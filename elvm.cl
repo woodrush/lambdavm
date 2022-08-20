@@ -38,7 +38,7 @@
 
 
 ;;================================================================
-;; Memory
+;; Memory and program
 ;;================================================================
 (def-lazy init-memory nil)
 
@@ -50,6 +50,15 @@
       memory)
     (t
       (memory-read (memory (car address)) (cdr address)))))
+
+(defrec-lazy lookup-progtree (progtree address)
+  (cond
+    ((isnil progtree)
+      progtree)
+    ((isnil address)
+      progtree)
+    (t
+      (lookup-progtree (progtree (car address)) (cdr address)))))
 
 (defrec-lazy memory-write (memory address value)
   (cond
@@ -65,16 +74,33 @@
         (cons (car memory) (memory-write (cdr memory) (cdr address) value))))))
 
 
+(defrec-lazy list2checkpoint-tree (proglist depth)
+  (cond
+    ((isnil proglist)
+      (cons nil nil))
+    ((isnil depth)
+      (cons proglist (cdr proglist)))
+    (t
+      (let ((rightstate (list2checkpoint-tree proglist (cdr depth)))
+            (righttree (car rightstate))
+            (right-restproglist (cdr rightstate))
+            (leftstate (list2checkpoint-tree right-restproglist (cdr depth)))
+            (lefttree (car leftstate))
+            (left-restproglist (cdr leftstate)))
+        (cons (cons lefttree righttree) left-restproglist)))))
+
+
 ;;================================================================
 ;; Registers
 ;;================================================================
-(defun-lazy reg-A   (r1 r2 r3 r4 r5 r6) r1)
-(defun-lazy reg-B   (r1 r2 r3 r4 r5 r6) r2)
-(defun-lazy reg-C   (r1 r2 r3 r4 r5 r6) r3)
-(defun-lazy reg-D   (r1 r2 r3 r4 r5 r6) r4)
-(defun-lazy reg-SP  (r1 r2 r3 r4 r5 r6) r5)
-(defun-lazy reg-BP  (r1 r2 r3 r4 r5 r6) r6)
-(defun-lazy cons6 (r1 r2 r3 r4 r5 r6 f) (f r1 r2 r3 r4 r5 r6))
+(defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r1)
+(defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r2)
+(defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r3)
+(defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r4)
+(defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r5)
+(defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r6)
+(defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
+  `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
 (def-lazy init-reg
   (cons6 int-zero int-zero int-zero int-zero int-zero int-zero))
@@ -149,6 +175,7 @@
 (defmacro-lazy cmp (n m)
   `(cmp* (reverse ,n) (reverse ,m)))
 
+
 ;;================================================================
 ;; I/O
 ;;================================================================
@@ -191,17 +218,10 @@
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i3)
 (defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8 i9) i4)
 (defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9) i5)
-(defun-lazy inst-jumpif  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
+(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
 (defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i7)
 (defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8 i9) i8)
 (defun-lazy inst-add     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i9)
-
-;; (defun-lazy jump-jeq (x1 x2 x3 x4 x5 x6) x1)
-;; (defun-lazy jump-jne (x1 x2 x3 x4 x5 x6) x2)
-;; (defun-lazy jump-jlt (x1 x2 x3 x4 x5 x6) x3)
-;; (defun-lazy jump-jgt (x1 x2 x3 x4 x5 x6) x4)
-;; (defun-lazy jump-jle (x1 x2 x3 x4 x5 x6) x5)
-;; (defun-lazy jump-jge (x1 x2 x3 x4 x5 x6) x6)
 
 (defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x1)
 (defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x2)
@@ -215,44 +235,53 @@
 (defun-lazy io-int-putc (x1 x2 x3) x3)
 
 
-(defun-lazy cons3 (x1 x2 x3 f) (f x1 x2 x3))
 (defun-lazy car3-1 (f) (f (lambda (x1 x2 x3) x1)))
 (defun-lazy car3-2 (f) (f (lambda (x1 x2 x3) x2)))
 (defun-lazy car3-3 (f) (f (lambda (x1 x2 x3) x3)))
+(defmacro-lazy cons3 (x1 x2 x3)
+  `(lambda (f) (f ,x1 ,x2 ,x3)))
 
-(defun-lazy cons4 (x1 x2 x3 x4 f) (f x1 x2 x3 x4))
 (defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
 (defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
 (defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
 (defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
+(defmacro-lazy cons4 (x1 x2 x3 x4)
+  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
 
 
-;; The key ingredient to managing the I/O control flow.
-;; By inspecting the value of the top character of the standard input and branching depending on its value,
-;; `await` is able to halt the further execution of `body` until the input is actually provided.
-;; Since elements of `stdin` never exceed 256, this form is guaranteed to evaluate to `body`.
-;; However, since most interpreters do not use that fact during beta reduction,
-;; and expect `stdin` to be an arbitrary lambda form,
-;; such interpreters cannot deduce that this form always reduces to `body`,
-;; effectively making this form a method for halting evaluation until the standard input is provided.
+;;================================================================
+;; Evaluation
+;;================================================================
 (defmacro-lazy await (stdin-top body)
+  ;; The key ingredient to managing the I/O control flow.
+  ;; By inspecting the value of the top character of the standard input and branching depending on its value,
+  ;; `await` is able to halt the further execution of `body` until the input is actually provided.
+  ;; Since elements of `stdin` never exceed 256, this form is guaranteed to evaluate to `body`.
+  ;; However, since most interpreters do not use that fact during beta reduction,
+  ;; and expect `stdin` to be an arbitrary lambda form,
+  ;; such interpreters cannot deduce that this form always reduces to `body`,
+  ;; effectively making this form a method for halting evaluation until the standard input is provided.
   `(if (< 256 ,stdin-top)
     nil
     ,body))
 
-(defrec-lazy eval (reg memory program stdin pc curblock)
+(defrec-lazy flatten (curlist listlist)
+  (cond ((isnil curlist)
+          (if (isnil listlist)
+            nil
+            (flatten (car listlist) (cdr listlist))))
+        (t
+          (cons (car curlist) (flatten (cdr curlist) listlist)))))
+
+(defrec-lazy eval (reg memory progtree stdin curblock)
   ;; Prevent frequently used functions from being inlined every time
-  (let ((invert invert)
+  (let ((reverse-helper reverse-helper)
         (add-carry add-carry)
+        (flatten flatten)
         (cmp* cmp*)
         (reg-write reg-write))
     (cond ((isnil curblock)
-            ;; Add 1 to the PC and jump there
-            (let ((pc-inc (add int-one pc))
-                  (nextblock (lookup-program program pc-inc)))
-              (if (isnil nextblock)
-                string-term
-                (eval reg memory program stdin pc-inc nextblock))))
+            string-term)
           (t
             (let ((curinst (car curblock))
                   (*src (car4-3 curinst))
@@ -274,10 +303,10 @@
                   (let ((c (car stdin)))
                     ;; Await for the user input
                     (await c
-                      (eval (reg-write reg (int2bit c) *src) memory program (cdr stdin) pc nextblock)))
+                      (eval (reg-write reg (int2bit c) *src) memory progtree (cdr stdin) nextblock)))
                   ;; putc
                   (cons (bit2int (reg-read reg *src))
-                    (eval reg memory program stdin pc nextblock)))
+                    (eval reg memory progtree stdin nextblock)))
 
                 ;; ==== inst-sub ====
                 ;; Structure:
@@ -285,7 +314,7 @@
                 (eval (reg-write reg
                         (sub src (reg-read reg *dst))
                         *dst)
-                      memory program stdin pc nextblock)
+                      memory progtree stdin nextblock)
 
                 ;; ==== inst-cmp ====
                 ;; Structure:
@@ -313,12 +342,12 @@
                         int-one
                         int-zero)
                       *dst-cmp)
-                    memory program stdin pc nextblock))
+                    memory progtree stdin nextblock))
 
                 ;; ==== inst-load ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg (memory-read memory src) *dst) memory program stdin pc nextblock)
+                (eval (reg-write reg (memory-read memory src) *dst) memory progtree stdin nextblock)
 
                 ;; ==== inst-jumpcmp ====
                 ;; Structure:
@@ -339,26 +368,26 @@
                             (cmp-result t t nil)
                             ;; ge
                             (cmp-result t nil t))
-                          (eval reg memory program stdin jmp (lookup-program program jmp)))
+                          (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
                         (t
-                          (eval reg memory program stdin pc nextblock))))
+                          (eval reg memory progtree stdin nextblock))))
 
                 ;; ==== inst-jmp ====
                 ;; Structure:
                 ;;   (cons4 inst-jmp [jmp-isimm] [jmp] _)
-                (eval reg memory program stdin src (lookup-program program src))
+                (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper src nil))))
 
                 ;; ==== inst-mov ====
                 ;; Structure:
                 ;;   (cons4 inst-mov [src-isimm] [src] [*dst])
-                (eval (reg-write reg src *dst) memory program stdin pc nextblock)
+                (eval (reg-write reg src *dst) memory progtree stdin nextblock)
 
                 ;; ==== inst-store ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
                 ;; src:  The destination address
                 ;; *dst: The source register
-                (eval reg (memory-write memory src (reg-read reg *dst)) program stdin pc nextblock)
+                (eval reg (memory-write memory src (reg-read reg *dst)) progtree stdin nextblock)
 
                 ;; ==== inst-add ====
                 ;; Structure:
@@ -366,87 +395,20 @@
                 (eval (reg-write reg
                         (add src (reg-read reg *dst))
                         *dst)
-                      memory program stdin pc nextblock)
+                      memory progtree stdin nextblock)
                       ))))))
 
-(defparameter contargs `(%reg %memory %program %nextinst %add-carry %jmp))
-(defmacro definst-lazy (name args body)
-  `(defun-lazy ,name ,(append args contargs)
-      ,body))
 
-;; (defmacro-lazy %%nextinst (&rest args)
-;;   (cond ((not args)
-;;           nil)
-;;         (t
-;;           (let ((key (car args))
-;;                 (value (car (cdr args))))
-;;             (cond ((eq ')))))))
-
-(defrec-lazy lookup-program (program address)
-  (cond
-    ((isnil program)
-      nil)
-    ((isnil address)
-      program)
-    (t
-      (lookup-program (program (car address)) (cdr address)))))
-
-(defun-lazy nextinst (reg memory curprogram program nextinst cont)
-  (cond ((isnil curprogram)
-          (let ((pc-inc (add (reg-read %reg reg-pc) int-one))
-                (newreg (reg-write %reg newreg reg-pc)))
-            ))))
-
-(definst-lazy inst-exit ()
-  string-term)
-
-(definst-lazy inst-incpc ()
-  (nextinst (reg-write %reg (add (reg-read %reg reg-pc) int-one) reg-pc)
-            %memory %curprogram %program %nextinst %add))
-
-(definst-lazy inst-mov-imm (imm *dst)
-  (%nextinst (reg-write reg *dst imm) %memory %program %nextinst %cont))
-
-(defun-lazy inst-mov-imm (imm *dst reg memory program cont)
-  (cont (reg-write reg *dst imm) memory program))
-
-(defun-lazy inst-mov-reg (*src *dst reg memory program cont)
-  (cont (reg-write reg *dst (reg-read reg *src)) memory program))
-
-
-
-(defun-lazy inst-add-imm (imm *dst reg memory program cont)
-  (cont (reg-write reg *dst (reg-read reg *src)) memory program))
-
-
-(defun-lazy truth2int (x) (x 1 0))
 
 (defun-lazy main (stdin)
   (do-continuation
     (let* memory init-memory)
     (let* reg init-reg)
+    (let* progtree nil)
+    (let* pc int-zero)
+
     (let* address (list t t nil))
-    ;; (let ((value (list "A"))))
-    ;; (let ((memory (memory-write memory address value))))
-    ;; (let* ret  (memory-read memory address))
-    ;; (let* ret2 (memory-read memory (list t t t)))
-    ;; (let* ret3 (memory-read memory (list t t nil nil)))
-    ;; (let* ret4 (memory-read memory (list t t nil nil)))
-    ;; (cons (car ret))
-    ;; (cons (car ret2))
-    ;; (cons (car ret3))
-    ;; (cons (car ret4))
 
-    ;; (let* memory (memory-write memory address (int2bit 32)))
-    ;; (let* n (memory-read memory address))
-
-    ;; (let* reg (reg-write reg reg-B (int2bit 32)))
-    ;; (let* n (reg-read reg reg-B))
-
-    ;; (let* n (int2bit 32))
-
-    (<- (reg memory program) (inst-mov-imm (int2bit 32) reg-A reg memory nil))
-    (<- (reg memory program) (inst-mov-reg reg-A reg-B reg memory nil))
     (let* n (reg-read reg reg-B))
 
     (let* m (int2bit 4))
@@ -454,49 +416,28 @@
     (let* zx (add (add n m) a))
     (let* zy (add (add (add n m) m) a))
     (let* zz (sub (add (add n m) m) a))
-    ;; (let ((c (bit2int (list t nil nil t t t nil nil)))))
-    ;; (let ((c (bit2int x))))
-    ;; ;; (let ((d (bit2int (int2bit (+ 4 32))))))
-    ;; (let ((e (bit2int x))))
 
-    ;; (cons (+ "0" (length zx)))
-    ;; (cons " ")
-    ;; (cons (bit2int n))
-    ;; (cons (bit2int zx))
-    ;; (cons (bit2int zy))
-    ;; (cons (bit2int zz))
-    ;; (cons " ")
-    ;; (cons (+ "0" (-> zx car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr cdr cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr cdr cdr cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr cdr cdr cdr cdr car truth2int)))
-    ;; (cons (+ "0" (-> zx cdr cdr cdr cdr cdr cdr cdr car truth2int)))
+    ;; (let* progtree (memory-write progtree (int2bit 0) p1))
+    ;; (let* progtree (memory-write progtree (int2bit 1) p2))
 
-    ;; ;; (cons c)
-    ;; ;; ;; (cons d)
-    ;; ;; (cons e)
-    ;; (inflist 256)
     (let* curblock
       (list
-        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-B io-int-getc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-B io-int-putc)
-        (cons4 inst-add t (int2bit 2) reg-A)
+        ;; (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-B io-int-getc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-add t (int2bit 2) reg-A)
-        ;; (cons4 inst-sub t (int2bit 2) reg-A)
-        (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
-        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
-        (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; ;; (cons4 inst-add t (int2bit 2) reg-A)
+        ;; ;; (cons4 inst-sub t (int2bit 2) reg-A)
+        ;; (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
+        ;; (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
 
         ;; (cons4 inst-add t (int2bit 2) reg-A)
         ;; (cons4 inst-store t (int2bit (+ 2 (+ 32 4))) reg-A)
@@ -558,8 +499,22 @@
         )
         ;; nil
         )
+    (let* p1
+      (list
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)))
+    (let* p2
+      (list
+        (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)))
+    (let* proglist (list p1 p2))
+    (let* progtree (list2checkpoint-tree proglist))
+    ;; (let* progtree nil)
+    (let* progtree (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons (list p1 p2 p2 p2) (list p1 p1 p2))))))))))
+    (let* initinst (list (cons4 inst-jmp t int-one nil)))
+
     (cons "A")
-    (eval reg memory program stdin int-zero curblock)
+    (eval reg memory progtree stdin initinst)
     ))
 
 
