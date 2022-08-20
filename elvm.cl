@@ -171,21 +171,29 @@
 ;; (defmacro-lazy cmp (n m)
 ;;   `(cmp* (reverse ,n) (reverse ,m)))
 
+;; (defun-lazy cmp (n m enum-cmp)
+;;   (let ((cmp-result (cmp* (reverse n) (reverse m))))
+;;     ;; Type match over the cmp type
+;;     ;; cmp-result: eq, lt, gt
+;;     (enum-cmp
+;;       ;; eq
+;;       (cmp-result t   nil nil)
+;;       ;; ne
+;;       (cmp-result nil t   t)
+;;       ;; lt
+;;       (cmp-result nil t   nil)
+;;       ;; gt
+;;       (cmp-result nil nil t)
+;;       ;; le
+;;       (cmp-result t   t   nil)
+;;       ;; ge
+;;       (cmp-result t   nil t))))
+
 (defun-lazy cmp (n m enum-cmp)
-  (let ((cmp-result (cmp* (reverse n) (reverse m))))
-    (enum-cmp
-      ;; eq
-      (cmp-result t nil nil)
-      ;; ne
-      (cmp-result nil t t)
-      ;; lt
-      (cmp-result nil t nil)
-      ;; gt
-      (cmp-result nil nil t)
-      ;; le
-      (cmp-result t t nil)
-      ;; ge
-      (cmp-result t nil t))))
+  ((cmp* (reverse n) (reverse m))
+    (enum-cmp t nil nil nil t t)
+    (enum-cmp nil t t nil t nil)
+    (enum-cmp nil t nil t nil t)))
 
 ;;================================================================
 ;; I/O
@@ -343,11 +351,7 @@
                   (eval-reg
                     (reg-write
                       reg
-                      ;; Type match over the cmp type
-                      ;; cmp-result: eq, lt, gt
-                      (if cmp-result
-                        int-one
-                        int-zero)
+                      (if cmp-result int-one int-zero)
                       *dst-cmp)))
 
                 ;; ==== inst-load ====
@@ -360,8 +364,9 @@
                 ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
                 (let ((*jmp (car4-4 *dst))
                       (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
-                      (cmp-result (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))))
-                  (cond (cmp-result
+                      ;; (cmp-result (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst)))
+                      )
+                  (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
                           (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
                         (t
                           (eval-reg reg))))
