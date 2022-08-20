@@ -312,7 +312,7 @@
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
                 (eval (reg-write reg
-                        (sub src (reg-read reg *dst))
+                        (sub (reg-read reg *dst) src)
                         *dst)
                       memory progtree stdin nextblock)
 
@@ -320,7 +320,7 @@
                 ;; Structure:
                 ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
                 (let ((*dst-cmp (cdr *dst))
-                      (cmp-result (cmp src (reg-read reg *dst-cmp))))
+                      (cmp-result (cmp (reg-read reg *dst-cmp) src)))
                   (eval
                     (reg-write
                       reg
@@ -354,7 +354,7 @@
                 ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
                 (let ((*jmp (car4-4 *dst))
                       (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
-                      (cmp-result (cmp src (reg-read reg (car4-2 *dst)))))
+                      (cmp-result (cmp (reg-read reg (car4-2 *dst)) src)))
                   (cond (((car4-1 *dst)
                             ;; eq
                             (cmp-result t nil nil)
@@ -499,6 +499,9 @@
         )
         ;; nil
         )
+    (let* p0
+      (list
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-B)))
     (let* p1
       (list
         (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
@@ -507,7 +510,15 @@
       (list
         (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
         (cons4 inst-io-int nil reg-A io-int-putc)))
-    (let* proglist (list p1 p2 p1 p2))
+    (let* p3
+      (list
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-sub t int-one reg-B)
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-jumpcmp t int-one (cons4 cmp-le reg-B t (int2bit 8)))
+        (cons4 inst-jmp t (add int-one int-one) nil)))
+    (let* proglist (list p0 p1 p2 p3))
     (let* progtree (car (list2checkpoint-tree proglist int-zero)))
     ;; (let* progtree nil)
     ;; (let* progtree (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons (list p1 p2 p2 p2) (list p1 p1 p2))))))))))
