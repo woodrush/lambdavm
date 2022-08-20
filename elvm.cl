@@ -129,9 +129,9 @@
         (t
           (iszero-bit (cdr n)))))
 
-(defun-lazy cmpret-eq   (r1 r2 r3) r1)
-(defun-lazy cmpret-lt   (r1 r2 r3) r2)
-(defun-lazy cmpret-gt   (r1 r2 r3) r3)
+(defun-lazy cmpret-eq (r1 r2 r3) r1)
+(defun-lazy cmpret-lt (r1 r2 r3) r2)
+(defun-lazy cmpret-gt (r1 r2 r3) r3)
 
 (defrec-lazy cmp* (n m)
   (cond ((isnil n)
@@ -141,13 +141,13 @@
                 (mcar (car m)))
             (cond ((and (not ncar) mcar)
                     cmpret-lt)
-                  ((and (ncar (not mcar)))
+                  ((and ncar (not mcar))
                     cmpret-gt)
                   (t
                     (cmp* (cdr n) (cdr m))))))))
 
 (defmacro-lazy cmp (n m)
-  `(cmp* (invert ,n) (invert ,m)))
+  `(cmp* (reverse ,n) (reverse ,m)))
 
 ;;================================================================
 ;; I/O
@@ -244,8 +244,7 @@
                   (*src (car4-3 curinst))
                   (src (if (car4-2 curinst) *src (reg-read reg *src)))
                   (*dst (car4-4 curinst))
-                  (nextblock (cdr curblock))
-                  )
+                  (nextblock (cdr curblock)))
               ;; Typematch on the current instruction's tag
               ((car4-1 curinst)
                 ;; ==== inst-io-int ====
@@ -254,13 +253,13 @@
                 ;;   getc: (cons4 inst-io-int _ [dst] io-int-getc)
                 ;;   putc: (cons4 inst-io-int _ [src] io-int-putc)
                 ;; Typematch over the inst. type
-                ;; (cons "B" string-term)
                 (*dst
                   ;; exit
                   string-term
                   ;; getc
                   (let ((c (car stdin)))
-                    (if (<= (succ 256) c)
+                    ;; Await for the user input
+                    (if (<= 256 c)
                       string-term
                       (eval (reg-write reg (int2bit c) *src) memory program (cdr stdin) pc nextblock)))
                   ;; putc
@@ -278,7 +277,8 @@
                 ;; ==== inst-cmp ====
                 ;; Structure:
                 ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-                (let ((cmp-result (cmp src (reg-read reg *dst))))
+                (let ((*dst-cmp (cdr *dst))
+                      (cmp-result (cmp src (reg-read reg *dst-cmp))))
                   (eval
                     (reg-write
                       reg
@@ -299,7 +299,7 @@
                             (cmp-result t nil t))
                         int-one
                         int-zero)
-                      *dst)
+                      *dst-cmp)
                     memory program stdin pc nextblock))
 
                 ;; ==== inst-load ====
@@ -468,31 +468,76 @@
     ;; (inflist 256)
     (let* curblock
       (list
-        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-B io-int-getc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-B io-int-putc)
-        (cons4 inst-add t (int2bit 2) reg-A)
+        ;; (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; ;; (cons4 inst-io-int nil reg-B io-int-getc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-add t (int2bit 2) reg-A)
-        ;; (cons4 inst-sub t (int2bit 2) reg-A)
-        (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
-        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
-        (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; ;; (cons4 inst-add t (int2bit 2) reg-A)
+        ;; ;; (cons4 inst-sub t (int2bit 2) reg-A)
+        ;; (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
+        ;; (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
 
-        (cons4 inst-add t (int2bit 2) reg-A)
-        (cons4 inst-store t (int2bit (+ 2 (+ 32 4))) reg-A)
-        (cons4 inst-load t (int2bit (+ 2 (+ 32 4))) reg-B)
-        (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; (cons4 inst-add t (int2bit 2) reg-A)
+        ;; (cons4 inst-store t (int2bit (+ 2 (+ 32 4))) reg-A)
+        ;; (cons4 inst-load t (int2bit (+ 2 (+ 32 4))) reg-B)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
 
-        (cons4 inst-io-int nil reg-B io-int-putc)
-        (cons4 inst-mov t (int2bit 2) reg-C)
-        (cons4 inst-sub nil reg-B reg-C)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; (cons4 inst-mov t (int2bit 2) reg-C)
+        ;; (cons4 inst-sub nil reg-B reg-C)
+        ;; (cons4 inst-io-int nil reg-C io-int-putc)
+
+
+        (cons4 inst-mov t (int2bit (+ 32 8)) reg-D)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-eq reg-B))
+        (cons4 inst-add nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-lt reg-B))
+        (cons4 inst-add nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-gt reg-B))
+        (cons4 inst-add nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-le reg-B))
+        (cons4 inst-add nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-ge reg-B))
+        (cons4 inst-add nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+
+        (cons4 inst-mov t (int2bit (+ 32 16)) reg-C)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-mov nil reg-D reg-B)
+        (cons4 inst-cmp nil reg-A (cons cmp-ne reg-B))
+        (cons4 inst-add nil reg-B reg-C)
         (cons4 inst-io-int nil reg-C io-int-putc)
 
 
