@@ -239,22 +239,6 @@
 (defmacro-lazy nth (n list)
   `(-> ,list (,n cdr) car))
 
-(defrec-lazy reverse-helper (list curlist)
-  (if (isnil list) curlist (reverse-helper (cdr list) (cons (car list) curlist))))
-
-(defmacro-lazy reverse (list)
-  `(reverse-helper ,list nil))
-
-(defrec-lazy take* (n list ret)
-  (cond
-    ((iszero n)
-      (reverse ret))
-    (t
-      (take* (pred n) (cdr list) (cons (car list) ret)))))
-
-(defmacro-lazy take (n list)
-  `(take ,n ,list nil))
-
 (def-lazy "A" (succ 64))
 (defmacro def-alphabet-lazy ()
   (let* ((alphabet (coerce "ABCDEFGHIJKLMNOPQRSTUVWXYZ" `list))
@@ -287,6 +271,30 @@
   (if (not args)
     target
     `(-> (,(car args) ,target) ,@(cdr args))))
+
+(defrec-lazy reverse-helper (list curlist)
+  (if (isnil list) curlist (reverse-helper (cdr list) (cons (car list) curlist))))
+
+(defmacro-lazy reverse (list)
+  `(reverse-helper ,list nil))
+
+(defrec-lazy take* (n list ret)
+  (cond
+    ((iszero n)
+      (reverse ret))
+    (t
+      (take* (pred n) (cdr list) (cons (car list) ret)))))
+
+(defmacro-lazy take (n list)
+  `(take ,n ,list nil))
+
+(defrec-lazy length (list)
+  ((letrec-lazy length (l n)
+      (if (isnil l)
+        n
+        (length (cdr l) (succ n))))
+    list 0))
+
 
 
 (defun compile-to-blc (expr)
