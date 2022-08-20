@@ -1,6 +1,7 @@
 (load "./lazy.cl")
 
 
+(def-lazy SYS-N-BITS (+ 16 8))
 (def-lazy " " 32)
 (def-lazy string-term (inflist 256))
 
@@ -30,12 +31,13 @@
   `(do-continuation* ,@(reverse proc)))
 
 
-;; (def-lazy int-zero (take 24 (inflist nil)))
 (def-lazy "0" (+ 32 16))
 
-(def-lazy int-zero (list nil nil nil nil nil nil nil nil))
-(def-lazy int-one (list t nil nil nil nil nil nil nil))
 
+;; (def-lazy int-zero (list nil nil nil nil nil nil nil nil))
+;; (def-lazy int-one (list t nil nil nil nil nil nil nil))
+(def-lazy int-zero (take SYS-N-BITS (inflist nil)))
+(def-lazy int-one (cons t (take (pred SYS-N-BITS) (inflist nil))))
 
 ;;================================================================
 ;; Memory and program
@@ -180,10 +182,18 @@
 ;; I/O
 ;;================================================================
 (def-lazy powerlist
-  (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil)))))))))
+  ((letrec-lazy pows (n exp)
+    (if (iszero exp)
+      nil
+      (cons n (pows (+ n n) (pred exp)))))
+   1 SYS-N-BITS)
+  ;; (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil))))))))
+  )
 
-(def-lazy invpowerlist
-  (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil)))))))))
+(def-lazy revpowerlist
+  (reverse powerlist)
+  ;; (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil))))))))
+  )
 
 (defrec-lazy bit2int* (n powerlist)
   (cond ((isnil powerlist)
@@ -196,18 +206,18 @@
 (defmacro-lazy bit2int (n)
   `(bit2int* ,n powerlist))
 
-(defrec-lazy int2bit* (n invpowerlist)
-  (cond ((isnil invpowerlist)
+(defrec-lazy int2bit* (n revpowerlist)
+  (cond ((isnil revpowerlist)
           nil)
         ((iszero n)
-          (cons nil (int2bit* n (cdr invpowerlist))))
+          (cons nil (int2bit* n (cdr revpowerlist))))
         (t
-          (if (<= (car invpowerlist) n)
-            (cons t   (int2bit* (- n (car invpowerlist)) (cdr invpowerlist)))
-            (cons nil (int2bit* n (cdr invpowerlist)))))))
+          (if (<= (car revpowerlist) n)
+            (cons t   (int2bit* (- n (car revpowerlist)) (cdr revpowerlist)))
+            (cons nil (int2bit* n (cdr revpowerlist)))))))
 
 (defmacro-lazy int2bit (n)
-  `(reverse (int2bit* ,n invpowerlist)))
+  `(reverse (int2bit* ,n revpowerlist)))
 
 
 ;;================================================================
@@ -528,6 +538,8 @@
     (eval reg memory progtree stdin initinst)
     ))
 
+;; (defun-lazy main* (stdin)
+;;   (eval init-reg nil nil stdin (list (cons4 inst-jmp t int-zero nil))))
 
 
 ;;================================================================
