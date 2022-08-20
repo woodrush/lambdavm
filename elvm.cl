@@ -490,8 +490,10 @@
         (cons4 inst-load t (int2bit (+ 2 (+ 32 4))) reg-B)
         (cons4 inst-io-int nil reg-B io-int-putc)
 
-        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
         (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-mov t (int2bit 2) reg-C)
+        (cons4 inst-sub nil reg-B reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
 
 
         ;; (cons4 inst-mov t (int2bit (+ 2 (+ 32 4))) reg-B)
