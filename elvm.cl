@@ -507,11 +507,11 @@
       (list
         (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
         (cons4 inst-io-int nil reg-A io-int-putc)))
-    (let* proglist (list p1 p2))
-    (let* progtree (list2checkpoint-tree proglist))
+    (let* proglist (list p1 p2 p1 p2))
+    (let* progtree (car (list2checkpoint-tree proglist int-zero)))
     ;; (let* progtree nil)
-    (let* progtree (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons (list p1 p2 p2 p2) (list p1 p1 p2))))))))))
-    (let* initinst (list (cons4 inst-jmp t int-one nil)))
+    ;; (let* progtree (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons (list p1 p2 p2 p2) (list p1 p1 p2))))))))))
+    (let* initinst (list (cons4 inst-jmp t int-zero nil)))
 
     (cons "A")
     (eval reg memory progtree stdin initinst)
