@@ -286,7 +286,7 @@
       (take* (pred n) (cdr list) (cons (car list) ret)))))
 
 (defmacro-lazy take (n list)
-  `(take ,n ,list nil))
+  `(take* ,n ,list nil))
 
 (defrec-lazy length (list)
   ((letrec-lazy length (l n)
