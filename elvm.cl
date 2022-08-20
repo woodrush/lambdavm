@@ -1,9 +1,11 @@
 (load "./lazy.cl")
 
 
-(def-lazy SYS-N-BITS (+ 16 8))
-(def-lazy " " 32)
 (def-lazy string-term (inflist 256))
+
+(def-lazy SYS-N-BITS (+ 16 8))
+(def-lazy int-zero (take SYS-N-BITS (inflist nil)))
+(def-lazy int-one (cons t (take (pred SYS-N-BITS) (inflist nil))))
 
 (defmacro-lazy do-continuation* (top &rest proc)
   (cond ((not proc)
@@ -30,14 +32,6 @@
 (defmacro-lazy do-continuation (&rest proc)
   `(do-continuation* ,@(reverse proc)))
 
-
-(def-lazy "0" (+ 32 16))
-
-
-;; (def-lazy int-zero (list nil nil nil nil nil nil nil nil))
-;; (def-lazy int-one (list t nil nil nil nil nil nil nil))
-(def-lazy int-zero (take SYS-N-BITS (inflist nil)))
-(def-lazy int-one (cons t (take (pred SYS-N-BITS) (inflist nil))))
 
 ;;================================================================
 ;; Memory and program
@@ -286,9 +280,9 @@
 (defrec-lazy eval (reg memory progtree stdin curblock)
   ;; Prevent frequently used functions from being inlined every time
   (let ((reverse-helper reverse-helper)
-        (add-carry add-carry)
-        (flatten flatten)
-        (cmp* cmp*)
+        ;; (add-carry add-carry)
+        ;; (flatten flatten)
+        ;; (cmp* cmp*)
         (reg-write reg-write))
     (cond ((isnil curblock)
             string-term)
@@ -297,7 +291,8 @@
                   (*src (car4-3 curinst))
                   (src (if (car4-2 curinst) *src (reg-read reg *src)))
                   (*dst (car4-4 curinst))
-                  (nextblock (cdr curblock)))
+                  (nextblock (cdr curblock))
+                  (eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock))))
               ;; Typematch on the current instruction's tag
               ((car4-1 curinst)
                 ;; ==== inst-io-int ====
@@ -316,22 +311,21 @@
                       (eval (reg-write reg (int2bit c) *src) memory progtree (cdr stdin) nextblock)))
                   ;; putc
                   (cons (bit2int (reg-read reg *src))
-                    (eval reg memory progtree stdin nextblock)))
+                    (eval-reg reg)))
 
                 ;; ==== inst-sub ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg
+                (eval-reg (reg-write reg
                         (sub (reg-read reg *dst) src)
-                        *dst)
-                      memory progtree stdin nextblock)
+                        *dst))
 
                 ;; ==== inst-cmp ====
                 ;; Structure:
                 ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
                 (let ((*dst-cmp (cdr *dst))
                       (cmp-result (cmp (reg-read reg *dst-cmp) src)))
-                  (eval
+                  (eval-reg
                     (reg-write
                       reg
                       ;; Type match over the cmp type
@@ -351,13 +345,12 @@
                             (cmp-result t nil t))
                         int-one
                         int-zero)
-                      *dst-cmp)
-                    memory progtree stdin nextblock))
+                      *dst-cmp)))
 
                 ;; ==== inst-load ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg (memory-read memory src) *dst) memory progtree stdin nextblock)
+                (eval-reg (reg-write reg (memory-read memory src) *dst))
 
                 ;; ==== inst-jumpcmp ====
                 ;; Structure:
@@ -380,7 +373,7 @@
                             (cmp-result t nil t))
                           (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
                         (t
-                          (eval reg memory progtree stdin nextblock))))
+                          (eval-reg reg))))
 
                 ;; ==== inst-jmp ====
                 ;; Structure:
@@ -390,7 +383,7 @@
                 ;; ==== inst-mov ====
                 ;; Structure:
                 ;;   (cons4 inst-mov [src-isimm] [src] [*dst])
-                (eval (reg-write reg src *dst) memory progtree stdin nextblock)
+                (eval-reg (reg-write reg src *dst))
 
                 ;; ==== inst-store ====
                 ;; Structure:
@@ -402,10 +395,10 @@
                 ;; ==== inst-add ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg
+                (eval-reg (reg-write reg
                         (add src (reg-read reg *dst))
                         *dst)
-                      memory progtree stdin nextblock)
+                      )
                       ))))))
 
 
