@@ -226,6 +226,20 @@
 (defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
 (defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
 
+
+;; The key ingredient to managing the I/O control flow.
+;; By inspecting the value of the top character of the standard input and branching depending on its value,
+;; `await` is able to halt the further execution of `body` until the input is actually provided.
+;; Since elements of `stdin` never exceed 256, this form is guaranteed to evaluate to `body`.
+;; However, since most interpreters do not use that fact during beta reduction,
+;; and expect `stdin` to be an arbitrary lambda form,
+;; such interpreters cannot deduce that this form always reduces to `body`,
+;; effectively making this form a method for halting evaluation until the standard input is provided.
+(defmacro-lazy await (stdin-top body)
+  `(if (< 256 ,stdin-top)
+    nil
+    ,body))
+
 (defrec-lazy eval (reg memory program stdin pc curblock)
   ;; Prevent frequently used functions from being inlined every time
   (let ((invert invert)
@@ -259,8 +273,7 @@
                   ;; getc
                   (let ((c (car stdin)))
                     ;; Await for the user input
-                    (if (<= 256 c)
-                      string-term
+                    (await c
                       (eval (reg-write reg (int2bit c) *src) memory program (cdr stdin) pc nextblock)))
                   ;; putc
                   (cons (bit2int (reg-read reg *src))
@@ -468,22 +481,22 @@
     ;; (inflist 256)
     (let* curblock
       (list
-        ;; (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; ;; (cons4 inst-io-int nil reg-B io-int-getc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; (cons4 inst-io-int nil reg-A io-int-putc)
-        ;; ;; (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-B io-int-getc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-add t (int2bit 2) reg-A)
         ;; (cons4 inst-add t (int2bit 2) reg-A)
-        ;; ;; (cons4 inst-add t (int2bit 2) reg-A)
-        ;; ;; (cons4 inst-sub t (int2bit 2) reg-A)
-        ;; (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
-        ;; (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
-        ;; (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; (cons4 inst-sub t (int2bit 2) reg-A)
+        (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
+        (cons4 inst-io-int nil reg-B io-int-putc)
 
         ;; (cons4 inst-add t (int2bit 2) reg-A)
         ;; (cons4 inst-store t (int2bit (+ 2 (+ 32 4))) reg-A)
