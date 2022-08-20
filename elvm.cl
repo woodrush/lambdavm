@@ -255,18 +255,17 @@
                 ;;   putc: (cons4 inst-io-int _ [src] io-int-putc)
                 ;; Typematch over the inst. type
                 ;; (cons "B" string-term)
-                (cons "Z" (*dst
+                (*dst
                   ;; exit
                   string-term
                   ;; getc
-                  ;; (cons "G" string-term)
                   (let ((c (car stdin)))
                     (if (<= (succ 256) c)
                       string-term
                       (eval (reg-write reg (int2bit c) *src) memory program (cdr stdin) pc nextblock)))
                   ;; putc
                   (cons (bit2int (reg-read reg *src))
-                    (eval reg memory program stdin pc nextblock))))
+                    (eval reg memory program stdin pc nextblock)))
 
                 ;; ==== inst-sub ====
                 ;; Structure:
@@ -339,8 +338,7 @@
                 ;; ==== inst-mov ====
                 ;; Structure:
                 ;;   (cons4 inst-mov [src-isimm] [src] [*dst])
-                ;; (cons "B" string-term)
-                (cons "M" (eval (reg-write reg src *dst) memory program stdin pc nextblock))
+                (eval (reg-write reg src *dst) memory program stdin pc nextblock)
 
                 ;; ==== inst-store ====
                 ;; Structure:
@@ -472,14 +470,31 @@
       (list
         (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
         (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int nil reg-B io-int-getc)
+        ;; (cons4 inst-io-int nil reg-B io-int-getc)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-add t (int2bit 2) reg-A)
+        ;; (cons4 inst-add t (int2bit 2) reg-A)
+        ;; (cons4 inst-sub t (int2bit 2) reg-A)
+        (cons4 inst-store t (int2bit (+ 32 4)) reg-A)
+        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
         (cons4 inst-io-int nil reg-B io-int-putc)
+
+        (cons4 inst-add t (int2bit 2) reg-A)
+        (cons4 inst-store t (int2bit (+ 2 (+ 32 4))) reg-A)
+        (cons4 inst-load t (int2bit (+ 2 (+ 32 4))) reg-B)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+
+        (cons4 inst-load t (int2bit (+ 32 4)) reg-B)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+
+
+        ;; (cons4 inst-mov t (int2bit (+ 2 (+ 32 4))) reg-B)
         )
         ;; nil
         )
