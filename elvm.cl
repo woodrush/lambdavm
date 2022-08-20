@@ -42,14 +42,14 @@
 ;;================================================================
 (def-lazy init-memory nil)
 
-(defrec-lazy memory-lookup (memory address)
+(defrec-lazy memory-read (memory address)
   (cond
     ((isnil memory)
       int-zero)
     ((isnil address)
       memory)
     (t
-      (memory-lookup (memory (car address)) (cdr address)))))
+      (memory-read (memory (car address)) (cdr address)))))
 
 (defrec-lazy memory-write (memory address value)
   (cond
@@ -216,17 +216,17 @@
 
 
 (defun-lazy cons3 (x1 x2 x3 f) (f x1 x2 x3))
-(defun-lazy car3-1 (x1 x2 x3) x1)
-(defun-lazy car3-2 (x1 x2 x3) x2)
-(defun-lazy car3-3 (x1 x2 x3) x3)
+(defun-lazy car3-1 (f) (f (lambda (x1 x2 x3) x1)))
+(defun-lazy car3-2 (f) (f (lambda (x1 x2 x3) x2)))
+(defun-lazy car3-3 (f) (f (lambda (x1 x2 x3) x3)))
 
 (defun-lazy cons4 (x1 x2 x3 x4 f) (f x1 x2 x3 x4))
-(defun-lazy car4-1 (x1 x2 x3 x4) x1)
-(defun-lazy car4-2 (x1 x2 x3 x4) x2)
-(defun-lazy car4-3 (x1 x2 x3 x4) x3)
-(defun-lazy car4-4 (x1 x2 x3 x4) x4)
+(defun-lazy car4-1 (f) (f (lambda (x1 x2 x3 x4) x1)))
+(defun-lazy car4-2 (f) (f (lambda (x1 x2 x3 x4) x2)))
+(defun-lazy car4-3 (f) (f (lambda (x1 x2 x3 x4) x3)))
+(defun-lazy car4-4 (f) (f (lambda (x1 x2 x3 x4) x4)))
 
-(defrec-lazy eval (reg memory program curblock)
+(defrec-lazy eval (reg memory program pc curblock)
   ;; Prevent frequently used functions from being inlined every time
   (let ((invert invert)
         (add-carry add-carry)
@@ -234,7 +234,8 @@
         (reg-write reg-write))
     (cond ((isnil curblock)
             ;; Add 1 to the PC and jump there
-            (eval (reg-write reg (add int-one (reg-read reg reg-pc)) reg-PC) memory program (lookup-program program jmp))
+            (let ((pc-inc (add int-one pc)))
+              (eval reg memory program pc-inc (lookup-program program pc-inc)))
             ;; (eval reg memory program
             ;;   (list
             ;;     (cons4 inst-add t int-one reg-pc)
@@ -245,7 +246,8 @@
                   (*src (car4-3 curinst))
                   (src (if (car4-2 curinst) *src (reg-read reg *src)))
                   (*dst (car4-4 curinst))
-                  (nextblock (cdr curblock)))
+                  (nextblock (cdr curblock))
+                  )
               ;; Typematch on the current instruction's tag
               ((car4-1 curinst)
                 ;; ==== inst-io-int ====
@@ -254,102 +256,112 @@
                 ;;   getc: (cons4 inst-io-int _ [dst] io-int-getc)
                 ;;   putc: (cons4 inst-io-int _ [src] io-int-putc)
                 ;; Typematch over the inst. type
-                (*dst
-                  ;; exit
-                  string-term
-                  ;; getc
-                  nil
-                  ;; putc
-                  (cons (bit2int (reg-read reg *src))
-                    (eval reg memory program nextblock)))
+                (cons "B" string-term)
+                ;; (*dst
+                ;;   ;; exit
+                ;;   string-term
+                ;;   ;; getc
+                ;;   nil
+                ;;   ;; putc
+                ;;   (cons (bit2int (reg-read reg *src))
+                ;;     (eval reg memory program pc nextblock)))
 
                 ;; ==== inst-sub ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg
-                        (sub src (reg-read reg *dst))
-                        *dst)
-                      memory program nextblock)
+                (cons "B" string-term)
+                ;; (eval (reg-write reg
+                ;;         (sub src (reg-read reg *dst))
+                ;;         *dst)
+                ;;       memory program pc nextblock)
 
                 ;; ==== inst-cmp ====
                 ;; Structure:
                 ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-                ;; Type match over the cmp type
-                ;; cmpresult: eq, lt, gt
-                (let ((cmp-result (cmp src (reg-read reg *dst))))
-                  (eval
-                    (reg-write
-                      reg
-                      (if ((car *dst)
-                            ;; eq
-                            (cmp-result t nil nil)
-                            ;; ne
-                            (cmp-result nil t t)
-                            ;; lt
-                            (cmp-result nil t nil)
-                            ;; gt
-                            (cmp-result nil nil t)
-                            ;; le
-                            (cmp-result t t nil)
-                            ;; ge
-                            (cmp-result t nil t))
-                        int-one
-                        int-zero)
-                      *dst)
-                    memory program nextblock))
+                (cons "B" string-term)
+                ;; (let ((cmp-result (cmp src (reg-read reg *dst))))
+                ;;   (eval
+                ;;     (reg-write
+                ;;       reg
+                ;;       ;; Type match over the cmp type
+                ;;       ;; cmp-result: eq, lt, gt
+                ;;       (if ((car *dst)
+                ;;             ;; eq
+                ;;             (cmp-result t nil nil)
+                ;;             ;; ne
+                ;;             (cmp-result nil t t)
+                ;;             ;; lt
+                ;;             (cmp-result nil t nil)
+                ;;             ;; gt
+                ;;             (cmp-result nil nil t)
+                ;;             ;; le
+                ;;             (cmp-result t t nil)
+                ;;             ;; ge
+                ;;             (cmp-result t nil t))
+                ;;         int-one
+                ;;         int-zero)
+                ;;       *dst)
+                ;;     memory program pc nextblock))
 
                 ;; ==== inst-load ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg (memory-read memory src) *dst) memory program nextblock)
+                (cons "B" string-term)
+                ;; (eval (reg-write reg (memory-read memory src) *dst) memory program pc nextblock)
 
                 ;; ==== inst-jumpcmp ====
                 ;; Structure:
                 ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-                (let ((*jmp (car4-4 *dst))
-                      (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
-                      (cmp-result (cmp src (reg-read reg (car4-2 *dst)))))
-                  (cond (((car4-1 *dst)
-                            ;; eq
-                            (cmp-result t nil nil)
-                            ;; ne
-                            (cmp-result nil t t)
-                            ;; lt
-                            (cmp-result nil t nil)
-                            ;; gt
-                            (cmp-result nil nil t)
-                            ;; le
-                            (cmp-result t t nil)
-                            ;; ge
-                            (cmp-result t nil t))
-                          (eval (reg-write reg jmp reg-PC) memory program (lookup-program program jmp)))
-                        (t
-                          (eval reg memory program nextblock))))
+                (cons "B" string-term)
+                ;; (let ((*jmp (car4-4 *dst))
+                ;;       (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
+                ;;       (cmp-result (cmp src (reg-read reg (car4-2 *dst)))))
+                ;;   (cond (((car4-1 *dst)
+                ;;             ;; eq
+                ;;             (cmp-result t nil nil)
+                ;;             ;; ne
+                ;;             (cmp-result nil t t)
+                ;;             ;; lt
+                ;;             (cmp-result nil t nil)
+                ;;             ;; gt
+                ;;             (cmp-result nil nil t)
+                ;;             ;; le
+                ;;             (cmp-result t t nil)
+                ;;             ;; ge
+                ;;             (cmp-result t nil t))
+                ;;           (eval reg memory program jmp (lookup-program program jmp)))
+                ;;         (t
+                ;;           (eval reg memory program pc nextblock))))
 
                 ;; ==== inst-jmp ====
                 ;; Structure:
                 ;;   (cons4 inst-jmp [jmp-isimm] [jmp] _)
-                (eval (reg-write reg src reg-PC) memory program (lookup-program program src))
+                (cons "B" string-term)
+                ;; (eval reg memory program src (lookup-program program src))
 
                 ;; ==== inst-mov ====
                 ;; Structure:
                 ;;   (cons4 inst-mov [src-isimm] [src] [*dst])
-                (eval (reg-write reg src *dst) memory program nextblock)
+                (cons "B" string-term)
+                ;; (eval (reg-write reg src *dst) memory program pc nextblock)
 
                 ;; ==== inst-store ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
                 ;; src:  The destination address
                 ;; *dst: The source register
-                (eval reg (memory-write memory src (reg-read reg *dst)) program nextblock)
+                (cons "B" string-term)
+                ;; (eval reg (memory-write memory src (reg-read reg *dst)) program pc nextblock)
 
                 ;; ==== inst-add ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval (reg-write reg
-                        (add src (reg-read reg *dst))
-                        *dst)
-                      memory program nextblock)))))))
+                (cons "B" string-term)
+                ;; (eval (reg-write reg
+                ;;         (add src (reg-read reg *dst))
+                ;;         *dst)
+                ;;       memory program pc nextblock)
+                      ))))))
 
 (defparameter contargs `(%reg %memory %program %nextinst %add-carry %jmp))
 (defmacro definst-lazy (name args body)
@@ -364,14 +376,14 @@
 ;;                 (value (car (cdr args))))
 ;;             (cond ((eq ')))))))
 
-(defrec-lazy program-lookup (program address)
+(defrec-lazy lookup-program (program address)
   (cond
     ((isnil program)
       (list inst-exit))
     ((isnil address)
       program)
     (t
-      (program-lookup (program (car address)) (cdr address)))))
+      (lookup-program (program (car address)) (cdr address)))))
 
 (defun-lazy nextinst (reg memory curprogram program nextinst cont)
   (cond ((isnil curprogram)
@@ -410,17 +422,17 @@
     (let* address (list t t nil))
     ;; (let ((value (list "A"))))
     ;; (let ((memory (memory-write memory address value))))
-    ;; (let* ret  (memory-lookup memory address))
-    ;; (let* ret2 (memory-lookup memory (list t t t)))
-    ;; (let* ret3 (memory-lookup memory (list t t nil nil)))
-    ;; (let* ret4 (memory-lookup memory (list t t nil nil)))
+    ;; (let* ret  (memory-read memory address))
+    ;; (let* ret2 (memory-read memory (list t t t)))
+    ;; (let* ret3 (memory-read memory (list t t nil nil)))
+    ;; (let* ret4 (memory-read memory (list t t nil nil)))
     ;; (cons (car ret))
     ;; (cons (car ret2))
     ;; (cons (car ret3))
     ;; (cons (car ret4))
 
     ;; (let* memory (memory-write memory address (int2bit 32)))
-    ;; (let* n (memory-lookup memory address))
+    ;; (let* n (memory-read memory address))
 
     ;; (let* reg (reg-write reg reg-B (int2bit 32)))
     ;; (let* n (reg-read reg reg-B))
@@ -464,8 +476,12 @@
     (let* curblock
       (list
         (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
-        (cons4 inst-io-int nil reg-A io-int-putc)))
-    (eval reg memory program curblock)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        )
+        ;; nil
+        )
+    (cons "A")
+    (eval reg memory program int-zero curblock)
     ))
 
 
