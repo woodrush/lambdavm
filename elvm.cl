@@ -168,9 +168,24 @@
                   (t
                     (cmp* (cdr n) (cdr m))))))))
 
-(defmacro-lazy cmp (n m)
-  `(cmp* (reverse ,n) (reverse ,m)))
+;; (defmacro-lazy cmp (n m)
+;;   `(cmp* (reverse ,n) (reverse ,m)))
 
+(defun-lazy cmp (n m enum-cmp)
+  (let ((cmp-result (cmp* (reverse n) (reverse m))))
+    (enum-cmp
+      ;; eq
+      (cmp-result t nil nil)
+      ;; ne
+      (cmp-result nil t t)
+      ;; lt
+      (cmp-result nil t nil)
+      ;; gt
+      (cmp-result nil nil t)
+      ;; le
+      (cmp-result t t nil)
+      ;; ge
+      (cmp-result t nil t))))
 
 ;;================================================================
 ;; I/O
@@ -324,25 +339,13 @@
                 ;; Structure:
                 ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
                 (let ((*dst-cmp (cdr *dst))
-                      (cmp-result (cmp (reg-read reg *dst-cmp) src)))
+                      (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
                   (eval-reg
                     (reg-write
                       reg
                       ;; Type match over the cmp type
                       ;; cmp-result: eq, lt, gt
-                      (if ((car *dst)
-                            ;; eq
-                            (cmp-result t nil nil)
-                            ;; ne
-                            (cmp-result nil t t)
-                            ;; lt
-                            (cmp-result nil t nil)
-                            ;; gt
-                            (cmp-result nil nil t)
-                            ;; le
-                            (cmp-result t t nil)
-                            ;; ge
-                            (cmp-result t nil t))
+                      (if cmp-result
                         int-one
                         int-zero)
                       *dst-cmp)))
@@ -357,20 +360,8 @@
                 ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
                 (let ((*jmp (car4-4 *dst))
                       (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
-                      (cmp-result (cmp (reg-read reg (car4-2 *dst)) src)))
-                  (cond (((car4-1 *dst)
-                            ;; eq
-                            (cmp-result t nil nil)
-                            ;; ne
-                            (cmp-result nil t t)
-                            ;; lt
-                            (cmp-result nil t nil)
-                            ;; gt
-                            (cmp-result nil nil t)
-                            ;; le
-                            (cmp-result t t nil)
-                            ;; ge
-                            (cmp-result t nil t))
+                      (cmp-result (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))))
+                  (cond (cmp-result
                           (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
                         (t
                           (eval-reg reg))))
@@ -531,14 +522,15 @@
     (eval reg memory progtree stdin initinst)
     ))
 
-;; (defun-lazy main* (stdin)
-;;   (eval init-reg nil nil stdin (list (cons4 inst-jmp t int-zero nil))))
+(defun-lazy main* (stdin)
+  (eval init-reg nil nil stdin (list (cons4 inst-jmp t int-zero nil))))
 
 
 ;;================================================================
 ;; Code output
 ;;================================================================
 (format t (compile-to-ski-lazy main))
+;; (format t (compile-to-ski-lazy main*))
 ;; (format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
