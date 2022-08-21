@@ -85,6 +85,22 @@
             (left-restproglist (cdr leftstate)))
         (cons (cons lefttree righttree) left-restproglist)))))
 
+(defrec-lazy list2tree (memlist depth)
+  (cond
+    ((isnil memlist)
+      (cons nil nil))
+    ((isnil depth)
+      (cons (car memlist) (cdr memlist)))
+    (t
+      (let ((rightstate (list2tree memlist (cdr depth)))
+            (righttree (car rightstate))
+            (right-restmemlist (cdr rightstate))
+            (leftstate (list2tree right-restmemlist (cdr depth)))
+            (lefttree (car leftstate))
+            (left-restmemlist (cdr leftstate)))
+        (cons (cons lefttree righttree) left-restmemlist)))))
+
+
 
 ;;================================================================
 ;; Registers
@@ -320,9 +336,9 @@
               ((car4-1 curinst)
                 ;; ==== inst-io-int ====
                 ;; Structure:
-                ;;   exit: (cons4 inst-io-int _ _     io-int-exit)
-                ;;   getc: (cons4 inst-io-int _ [dst] io-int-getc)
-                ;;   putc: (cons4 inst-io-int _ [src] io-int-putc)
+                ;;   exit: (cons4 inst-io-int nil         nil   io-int-exit)
+                ;;   getc: (cons4 inst-io-int nil         [dst] io-int-getc)
+                ;;   putc: (cons4 inst-io-int [src-isimm] [src] io-int-putc)
                 ;; Typematch over the inst. type
                 (*dst
                   ;; exit
@@ -333,7 +349,7 @@
                     (await c
                       (eval (reg-write reg (int2bit c) *src) memory progtree (cdr stdin) nextblock)))
                   ;; putc
-                  (cons (bit2int (reg-read reg *src))
+                  (cons (bit2int src)
                     (eval-reg reg)))
 
                 ;; ==== inst-sub ====
@@ -356,7 +372,7 @@
 
                 ;; ==== inst-load ====
                 ;; Structure:
-                ;;   (cons4 inst-store [src-isimm] [src] [*dst])
+                ;;   (cons4 inst-load [src-isimm] [src] [*dst])
                 (eval-reg (reg-write reg (memory-read memory src) *dst))
 
                 ;; ==== inst-jumpcmp ====
@@ -527,20 +543,36 @@
     (eval reg memory progtree stdin initinst)
     ))
 
+(defun-lazy main** (memlist proglist stdin)
+  (cons "A" (eval
+    init-reg
+    (car (list2tree memlist int-zero))
+    (car (list2checkpoint-tree proglist int-zero))
+    stdin
+    ;; (list
+    ;;     (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
+    ;;     (cons4 inst-io-int nil reg-A io-int-putc)
+    ;;     (cons4 inst-jmp t int-zero nil))
+    
+    (list
+     (cons4 inst-jmp t int-zero nil))
+        )))
+
 (defun-lazy main* (stdin)
-  (eval init-reg nil nil stdin (list (cons4 inst-jmp t int-zero nil))))
-
-
-;;================================================================
-;; Code output
-;;================================================================
-(format t (compile-to-ski-lazy main))
-;; (format t (compile-to-ski-lazy main*))
-;; (format t (compile-to-blc-lazy main))
-
-;; ;; Print lambda term
-;; (setf *print-right-margin* 800)
-;; (format t (write-to-string (curry (macroexpand-lazy main))))
-
-;; ;; Print in curried De Bruijn notation
-;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy main)))))
+  (main**
+    (list
+      (int2bit (+ 32 4)))
+    (list
+      
+      (list
+        (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-load t int-zero reg-B)
+                ;;   (cons4 inst-load [src-isimm] [src] [*dst])
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        )
+        )
+      stdin
+        ))
