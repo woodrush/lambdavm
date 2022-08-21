@@ -344,10 +344,13 @@
                   ;; exit
                   string-term
                   ;; getc
-                  (let ((c (car stdin)))
+                  (let ((c (car stdin))
+                        (c-bit (int2bit c)))
                     ;; Await for the user input
                     (await c
-                      (eval (reg-write reg (int2bit c) *src) memory progtree (cdr stdin) nextblock)))
+                      (if (cmp c-bit (int2bit 256) cmp-eq)
+                        (eval (reg-write reg int-zero *src) memory progtree (cdr stdin) nextblock)
+                        (eval (reg-write reg c-bit *src) memory progtree (cdr stdin) nextblock))))
                   ;; putc
                   (cons (bit2int src)
                     (eval-reg reg)))
@@ -373,7 +376,7 @@
                 ;; ==== inst-load ====
                 ;; Structure:
                 ;;   (cons4 inst-load [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg (memory-read memory src) *dst))
+                (eval-reg (reg-write reg (memory-read memory (reverse-helper src nil)) *dst))
 
                 ;; ==== inst-jumpcmp ====
                 ;; Structure:
@@ -402,7 +405,7 @@
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
                 ;; src:  The destination address
                 ;; *dst: The source register
-                (eval reg (memory-write memory src (reg-read reg *dst)) progtree stdin nextblock)
+                (eval reg (memory-write memory (reverse-helper src nil) (reg-read reg *dst)) progtree stdin nextblock)
 
                 ;; ==== inst-add ====
                 ;; Structure:
@@ -544,7 +547,7 @@
     ))
 
 (defun-lazy main** (memlist proglist stdin)
-  (cons "A" (eval
+  (eval
     init-reg
     (car (list2tree memlist int-zero))
     (car (list2checkpoint-tree proglist int-zero))
@@ -556,15 +559,38 @@
     
     (list
      (cons4 inst-jmp t int-zero nil))
-        )))
+        ))
 
 (defun-lazy main* (stdin)
   (main**
     (list
-      (int2bit (+ 32 4)))
+      (int2bit (+ 32 4))
+      (int2bit (+ 32 8))
+      )
     (list
       
       (list
+        (cons4 inst-load t int-zero reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-load t int-one reg-B)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-jmp t int-zero nil)
+        (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-load t int-zero reg-C)
+        (cons4 inst-io-int nil reg-C io-int-putc)
+        (cons4 inst-io-int nil reg-A io-int-putc)
+        (cons4 inst-jmp t int-one nil)
+        )
+      (list
+        (cons4 inst-io-int nil reg-B io-int-getc)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-io-int nil reg-B io-int-getc)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-io-int nil reg-B io-int-getc)
+        (cons4 inst-io-int nil reg-B io-int-putc)
+        (cons4 inst-io-int nil reg-B io-int-getc)
+        (cons4 inst-io-int nil reg-B io-int-putc)
         (cons4 inst-mov t (int2bit (+ 32 8)) reg-A)
         (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int nil reg-A io-int-putc)
