@@ -313,7 +313,7 @@
                   (eval-reg
                     (reg-write
                       reg
-                      (if cmp-result int-one int-zero)
+                      (if cmp-result (cons t (cdr int-zero)) int-zero)
                       *dst-cmp)))
 
                 ;; ==== inst-load ====
