@@ -4,13 +4,9 @@
 (def-lazy SYS-N-BITS (+ 16 8))
 (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 
-
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(def-lazy init-memory nil)
-
-
 (defrec-lazy lookup-tree (progtree address)
   (cond
     ((isnil progtree)
@@ -49,16 +45,15 @@
         (cons (cons lefttree righttree) left-restmemlist)))))
 
 
-
 ;;================================================================
 ;; Registers
 ;;================================================================
-(defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r1)
-(defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r2)
-(defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r3)
-(defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r4)
-(defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r5)
-(defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r6)
+(defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r6)
+(defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r5)
+(defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r4)
+(defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r3)
+(defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r2)
+(defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r1)
 (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
@@ -76,6 +71,39 @@
 
 (defun-lazy reg-write (reg value regptr)
   (memory-write reg (regptr2regaddr regptr) value))
+
+
+;;================================================================
+;; Instructions
+;;================================================================
+(defun-lazy inst-add     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i9)
+(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8 i9) i8)
+(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i7)
+(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
+(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9) i5)
+(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8 i9) i4)
+(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i3)
+(defun-lazy inst-sub     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i2)
+(defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i1)
+
+(defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x6)
+(defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x5)
+(defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x4)
+(defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x3)
+(defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x2)
+(defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x1)
+
+(defun-lazy io-int-putc (x1 x2 x3) x3)
+(defun-lazy io-int-getc (x1 x2 x3) x2)
+(defun-lazy io-int-exit (x1 x2 x3) x1)
+
+(defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
+(defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
+(defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
+(defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
+(defmacro-lazy cons4 (x1 x2 x3 x4)
+  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
+
 
 ;;================================================================
 ;; Arithmetic
@@ -130,9 +158,10 @@
 
 (defun-lazy cmp (n m enum-cmp)
   ((cmp* (reverse n) (reverse m))
-    (enum-cmp t nil nil nil t t)
-    (enum-cmp nil t t nil t nil)
-    (enum-cmp nil t nil t nil t)))
+    (enum-cmp t   t   nil nil nil t  )
+    (enum-cmp nil t   nil t   t   nil)
+    (enum-cmp t   nil t   nil t   nil)))
+
 
 ;;================================================================
 ;; I/O
@@ -174,38 +203,6 @@
 
 (defrec-lazy append-list (l item)
   (if (isnil l) item (cons (car l) (append-list (cdr l) item))))
-
-
-;;================================================================
-;; Instructions
-;;================================================================
-(defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i1)
-(defun-lazy inst-sub     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i2)
-(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i3)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8 i9) i4)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9) i5)
-(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i7)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8 i9) i8)
-(defun-lazy inst-add     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i9)
-
-(defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x1)
-(defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x2)
-(defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x3)
-(defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x4)
-(defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x5)
-(defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x6)
-
-(defun-lazy io-int-exit (x1 x2 x3) x1)
-(defun-lazy io-int-getc (x1 x2 x3) x2)
-(defun-lazy io-int-putc (x1 x2 x3) x3)
-
-(defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
-(defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
-(defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
-(defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
-(defmacro-lazy cons4 (x1 x2 x3 x4)
-  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
 
 
 ;;================================================================
