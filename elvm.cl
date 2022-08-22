@@ -358,10 +358,12 @@
 
 
 (defun-lazy main (memlist proglist stdin)
-  (eval
-    init-reg
-    (car (list2tree memlist int-zero car*))
-    (car (list2tree proglist int-zero (lambda (x) x)))
-    stdin
-    (list
-     (cons4 inst-jmp t int-zero nil))))
+  (let ((int-zero int-zero)
+        (list2tree list2tree))
+    (eval
+      init-reg
+      (car (list2tree memlist int-zero car*))
+      (car (list2tree proglist int-zero (lambda (x) x)))
+      stdin
+      (list
+       (cons4 inst-jmp t int-zero nil)))))

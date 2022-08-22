@@ -4,23 +4,13 @@
 ;; In Universal Lambda, strings are terminated by `nil`
 (def-lazy SYS-STRING-TERM nil)
 
-(defun-lazy main-clamb (memlist proglist stdin)
-  (let ((int-zero int-zero)
-        (list2tree list2tree))
-    (eval
-      init-reg
-      (car (list2tree memlist int-zero car*))
-      (car (list2tree proglist int-zero (lambda (x) x)))
-      stdin
-      (list
-      (cons4 inst-jmp t int-zero nil)))))
 
 ;;================================================================
 ;; Code output
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
 ;; (format t (compile-to-ski-lazy main-clamb))
-(format t (compile-to-blc-lazy main-clamb))
+(format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 500)

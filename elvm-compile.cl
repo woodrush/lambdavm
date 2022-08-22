@@ -4,11 +4,20 @@
 ;; In Lazy K, strings are terminated by an infinite list of `256`s
 (def-lazy SYS-STRING-TERM (inflist 256))
 
+(defrec-lazy eof2nil (stdin)
+  (let ((c (car stdin)))
+    (if (<= 256 c)
+      nil
+      (cons c (eof2nil (cdr stdin))))))
+
+(defun-lazy main-lazy (memlist proglist stdin)
+  (main memlist proglist (eof2nil stdin)))
+
 ;;================================================================
 ;; Code output
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
-(format t (compile-to-ski-lazy main))
+(format t (compile-to-ski-lazy main-lazy))
 ;; (format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
