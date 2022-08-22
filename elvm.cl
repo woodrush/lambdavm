@@ -10,23 +10,23 @@
 ;;================================================================
 (def-lazy init-memory nil)
 
-(defrec-lazy memory-read (memory address)
-  (cond
-    ((isnil memory)
-      int-zero)
-    ((isnil address)
-      memory)
-    (t
-      (memory-read (memory (car address)) (cdr address)))))
+;; (defrec-lazy memory-read (memory address)
+;;   (cond
+;;     ((isnil memory)
+;;       int-zero)
+;;     ((isnil address)
+;;       memory)
+;;     (t
+;;       (memory-read (memory (car address)) (cdr address)))))
 
-(defrec-lazy lookup-progtree (progtree address)
+(defrec-lazy lookup-tree (progtree address)
   (cond
     ((isnil progtree)
       progtree)
     ((isnil address)
       progtree)
     (t
-      (lookup-progtree (progtree (car address)) (cdr address)))))
+      (lookup-tree (progtree (car address)) (cdr address)))))
 
 (defrec-lazy memory-write (memory address value)
   (cond
@@ -40,22 +40,6 @@
       ((car address)
         (cons (memory-write (car memory) (cdr address) value) (cdr memory))
         (cons (car memory) (memory-write (cdr memory) (cdr address) value))))))
-
-
-(defrec-lazy list2checkpoint-tree (proglist depth)
-  (cond
-    ((isnil proglist)
-      (cons nil nil))
-    ((isnil depth)
-      (cons proglist (cdr proglist)))
-    (t
-      (let ((rightstate (list2checkpoint-tree proglist (cdr depth)))
-            (righttree (car rightstate))
-            (right-restproglist (cdr rightstate))
-            (leftstate (list2checkpoint-tree right-restproglist (cdr depth)))
-            (lefttree (car leftstate))
-            (left-restproglist (cdr leftstate)))
-        (cons (cons lefttree righttree) left-restproglist)))))
 
 (defrec-lazy list2tree (memlist depth decorator)
   (cond
@@ -166,7 +150,12 @@
 ;; I/O
 ;;================================================================
 (def-lazy powerlist
-  (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil)))))))))
+  ((letrec-lazy powerlist (n bits)
+    (cond ((isnil bits)
+            nil)
+          (t
+            (cons n (powerlist (+ n n) (cdr bits))))))
+    1 (take 8 (inflist t))))
 
 (def-lazy revpowerlist
   (reverse powerlist))
@@ -262,99 +251,98 @@
           (cons (car curlist) (flatten (cdr curlist) listlist)))))
 
 (defrec-lazy eval (reg memory progtree stdin curblock)
-  ;; Prevent frequently used functions from being inlined every time
-  (let ((reverse-helper reverse-helper)
-        (append-list append-list)
-        (add-carry add-carry)
-        (flatten flatten)
-        (cmp cmp)
-        (int2bit* int2bit*)
-        (bit2int* bit2int*)
-        (reg-write reg-write))
-    (cond ((isnil curblock)
-            SYS-STRING-TERM)
-          (t
-            (let ((curinst (car curblock))
-                  (*src (car4-3 curinst))
-                  (src (if (car4-2 curinst) *src (reg-read reg *src)))
-                  (*dst (car4-4 curinst))
-                  (nextblock (cdr curblock))
-                  (eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock))))
-              ;; Typematch on the current instruction's tag
-              ((car4-1 curinst)
-                ;; ==== inst-io-int ====
-                ;; Structure:
-                ;;   exit: (cons4 inst-io-int nil         nil   io-int-exit)
-                ;;   getc: (cons4 inst-io-int nil         [dst] io-int-getc)
-                ;;   putc: (cons4 inst-io-int [src-isimm] [src] io-int-putc)
-                ;; Typematch over the inst. type
-                (*dst
-                  ;; exit
-                  SYS-STRING-TERM
-                  ;; getc
-                  (cond ((isnil stdin)
-                          (eval-reg (reg-write reg int-zero *src)))
-                        (t
-                          (eval
-                            (reg-write reg (int2bit-lamb (car stdin)) *src)
-                            memory progtree (cdr stdin) nextblock)))
-                  ;; putc
-                  (cons (bit2int src) (eval-reg reg)))
+  (cond ((isnil curblock)
+          SYS-STRING-TERM)
+        (t
+          ;; Prevent frequently used functions from being inlined every time
+          (let ((lookup-tree lookup-tree)
+                (reverse-helper reverse-helper)
+                (powerlist powerlist)
+                (int2bit* int2bit*)
+                (bit2int* bit2int*)
+                (append-list append-list)
+                (add-carry add-carry)
+                (flatten flatten)
+                (cmp cmp)
+                (reg-write reg-write)
+                (curinst (car curblock))
+                (*src (car4-3 curinst))
+                (src (if (car4-2 curinst) *src (reg-read reg *src)))
+                (*dst (car4-4 curinst))
+                (nextblock (cdr curblock))
+                (eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock))))
+            ;; Typematch on the current instruction's tag
+            ((car4-1 curinst)
+              ;; ==== inst-io-int ====
+              ;; Instruction structure:
+              ;;   exit: (cons4 inst-io-int nil         nil   io-int-exit)
+              ;;   getc: (cons4 inst-io-int nil         [dst] io-int-getc)
+              ;;   putc: (cons4 inst-io-int [src-isimm] [src] io-int-putc)
+              ;; Typematch over the inst. type
+              (*dst
+                ;; exit
+                SYS-STRING-TERM
+                ;; getc
+                (cond ((isnil stdin)
+                        (eval-reg (reg-write reg int-zero *src)))
+                      (t
+                        (eval
+                          (reg-write reg (int2bit-lamb (car stdin)) *src)
+                          memory progtree (cdr stdin) nextblock)))
+                ;; putc
+                (cons (bit2int src) (eval-reg reg)))
 
-                ;; ==== inst-sub ====
-                ;; Structure:
-                ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg
-                        (sub (reg-read reg *dst) src)
-                        *dst))
+              ;; ==== inst-sub ====
+              ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
+              (eval-reg (reg-write reg
+                      (sub (reg-read reg *dst) src)
+                      *dst))
 
-                ;; ==== inst-cmp ====
-                ;; Structure:
-                ;;  (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-                (let ((*dst-cmp (cdr *dst))
-                      (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
-                  (eval-reg
-                    (reg-write
-                      reg
-                      (if cmp-result (cons t (cdr int-zero)) int-zero)
-                      *dst-cmp)))
+              ;; ==== inst-cmp ====
+              ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
+              (let ((*dst-cmp (cdr *dst))
+                    (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
+                (eval-reg
+                  (reg-write
+                    reg
+                    (if cmp-result (cons t (cdr int-zero)) int-zero)
+                    *dst-cmp)))
 
-                ;; ==== inst-load ====
-                ;; Structure:
-                ;;   (cons4 inst-load [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg (memory-read memory (reverse-helper src nil)) *dst))
+              ;; ==== inst-load ====
+              ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
+              (eval-reg (reg-write
+                          reg
+                          (let ((m (lookup-tree memory (reverse-helper src nil))))
+                            (if (isnil m)
+                              int-zero
+                              m))
+                          *dst))
 
-                ;; ==== inst-jumpcmp ====
-                ;; Structure:
-                ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-                (let ((*jmp (car4-4 *dst))
-                      (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
-                  (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
-                          (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
-                        (t
-                          (eval-reg reg))))
+              ;; ==== inst-jumpcmp ====
+              ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
+              (let ((*jmp (car4-4 *dst))
+                    (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
+                (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
+                        (eval reg memory progtree stdin (flatten nil (lookup-tree progtree (reverse-helper jmp nil)))))
+                      (t
+                        (eval-reg reg))))
 
-                ;; ==== inst-jmp ====
-                ;; Structure:
-                ;;   (cons4 inst-jmp [jmp-isimm] [jmp] _)
-                (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper src nil))))
+              ;; ==== inst-jmp ====
+              ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
+              (eval reg memory progtree stdin (flatten nil (lookup-tree progtree (reverse-helper src nil))))
 
-                ;; ==== inst-mov ====
-                ;; Structure:
-                ;;   (cons4 inst-mov [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg src *dst))
+              ;; ==== inst-mov ====
+              ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst-memory])
+              (eval-reg (reg-write reg src *dst))
 
-                ;; ==== inst-store ====
-                ;; Structure:
-                ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                ;; src:  The destination address
-                ;; *dst: The source register
-                (eval reg (memory-write memory (reverse-helper src nil) (reg-read reg *dst)) progtree stdin nextblock)
+              ;; ==== inst-store ====
+              ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
+              ;; Note that the destination is stored in the variable *src
+              (eval reg (memory-write memory (reverse-helper src nil) (reg-read reg *dst)) progtree stdin nextblock)
 
-                ;; ==== inst-add ====
-                ;; Structure:
-                ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg (add src (reg-read reg *dst)) *dst))))))))
+              ;; ==== inst-add ====
+              ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
+              (eval-reg (reg-write reg (add src (reg-read reg *dst)) *dst)))))))
 
 
 (defun-lazy main (memlist proglist stdin)
