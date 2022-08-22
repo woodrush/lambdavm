@@ -183,27 +183,6 @@
                   (t
                     (cmp* (cdr n) (cdr m))))))))
 
-;; (defmacro-lazy cmp (n m)
-;;   `(cmp* (reverse ,n) (reverse ,m)))
-
-;; (defun-lazy cmp (n m enum-cmp)
-;;   (let ((cmp-result (cmp* (reverse n) (reverse m))))
-;;     ;; Type match over the cmp type
-;;     ;; cmp-result: eq, lt, gt
-;;     (enum-cmp
-;;       ;; eq
-;;       (cmp-result t   nil nil)
-;;       ;; ne
-;;       (cmp-result nil t   t)
-;;       ;; lt
-;;       (cmp-result nil t   nil)
-;;       ;; gt
-;;       (cmp-result nil nil t)
-;;       ;; le
-;;       (cmp-result t   t   nil)
-;;       ;; ge
-;;       (cmp-result t   nil t))))
-
 (defun-lazy cmp (n m enum-cmp)
   ((cmp* (reverse n) (reverse m))
     (enum-cmp t nil nil nil t t)
@@ -214,31 +193,10 @@
 ;; I/O
 ;;================================================================
 (def-lazy powerlist
-  ((letrec-lazy pows (n exp)
-    (if (iszero exp)
-      nil
-      (cons n (pows (+ n n) (pred exp)))))
-   1 SYS-N-BITS)
-  ;; (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil))))))))
-  )
-
-(def-lazy powerlist-256
-  ;; ((letrec-lazy pows (n exp)
-  ;;   (if (iszero exp)
-  ;;     nil
-  ;;     (cons n (pows (+ n n) (pred exp)))))
-  ;;  1 SYS-N-BITS)
-  (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil))))))))
-  )
+  (cons 1 (cons 2 (cons 4 (cons 8 (cons 16 (cons 32 (cons 64 (cons 128 nil)))))))))
 
 (def-lazy revpowerlist
-  (reverse powerlist)
-  ;; (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil))))))))
-  )
-(def-lazy revpowerlist-256
-  ;; (reverse powerlist-256)
-  (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil))))))))
-  )
+  (reverse powerlist))
 
 (defrec-lazy bit2int* (n powerlist)
   (cond ((isnil powerlist)
@@ -248,8 +206,8 @@
             (+ (car powerlist) (bit2int* (cdr n) (cdr powerlist)))
             (bit2int* (cdr n) (cdr powerlist))))))
 
-(defmacro-lazy bit2int-256 (n)
-  `(bit2int* ,n powerlist-256))
+(defmacro-lazy bit2int (n)
+  `(bit2int* ,n powerlist))
 
 (defrec-lazy int2bit* (n revpowerlist)
   (cond ((isnil revpowerlist)
@@ -262,18 +220,12 @@
             (cons nil (int2bit* n (cdr revpowerlist)))))))
 
 (defmacro-lazy int2bit (n)
-  `(reverse (int2bit* ,n revpowerlist)))
-
-(defmacro-lazy int2bit-512 (n)
   `(if (<= 256 ,n)
-    (int2bit 256)
-    (append-list (reverse (int2bit* ,n revpowerlist-256)) (take 16 (inflist nil)))))
+    (reverse (int2bit* 256 revpowerlist))
+    (append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil)))))
 
 (defrec-lazy append-list (l item)
   (if (isnil l) item (cons (car l) (append-list (cdr l) item))))
-
-;; (defmacro-lazy mod256 (n)
-;;   `(append-list (take 8 ,n) (take 16 (inflist nil))))
 
 
 ;;================================================================
@@ -299,13 +251,6 @@
 (defun-lazy io-int-exit (x1 x2 x3) x1)
 (defun-lazy io-int-getc (x1 x2 x3) x2)
 (defun-lazy io-int-putc (x1 x2 x3) x3)
-
-
-(defun-lazy car3-1 (f) (f (lambda (x1 x2 x3) x1)))
-(defun-lazy car3-2 (f) (f (lambda (x1 x2 x3) x2)))
-(defun-lazy car3-3 (f) (f (lambda (x1 x2 x3) x3)))
-(defmacro-lazy cons3 (x1 x2 x3)
-  `(lambda (f) (f ,x1 ,x2 ,x3)))
 
 (defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
 (defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
@@ -342,9 +287,12 @@
 (defrec-lazy eval (reg memory progtree stdin curblock)
   ;; Prevent frequently used functions from being inlined every time
   (let ((reverse-helper reverse-helper)
-        ;; (add-carry add-carry)
-        ;; (flatten flatten)
-        ;; (cmp* cmp*)
+        (append-list append-list)
+        (add-carry add-carry)
+        (flatten flatten)
+        (cmp cmp)
+        (int2bit* int2bit*)
+        (bit2int* bit2int*)
         (reg-write reg-write))
     (cond ((isnil curblock)
             SYS-STRING-TERM)
@@ -368,7 +316,7 @@
                   SYS-STRING-TERM
                   ;; getc
                   (let ((c (car stdin))
-                        (c-bit (int2bit-512 c)))
+                        (c-bit (int2bit c)))
                     ;; Await for the user input
                     (await c
                       (cond
@@ -377,11 +325,7 @@
                         (t
                           (eval (reg-write reg c-bit *src) memory progtree (cdr stdin) nextblock)))))
                   ;; putc
-                  (cons (bit2int-256 src) (eval-reg reg))
-                  ;; (if (cmp src (int2bit 256) cmp-lt)
-                  ;;   (cons (bit2int-256 src) (eval-reg reg))
-                  ;;   (cons int-zero (eval-reg reg)))
-                    )
+                  (cons (bit2int src) (eval-reg reg)))
 
                 ;; ==== inst-sub ====
                 ;; Structure:

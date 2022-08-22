@@ -193,6 +193,7 @@
 (defmacro-lazy succ (n) `(lambda (f x) (f (,n f x))))
 (defun-lazy pred (n f x) (n ((lambda (g h) (h (g f)))) (lambda (u) x) (lambda (u) u)))
 (defmacro-lazy + (m n) `(lambda (f x) (,m f (,n f x))))
+(defmacro-lazy - (m n) `(,n pred ,m))
 (defmacro-lazy * (m n) `(lambda (f x) (,m (,n f) x)))
 (defmacro-lazy iszero (n) `(,n (lambda (x) nil) t))
 
@@ -296,10 +297,6 @@
         n
         (length (cdr l) (succ n))))
     list 0))
-
-(defmacro-lazy - (m n) `(,n pred ,m))
-;; (defrec-lazy - (n m)
-;;   (if (iszero m) n (- (pred n) (pred m))))
 
 
 
