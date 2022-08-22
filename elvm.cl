@@ -1,8 +1,6 @@
 (load "./lazy.cl")
 
 
-(def-lazy string-term (inflist 256))
-
 (def-lazy SYS-N-BITS (+ 16 8))
 (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 (def-lazy int-one (cons t (take (pred SYS-N-BITS) (inflist nil))))
@@ -324,14 +322,14 @@
   ;; The key ingredient to managing the I/O control flow.
   ;; By inspecting the value of the top character of the standard input and branching depending on its value,
   ;; `await` is able to halt the further execution of `body` until the input is actually provided.
-  ;; Since elements of `stdin` never exceed 256, this form is guaranteed to evaluate to `body`.
-  ;; However, since most interpreters do not use that fact during beta reduction,
+  ;; Since elements of `stdin` are always a number, this form is guaranteed to evaluate to `body`.
+  ;; However, since most interpreters do not use that fact during beta reduction
   ;; and expect `stdin` to be an arbitrary lambda form,
   ;; such interpreters cannot deduce that this form always reduces to `body`,
   ;; effectively making this form a method for halting evaluation until the standard input is provided.
-  `(if (< 256 ,stdin-top)
-    nil
-    ,body))
+  `(if (<= 0 ,stdin-top)
+    ,body
+    nil))
 
 (defrec-lazy flatten (curlist listlist)
   (cond ((isnil curlist)
@@ -349,7 +347,7 @@
         ;; (cmp* cmp*)
         (reg-write reg-write))
     (cond ((isnil curblock)
-            string-term)
+            SYS-STRING-TERM)
           (t
             (let ((curinst (car curblock))
                   (*src (car4-3 curinst))
@@ -367,18 +365,23 @@
                 ;; Typematch over the inst. type
                 (*dst
                   ;; exit
-                  string-term
+                  SYS-STRING-TERM
                   ;; getc
                   (let ((c (car stdin))
                         (c-bit (int2bit-512 c)))
                     ;; Await for the user input
                     (await c
-                      (if (cmp c-bit (int2bit 256) cmp-eq)
-                        (eval (reg-write reg int-zero *src) memory progtree (cdr stdin) nextblock)
-                        (eval (reg-write reg c-bit *src) memory progtree (cdr stdin) nextblock))))
+                      (cond
+                        ((cmp c-bit (int2bit 256) cmp-eq)
+                          (eval (reg-write reg int-zero *src) memory progtree (cdr stdin) nextblock))
+                        (t
+                          (eval (reg-write reg c-bit *src) memory progtree (cdr stdin) nextblock)))))
                   ;; putc
-                  (cons (bit2int-256 src)
-                    (eval-reg reg)))
+                  (cons (bit2int-256 src) (eval-reg reg))
+                  ;; (if (cmp src (int2bit 256) cmp-lt)
+                  ;;   (cons (bit2int-256 src) (eval-reg reg))
+                  ;;   (cons int-zero (eval-reg reg)))
+                    )
 
                 ;; ==== inst-sub ====
                 ;; Structure:
