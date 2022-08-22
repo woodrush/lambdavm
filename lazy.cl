@@ -189,7 +189,7 @@
 (defmacro-lazy or (x &rest r)
   (if (not r) x `(,x t (or ,@r))))
 
-(defun-lazy xor (x y) (if x (not y) y))
+(defmacro-lazy xor (x y) `(if ,x (not ,y) ,y))
 (defun-lazy xnor (x y) (if x y (not y)))
 
 (defmacro-lazy succ (n) `(lambda (f x) (f (,n f x))))
