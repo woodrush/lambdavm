@@ -11,21 +11,14 @@
           (cons (car stdin) (lambinput-to-lazyinput (cdr stdin))))))
 
 (defun-lazy main-clamb (memlist proglist stdin)
-  (eval
-    init-reg
-    (car (list2tree memlist int-zero))
-    (car (list2checkpoint-tree proglist int-zero))
-    (lambinput-to-lazyinput stdin)
-    ;; (list
-    ;;     (cons4 inst-mov t (int2bit (+ 32 4)) reg-A)
-    ;;     (cons4 inst-io-int nil reg-A io-int-putc)
-    ;;     (cons4 inst-jmp t int-zero nil))
-    (list
-     (cons4 inst-jmp t int-zero nil))
-        ))
-
-;; (defmacro-lazy main-clamb (memlist proglist stdin)
-;;   `(main* ,memlist ,proglist (lambinput-to-lazyinput ,stdin)))
+  (let ((int-zero int-zero))
+    (eval
+      init-reg
+      (car (list2tree memlist int-zero))
+      (car (list2checkpoint-tree proglist int-zero))
+      (lambinput-to-lazyinput stdin)
+      (list
+      (cons4 inst-jmp t int-zero nil)))))
 
 ;;================================================================
 ;; Code output

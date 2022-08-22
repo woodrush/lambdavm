@@ -3,8 +3,6 @@
 
 (def-lazy SYS-N-BITS (+ 16 8))
 (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
-(def-lazy int-one (cons t (take (pred SYS-N-BITS) (inflist nil))))
-(def-lazy int-minusone (take SYS-N-BITS (inflist t)))
 
 
 ;;================================================================
