@@ -58,20 +58,28 @@
 (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
-(defun-lazy regptr2regaddr (regptr)
-  (regptr
-    (list nil nil nil)
-    (list t nil nil)
-    (list nil t nil)
-    (list t t nil)
-    (list nil nil t)
-    (list t nil t)))
+
+;; (defun-lazy regptr2regaddr (regptr)
+;;   (regptr
+;;     (list nil nil nil)
+;;     (list t nil nil)
+;;     (list nil t nil)
+;;     (list t t nil)
+;;     (list nil nil t)
+;;     (list t nil t)))
 
 (defun-lazy reg-read (reg regptr)
-  (lookup-tree reg (regptr2regaddr regptr)))
+  (lookup-tree reg
+  regptr
+  ;; (regptr2regaddr regptr)
+  ))
 
 (defun-lazy reg-write (reg value regptr)
-  (memory-write reg (regptr2regaddr regptr) value))
+  (memory-write reg
+  regptr
+  ;; (regptr2regaddr regptr)
+  value))
+
 
 
 ;;================================================================
@@ -128,14 +136,6 @@
 
 (defmacro-lazy sub (n m)
   `(add-carry ,n ,m t t))
-
-(defrec-lazy iszero-bit (n)
-  (cond ((isnil n)
-          t)
-        ((car n)
-          nil)
-        (t
-          (iszero-bit (cdr n)))))
 
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
