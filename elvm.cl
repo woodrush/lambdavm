@@ -108,28 +108,37 @@
 ;;================================================================
 ;; Arithmetic
 ;;================================================================
-(defrec-lazy invert (n)
-  (if (isnil n)
-    nil
-    (cons (not (car n)) (invert (cdr n)))))
-
-(defrec-lazy add-carry (n m carry)
+(defrec-lazy add-carry (n m carry invert)
   (cond ((isnil n)
           nil)
         (t
           (if (car n)
-            (if (car m)
-              (cons carry       (add-carry (cdr n) (cdr m) t))
-              (cons (not carry) (add-carry (cdr n) (cdr m) carry)))
-            (if (car m)
-              (cons (not carry) (add-carry (cdr n) (cdr m) carry))
-              (cons carry       (add-carry (cdr n) (cdr m) nil)))))))
+            (if (xor invert (car m))
+              (cons carry       (add-carry (cdr n) (cdr m) t invert))
+              (cons (not carry) (add-carry (cdr n) (cdr m) carry invert)))
+            (if (xor invert (car m))
+              (cons (not carry) (add-carry (cdr n) (cdr m) carry invert))
+              (cons carry       (add-carry (cdr n) (cdr m) nil invert)))))))
+
+(defrec-lazy add-carry (n m carry invert)
+  (cond ((isnil n)
+          nil)
+        (t
+          (let ((next (lambda (x y) (cons x (add-carry (cdr n) (cdr m) y invert))))
+                (diff (next (not carry) carry)))
+            (if (xor invert (car m))
+              (if (car n)
+                (next carry t)
+                diff)
+              (if (car n)
+                diff
+                (next carry nil)))))))
 
 (defmacro-lazy add (n m)
-  `(add-carry ,n ,m nil))
+  `(add-carry ,n ,m nil nil))
 
 (defmacro-lazy sub (n m)
-  `(add-carry ,n (invert ,m) t))
+  `(add-carry ,n ,m t t))
 
 (defrec-lazy iszero-bit (n)
   (cond ((isnil n)
