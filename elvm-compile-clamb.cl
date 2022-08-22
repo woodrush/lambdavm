@@ -11,12 +11,14 @@
           (cons (car stdin) (lambinput-to-lazyinput (cdr stdin))))))
 
 (defun-lazy main-clamb (memlist proglist stdin)
-  (let ((int-zero int-zero))
+  (let ((int-zero int-zero)
+        (list2tree list2tree))
     (eval
       init-reg
-      (car (list2tree memlist int-zero))
-      (car (list2checkpoint-tree proglist int-zero))
-      (lambinput-to-lazyinput stdin)
+      (car (list2tree memlist int-zero car*))
+      (car (list2tree proglist int-zero (lambda (x) x)))
+      ;; (lambinput-to-lazyinput stdin)
+      stdin
       (list
       (cons4 inst-jmp t int-zero nil)))))
 

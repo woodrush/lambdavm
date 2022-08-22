@@ -57,17 +57,17 @@
             (left-restproglist (cdr leftstate)))
         (cons (cons lefttree righttree) left-restproglist)))))
 
-(defrec-lazy list2tree (memlist depth)
+(defrec-lazy list2tree (memlist depth decorator)
   (cond
     ((isnil memlist)
       (cons nil nil))
     ((isnil depth)
-      (cons (car memlist) (cdr memlist)))
+      (cons (decorator memlist) (cdr memlist)))
     (t
-      (let ((rightstate (list2tree memlist (cdr depth)))
+      (let ((rightstate (list2tree memlist (cdr depth) decorator))
             (righttree (car rightstate))
             (right-restmemlist (cdr rightstate))
-            (leftstate (list2tree right-restmemlist (cdr depth)))
+            (leftstate (list2tree right-restmemlist (cdr depth) decorator))
             (lefttree (car leftstate))
             (left-restmemlist (cdr leftstate)))
         (cons (cons lefttree righttree) left-restmemlist)))))
@@ -245,9 +245,9 @@
   ;; and expect `stdin` to be an arbitrary lambda form,
   ;; such interpreters cannot deduce that this form always reduces to `body`,
   ;; effectively making this form a method for halting evaluation until the standard input is provided.
-  `(if (<= 0 ,stdin-top)
-    ,body
-    nil))
+  `(if (iszero (succ ,stdin-top))
+    nil
+    ,body))
 
 (defrec-lazy flatten (curlist listlist)
   (cond ((isnil curlist)
@@ -288,13 +288,12 @@
                   ;; exit
                   SYS-STRING-TERM
                   ;; getc
-                  (let ((c (car stdin))
-                        (c-bit (int2bit c)))
-                    ;; Await for the user input
-                    (await c
-                      (eval
-                        (reg-write reg (if (cmp c-bit (int2bit 256) cmp-eq) int-zero c-bit) *src)
-                        memory progtree (cdr stdin) nextblock)))
+                  (cond ((isnil stdin)
+                          (eval-reg (reg-write reg int-zero *src)))
+                        (t
+                          (eval
+                            (reg-write reg (int2bit (car stdin)) *src)
+                            memory progtree (cdr stdin) nextblock)))
                   ;; putc
                   (cons (bit2int src) (eval-reg reg)))
 
@@ -325,9 +324,7 @@
                 ;; Structure:
                 ;;   (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
                 (let ((*jmp (car4-4 *dst))
-                      (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp)))
-                      ;; (cmp-result (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst)))
-                      )
+                      (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
                   (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
                           (eval reg memory progtree stdin (flatten nil (lookup-progtree progtree (reverse-helper jmp nil)))))
                         (t
@@ -353,18 +350,14 @@
                 ;; ==== inst-add ====
                 ;; Structure:
                 ;;   (cons4 inst-store [src-isimm] [src] [*dst])
-                (eval-reg (reg-write reg
-                        (add src (reg-read reg *dst))
-                        *dst)
-                      )
-                      ))))))
+                (eval-reg (reg-write reg (add src (reg-read reg *dst)) *dst))))))))
 
 
 (defun-lazy main (memlist proglist stdin)
   (eval
     init-reg
-    (car (list2tree memlist int-zero))
-    (car (list2checkpoint-tree proglist int-zero))
+    (car (list2tree memlist int-zero car*))
+    (car (list2tree proglist int-zero (lambda (x) x)))
     stdin
     (list
      (cons4 inst-jmp t int-zero nil))))
