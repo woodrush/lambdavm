@@ -70,14 +70,14 @@
 (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
-(def-lazy init-reg
-  (cons 
-    (cons
-      (cons int-zero int-zero)
-      (cons int-zero int-zero))
-    (cons
-      (cons int-zero int-zero)
-      (cons int-zero int-zero))))
+;; (def-lazy init-reg
+;;   (cons 
+;;     (cons
+;;       (cons int-zero int-zero)
+;;       (cons int-zero int-zero))
+;;     (cons
+;;       (cons int-zero int-zero)
+;;       (cons int-zero int-zero))))
 
 ;; (def-lazy init-reg
 ;;   (cons6 int-zero int-zero int-zero int-zero int-zero int-zero))
@@ -273,11 +273,14 @@
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
+                (memory-write memory-write)
                 (reverse-helper reverse-helper)
                 (expand-prog-at (lambda (pc) (flatten nil (lookup-tree progtree (reverse-helper pc nil)))))
                 (powerlist powerlist)
                 (add-carry add-carry)
                 (cmp cmp)
+                (regptr2regaddr regptr2regaddr)
+                (reg-read reg-read)
                 (reg-write reg-write)
                 (curinst (car curblock))
                 (*src (car4-3 curinst))
@@ -363,7 +366,7 @@
   (let ((int-zero int-zero)
         (list2tree list2tree))
     (eval
-      init-reg
+      (car (list2tree proglist (list t t t) (lambda (x) x)))
       (car (list2tree memlist int-zero car*))
       (car (list2tree proglist int-zero (lambda (x) x)))
       stdin
