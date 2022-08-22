@@ -171,6 +171,8 @@
 (defun-lazy t (x y) x)
 (defun-lazy nil (x y) y)
 ;; (defun-lazy cons (x y f) (f x y))
+(defun-lazy car* (l) (l t))
+(defun-lazy cdr* (l) (l nil))
 (defmacro-lazy car (l) `(,l t))
 (defmacro-lazy cdr (l) `(,l nil))
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))

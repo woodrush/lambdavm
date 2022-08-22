@@ -4,12 +4,6 @@
 ;; In Universal Lambda, strings are terminated by `nil`
 (def-lazy SYS-STRING-TERM nil)
 
-(defrec-lazy lambinput-to-lazyinput (stdin)
-  (cond ((isnil stdin)
-          (inflist 256))
-        (t
-          (cons (car stdin) (lambinput-to-lazyinput (cdr stdin))))))
-
 (defun-lazy main-clamb (memlist proglist stdin)
   (let ((int-zero int-zero)
         (list2tree list2tree))
@@ -17,7 +11,6 @@
       init-reg
       (car (list2tree memlist int-zero car*))
       (car (list2tree proglist int-zero (lambda (x) x)))
-      ;; (lambinput-to-lazyinput stdin)
       stdin
       (list
       (cons4 inst-jmp t int-zero nil)))))

@@ -192,10 +192,14 @@
             (cons t   (int2bit* (- n (car revpowerlist)) (cdr revpowerlist)))
             (cons nil (int2bit* n (cdr revpowerlist)))))))
 
-(defmacro-lazy int2bit (n)
+(defmacro-lazy int2bit-lazy (n)
   `(if (<= 256 ,n)
     (reverse (int2bit* 256 revpowerlist))
     (append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil)))))
+
+(defmacro-lazy int2bit-lamb (n)
+  `(append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil))))
+
 
 (defrec-lazy append-list (l item)
   (if (isnil l) item (cons (car l) (append-list (cdr l) item))))
@@ -292,7 +296,7 @@
                           (eval-reg (reg-write reg int-zero *src)))
                         (t
                           (eval
-                            (reg-write reg (int2bit (car stdin)) *src)
+                            (reg-write reg (int2bit-lamb (car stdin)) *src)
                             memory progtree (cdr stdin) nextblock)))
                   ;; putc
                   (cons (bit2int src) (eval-reg reg)))
