@@ -175,11 +175,11 @@
 (defmacro-lazy cdr (l) `(,l nil))
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 
-(defun-lazy isnil (l) ((lambda (a) (a (lambda (v n x) nil) t)) l))
-(defun-lazy inflist (item)
-  ((lambda (x) (x x))
-   (lambda (self)
-     (cons item (self self)))))
+(defmacro-lazy isnil (l) `((lambda (a) (a (lambda (v n x) nil) t)) ,l))
+(defmacro-lazy inflist (item)
+  `((lambda (x) (x x))
+    (lambda (self)
+      (cons ,item (self self)))))
 
 (defmacro-lazy not (x) `(,x nil t))
 (defmacro-lazy and (x y) `(,x ,y nil))
@@ -192,14 +192,14 @@
 
 (defmacro-lazy succ (n) `(lambda (f x) (f (,n f x))))
 (defun-lazy pred (n f x) (n ((lambda (g h) (h (g f)))) (lambda (u) x) (lambda (u) u)))
-(defun-lazy + (m n f x) (m f (n f x)))
-(defun-lazy * (m n f x) (m (n f) x))
-(defun-lazy - (m n) (n pred m))
-(defun-lazy iszero (n) (n (lambda (x) nil) t))
-(defun-lazy <= (m n) (iszero (- m n)))
-(defun-lazy < (m n) (<= (succ m) n))
-(defun-lazy >= (m n) (<= n m))
-(defun-lazy = (m n) (and (<= m n) (<= n m)))
+(defmacro-lazy + (m n) `(lambda (f x) (,m f (,n f x))))
+(defmacro-lazy * (m n) `(lambda (f x) (,m (,n f) x)))
+(defmacro-lazy iszero (n) `(,n (lambda (x) nil) t))
+
+(defmacro-lazy <= (m n) `(iszero (- ,m ,n)))
+(defmacro-lazy < (m n) `(<= (succ ,m) ,n))
+(defmacro-lazy >= (m n) `(<= ,n ,m))
+(defmacro-lazy = (m n) `(and (<= ,m ,n) (<= ,n ,m)))
 (defun-lazy 0 (f x) x)
 (defun-lazy 1 (f x) (f x))
 (defun-lazy 2 (f x) (f (f x)))
@@ -296,6 +296,10 @@
         n
         (length (cdr l) (succ n))))
     list 0))
+
+(defmacro-lazy - (m n) `(,n pred ,m))
+;; (defrec-lazy - (n m)
+;;   (if (iszero m) n (- (pred n) (pred m))))
 
 
 
