@@ -10,19 +10,11 @@
 ;;================================================================
 (def-lazy init-memory nil)
 
-;; (defrec-lazy memory-read (memory address)
-;;   (cond
-;;     ((isnil memory)
-;;       int-zero)
-;;     ((isnil address)
-;;       memory)
-;;     (t
-;;       (memory-read (memory (car address)) (cdr address)))))
 
 (defrec-lazy lookup-tree (progtree address)
   (cond
     ((isnil progtree)
-      progtree)
+      int-zero)
     ((isnil address)
       progtree)
     (t
@@ -299,10 +291,7 @@
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
               (eval-reg-write
-                (let ((m (lookup-tree memory (reverse-helper src nil))))
-                  (if (isnil m)
-                    int-zero
-                    m))
+                (lookup-tree memory (reverse-helper src nil))
                 *dst)
 
               ;; ==== inst-jumpcmp ====
@@ -338,7 +327,7 @@
         (take take)
         (int-zero int-zero))
     (eval
-      (car (list2tree (inflist int-zero) (regptr2regaddr reg-A) (lambda (x) x)))
+      nil
       (car (list2tree memlist int-zero car*))
       (car (list2tree proglist int-zero (lambda (x) x)))
       stdin
