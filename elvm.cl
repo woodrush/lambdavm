@@ -281,14 +281,14 @@
                 (cmp cmp)
                 (regptr2regaddr regptr2regaddr)
                 (reg-read reg-read)
-                (eval-reg-write
-                  (lambda (src dst)
-                    (eval (reg-write reg src dst) memory progtree stdin nextblock)))
                 (curinst (car curblock))
                 (*src (car4-3 curinst))
                 (src (if (car4-2 curinst) *src (reg-read reg *src)))
                 (*dst (car4-4 curinst))
-                (nextblock (cdr curblock)))
+                (nextblock (cdr curblock))
+                (eval-reg-write
+                  (lambda (src dst)
+                    (eval (reg-write reg src dst) memory progtree stdin nextblock))))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -326,20 +326,21 @@
 
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-              (eval-reg-write (let ((m (lookup-tree memory (reverse-helper src nil))))
-                            (if (isnil m)
-                              int-zero
-                              m))
-                          *dst)
+              (eval-reg-write
+                (let ((m (lookup-tree memory (reverse-helper src nil))))
+                  (if (isnil m)
+                    int-zero
+                    m))
+                *dst)
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
               (let ((*jmp (car4-4 *dst))
                     (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
-                (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
-                        (eval reg memory progtree stdin (expand-prog-at jmp)))
-                      (t
-                        (eval reg memory progtree stdin nextblock))))
+                (eval reg memory progtree stdin
+                  (if (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
+                    (expand-prog-at jmp)
+                    nextblock)))
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -360,8 +361,9 @@
 
 
 (defun-lazy main (memlist proglist stdin)
-  (let ((int-zero int-zero)
-        (list2tree list2tree))
+  (let ((list2tree list2tree)
+        (take take)
+        (int-zero int-zero))
     (eval
       (car (list2tree proglist (list t t t) (lambda (x) x)))
       (car (list2tree memlist int-zero car*))

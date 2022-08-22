@@ -239,7 +239,7 @@
     `(cons ,item nil)))
 
 (defun-lazy nth (n list)
-  (-> list (n cdr) car))
+  (-> list (n cdr*) car*))
 
 (defmacro-lazy nth (n list)
   `(-> ,list (,n cdr) car))
@@ -283,15 +283,17 @@
 (defmacro-lazy reverse (list)
   `(reverse-helper ,list nil))
 
-(defrec-lazy take* (n l ret)
-  (cond
-    ((iszero n)
-      (reverse ret))
-    (t
-      (take* (pred n) (cdr l) (cons (car l) ret)))))
+(defun-lazy take (n l)
+  ((letrec-lazy take (n l ret)
+      (cond
+        ((iszero n)
+          (reverse ret))
+        (t
+          (take (pred n) (cdr l) (cons (car l) ret)))))
+   n l nil))
 
-(defmacro-lazy take (n list)
-  `(take* ,n ,list nil))
+;; (defmacro-lazy take (n list)
+;;   `(take* ,n ,list nil))
 
 (defrec-lazy length (list)
   ((letrec-lazy length (l n)
