@@ -176,31 +176,28 @@
   (reverse powerlist))
 
 (defrec-lazy bit2int* (n powerlist)
-  (cond ((isnil powerlist)
-          0)
-        (t
-          (if (car n)
-            (+ (car powerlist) (bit2int* (cdr n) (cdr powerlist)))
-            (bit2int* (cdr n) (cdr powerlist))))))
+  (let ((next (bit2int* (cdr n) (cdr powerlist))))
+    (cond ((isnil powerlist)
+            0)
+          ((car n)
+            (+ (car powerlist) next))
+          (t
+            next))))
 
 (defmacro-lazy bit2int (n)
   `(bit2int* ,n powerlist))
 
 (defrec-lazy int2bit* (n revpowerlist)
-  (cond ((isnil revpowerlist)
-          nil)
-        ((iszero n)
-          (cons nil (int2bit* n (cdr revpowerlist))))
-        (t
-          (if (<= (car revpowerlist) n)
-            (cons t   (int2bit* (- n (car revpowerlist)) (cdr revpowerlist)))
-            (cons nil (int2bit* n (cdr revpowerlist)))))))
+  (let ((next (lambda (x) (int2bit* x (cdr revpowerlist)))))
+    (cond ((isnil revpowerlist)
+            nil)
+          ((<= (car revpowerlist) n)
+            (cons t (next (- n (car revpowerlist)))))
+          (t
+            (cons nil (next n))))))
 
 (defmacro-lazy int2bit (n)
-  `(append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil))))
-
-(defrec-lazy append-list (l item)
-  (if (isnil l) item (cons (car l) (append-list (cdr l) item))))
+  `(reverse-helper (int2bit* ,n revpowerlist) (take 16 (inflist nil))))
 
 
 ;;================================================================
