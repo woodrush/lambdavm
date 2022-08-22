@@ -170,17 +170,19 @@
 
 (defun-lazy t (x y) x)
 (defun-lazy nil (x y) y)
-(defun-lazy cons (x y f) (f x y))
-(defun-lazy car (l) (l t))
-(defun-lazy cdr (l) (l nil))
+;; (defun-lazy cons (x y f) (f x y))
+(defmacro-lazy car (l) `(,l t))
+(defmacro-lazy cdr (l) `(,l nil))
+(defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
+
 (defun-lazy isnil (l) ((lambda (a) (a (lambda (v n x) nil) t)) l))
 (defun-lazy inflist (item)
   ((lambda (x) (x x))
    (lambda (self)
      (cons item (self self)))))
 
-(defun-lazy not (x) (x nil t))
-(defun-lazy and (x y) (x y nil))
+(defmacro-lazy not (x) `(,x nil t))
+(defmacro-lazy and (x y) `(,x ,y nil))
 ;; (defun-lazy or (x y) (x t y))
 (defmacro-lazy or (x &rest r)
   (if (not r) x `(,x t (or ,@r))))
@@ -188,7 +190,7 @@
 (defun-lazy xor (x y) (if x (not y) y))
 (defun-lazy xnor (x y) (if x y (not y)))
 
-(defun-lazy succ (n f x) (f (n f x)))
+(defmacro-lazy succ (n) `(lambda (f x) (f (,n f x))))
 (defun-lazy pred (n f x) (n ((lambda (g h) (h (g f)))) (lambda (u) x) (lambda (u) u)))
 (defun-lazy + (m n f x) (m f (n f x)))
 (defun-lazy * (m n f x) (m (n f) x))
@@ -272,18 +274,18 @@
     target
     `(-> (,(car args) ,target) ,@(cdr args))))
 
-(defrec-lazy reverse-helper (list curlist)
-  (if (isnil list) curlist (reverse-helper (cdr list) (cons (car list) curlist))))
+(defrec-lazy reverse-helper (l curlist)
+  (if (isnil l) curlist (reverse-helper (cdr l) (cons (car l) curlist))))
 
 (defmacro-lazy reverse (list)
   `(reverse-helper ,list nil))
 
-(defrec-lazy take* (n list ret)
+(defrec-lazy take* (n l ret)
   (cond
     ((iszero n)
       (reverse ret))
     (t
-      (take* (pred n) (cdr list) (cons (car list) ret)))))
+      (take* (pred n) (cdr l) (cons (car l) ret)))))
 
 (defmacro-lazy take (n list)
   `(take* ,n ,list nil))
