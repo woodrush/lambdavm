@@ -17,17 +17,18 @@
       (lookup-tree (progtree (car address)) (cdr address)))))
 
 (defrec-lazy memory-write (memory address value)
-  (cond
-    ((isnil address)
-      value)
-    ((isnil memory)
-      ((car address)
-        (cons (memory-write nil (cdr address) value) nil)
-        (cons nil (memory-write nil (cdr address) value))))
-    (t
-      ((car address)
-        (cons (memory-write (car memory) (cdr address) value) (cdr memory))
-        (cons (car memory) (memory-write (cdr memory) (cdr address) value))))))
+  (let ((next (lambda (x) (memory-write x (cdr address) value))))
+    (cond
+      ((isnil address)
+        value)
+      ((isnil memory)
+        ((car address)
+          (cons (next nil) nil)
+          (cons nil (next nil))))
+      (t
+        ((car address)
+          (cons (next (car memory)) (cdr memory))
+          (cons (car memory) (next (cdr memory))))))))
 
 (defrec-lazy list2tree (memlist depth decorator)
   (cond
@@ -108,18 +109,6 @@
 ;;================================================================
 ;; Arithmetic
 ;;================================================================
-(defrec-lazy add-carry (n m carry invert)
-  (cond ((isnil n)
-          nil)
-        (t
-          (if (car n)
-            (if (xor invert (car m))
-              (cons carry       (add-carry (cdr n) (cdr m) t invert))
-              (cons (not carry) (add-carry (cdr n) (cdr m) carry invert)))
-            (if (xor invert (car m))
-              (cons (not carry) (add-carry (cdr n) (cdr m) carry invert))
-              (cons carry       (add-carry (cdr n) (cdr m) nil invert)))))))
-
 (defrec-lazy add-carry (n m carry invert)
   (cond ((isnil n)
           nil)
