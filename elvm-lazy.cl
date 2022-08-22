@@ -321,9 +321,7 @@
 
 
 (defun-lazy main (memlist proglist stdin)
-  (let (
-        ;; (regptr2regaddr regptr2regaddr)
-        (list2tree list2tree)
+  (let ((list2tree list2tree)
         (take take)
         (int-zero int-zero)
         )
