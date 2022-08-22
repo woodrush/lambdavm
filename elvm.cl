@@ -204,7 +204,7 @@
             (cons t   (int2bit* (- n (car revpowerlist)) (cdr revpowerlist)))
             (cons nil (int2bit* n (cdr revpowerlist)))))))
 
-(defmacro-lazy int2bit-lamb (n)
+(defmacro-lazy int2bit (n)
   `(append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil))))
 
 (defrec-lazy append-list (l item)
@@ -281,13 +281,14 @@
                 (cmp cmp)
                 (regptr2regaddr regptr2regaddr)
                 (reg-read reg-read)
-                (reg-write reg-write)
+                (eval-reg-write
+                  (lambda (src dst)
+                    (eval (reg-write reg src dst) memory progtree stdin nextblock)))
                 (curinst (car curblock))
                 (*src (car4-3 curinst))
                 (src (if (car4-2 curinst) *src (reg-read reg *src)))
                 (*dst (car4-4 curinst))
-                (nextblock (cdr curblock))
-                (eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock))))
+                (nextblock (cdr curblock)))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -301,39 +302,35 @@
                 SYS-STRING-TERM
                 ;; getc
                 (cond ((isnil stdin)
-                        (eval-reg (reg-write reg int-zero *src)))
+                        (eval-reg-write int-zero *src))
                       (t
                         (eval
-                          (reg-write reg (int2bit-lamb (car stdin)) *src)
+                          (reg-write reg (int2bit (car stdin)) *src)
                           memory progtree (cdr stdin) nextblock)))
                 ;; putc
-                (cons (bit2int src) (eval-reg reg)))
+                (cons (bit2int src) (eval reg memory progtree stdin nextblock)))
 
               ;; ==== inst-sub ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (eval-reg (reg-write reg
-                      (sub (reg-read reg *dst) src)
-                      *dst))
+              (eval-reg-write
+                (sub (reg-read reg *dst) src)
+                *dst)
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
               (let ((*dst-cmp (cdr *dst))
                     (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
-                (eval-reg
-                  (reg-write
-                    reg
-                    (if cmp-result (cons t (cdr int-zero)) int-zero)
-                    *dst-cmp)))
+                (eval-reg-write
+                  (if cmp-result (cons t (cdr int-zero)) int-zero)
+                  *dst-cmp))
 
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-              (eval-reg (reg-write
-                          reg
-                          (let ((m (lookup-tree memory (reverse-helper src nil))))
+              (eval-reg-write (let ((m (lookup-tree memory (reverse-helper src nil))))
                             (if (isnil m)
                               int-zero
                               m))
-                          *dst))
+                          *dst)
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -342,7 +339,7 @@
                 (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
                         (eval reg memory progtree stdin (expand-prog-at jmp)))
                       (t
-                        (eval-reg reg))))
+                        (eval reg memory progtree stdin nextblock))))
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -350,7 +347,7 @@
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst-memory])
-              (eval-reg (reg-write reg src *dst))
+              (eval-reg-write src *dst)
 
               ;; ==== inst-store ====
               ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -359,7 +356,7 @@
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (eval-reg (reg-write reg (add src (reg-read reg *dst)) *dst)))))))
+              (eval-reg-write (add src (reg-read reg *dst)) *dst))))))
 
 
 (defun-lazy main (memlist proglist stdin)
