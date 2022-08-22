@@ -95,13 +95,6 @@
 (defun-lazy inst-sub     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i2)
 (defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i1)
 
-(defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x6)
-(defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x5)
-(defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x4)
-(defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x3)
-(defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x2)
-(defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x1)
-
 (defun-lazy io-int-putc (x1 x2 x3) x3)
 (defun-lazy io-int-getc (x1 x2 x3) x2)
 (defun-lazy io-int-exit (x1 x2 x3) x1)
@@ -154,11 +147,18 @@
                   (t
                     (cmp* (cdr n) (cdr m))))))))
 
+(defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x6)
+(defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x5)
+(defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x4)
+(defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x3)
+(defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x2)
+(defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x1)
+
 (defun-lazy cmp (n m enum-cmp)
   ((cmp* (reverse n) (reverse m))
-    (enum-cmp t   t   nil nil nil t  )
-    (enum-cmp nil t   nil t   t   nil)
-    (enum-cmp t   nil t   nil t   nil)))
+    (enum-cmp nil t   t   t   nil nil)
+    (enum-cmp t   nil t   nil t   nil)
+    (enum-cmp t   t   nil nil nil t  )))
 
 
 ;;================================================================
