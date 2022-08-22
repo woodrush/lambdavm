@@ -70,33 +70,6 @@
 (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
-;; (def-lazy init-reg
-;;   (cons 
-;;     (cons
-;;       (cons int-zero int-zero)
-;;       (cons int-zero int-zero))
-;;     (cons
-;;       (cons int-zero int-zero)
-;;       (cons int-zero int-zero))))
-
-;; (def-lazy init-reg
-;;   (cons6 int-zero int-zero int-zero int-zero int-zero int-zero))
-
-;; (defmacro-lazy reg-read (reg regptr)
-;;   `(,reg ,regptr))
-
-;; (defmacro-lazy rr (reg regptr)
-;;   `(reg-read ,reg ,regptr))
-
-;; (defun-lazy reg-write (reg value regptr)
-;;   (regptr
-;;     (cons6  value         (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-;;     (cons6 (rr reg reg-A)  value         (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-;;     (cons6 (rr reg reg-A) (rr reg reg-B)  value         (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C)  value         (rr reg reg-SP) (rr reg reg-BP))
-;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D)  value          (rr reg reg-BP))
-;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP)  value         )))
-
 (defun-lazy regptr2regaddr (regptr)
   (regptr
     (list nil nil nil)
@@ -279,7 +252,6 @@
                 (powerlist powerlist)
                 (add-carry add-carry)
                 (cmp cmp)
-                (regptr2regaddr regptr2regaddr)
                 (reg-read reg-read)
                 (curinst (car curblock))
                 (*src (car4-3 curinst))
@@ -361,11 +333,12 @@
 
 
 (defun-lazy main (memlist proglist stdin)
-  (let ((list2tree list2tree)
+  (let ((regptr2regaddr regptr2regaddr)
+        (list2tree list2tree)
         (take take)
         (int-zero int-zero))
     (eval
-      (car (list2tree proglist (list t t t) (lambda (x) x)))
+      (car (list2tree (inflist int-zero) (regptr2regaddr reg-A) (lambda (x) x)))
       (car (list2tree memlist int-zero car*))
       (car (list2tree proglist int-zero (lambda (x) x)))
       stdin
