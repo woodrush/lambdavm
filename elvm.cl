@@ -71,23 +71,46 @@
   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
 (def-lazy init-reg
-  (cons6 int-zero int-zero int-zero int-zero int-zero int-zero))
+  (cons 
+    (cons
+      (cons int-zero int-zero)
+      (cons int-zero int-zero))
+    (cons
+      (cons int-zero int-zero)
+      (cons int-zero int-zero))))
 
-(defmacro-lazy reg-read (reg regptr)
-  `(,reg ,regptr))
+;; (def-lazy init-reg
+;;   (cons6 int-zero int-zero int-zero int-zero int-zero int-zero))
 
-(defmacro-lazy rr (reg regptr)
-  `(reg-read ,reg ,regptr))
+;; (defmacro-lazy reg-read (reg regptr)
+;;   `(,reg ,regptr))
+
+;; (defmacro-lazy rr (reg regptr)
+;;   `(reg-read ,reg ,regptr))
+
+;; (defun-lazy reg-write (reg value regptr)
+;;   (regptr
+;;     (cons6  value         (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
+;;     (cons6 (rr reg reg-A)  value         (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
+;;     (cons6 (rr reg reg-A) (rr reg reg-B)  value         (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
+;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C)  value         (rr reg reg-SP) (rr reg reg-BP))
+;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D)  value          (rr reg reg-BP))
+;;     (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP)  value         )))
+
+(defun-lazy regptr2regaddr (regptr)
+  (regptr
+    (list nil nil nil)
+    (list t nil nil)
+    (list nil t nil)
+    (list t t nil)
+    (list nil nil t)
+    (list t nil t)))
+
+(defun-lazy reg-read (reg regptr)
+  (lookup-tree reg (regptr2regaddr regptr)))
 
 (defun-lazy reg-write (reg value regptr)
-  (regptr
-    (cons6  value         (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-    (cons6 (rr reg reg-A)  value         (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-    (cons6 (rr reg reg-A) (rr reg reg-B)  value         (rr reg reg-D) (rr reg reg-SP) (rr reg reg-BP))
-    (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C)  value         (rr reg reg-SP) (rr reg reg-BP))
-    (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D)  value          (rr reg reg-BP))
-    (cons6 (rr reg reg-A) (rr reg reg-B) (rr reg reg-C) (rr reg reg-D) (rr reg reg-SP)  value         )))
-
+  (memory-write reg (regptr2regaddr regptr) value))
 
 ;;================================================================
 ;; Arithmetic
@@ -181,14 +204,8 @@
             (cons t   (int2bit* (- n (car revpowerlist)) (cdr revpowerlist)))
             (cons nil (int2bit* n (cdr revpowerlist)))))))
 
-(defmacro-lazy int2bit-lazy (n)
-  `(if (<= 256 ,n)
-    (reverse (int2bit* 256 revpowerlist))
-    (append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil)))))
-
 (defmacro-lazy int2bit-lamb (n)
   `(append-list (reverse (int2bit* ,n revpowerlist)) (take 16 (inflist nil))))
-
 
 (defrec-lazy append-list (l item)
   (if (isnil l) item (cons (car l) (append-list (cdr l) item))))
@@ -257,12 +274,9 @@
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
                 (reverse-helper reverse-helper)
+                (expand-prog-at (lambda (pc) (flatten nil (lookup-tree progtree (reverse-helper pc nil)))))
                 (powerlist powerlist)
-                (int2bit* int2bit*)
-                (bit2int* bit2int*)
-                (append-list append-list)
                 (add-carry add-carry)
-                (flatten flatten)
                 (cmp cmp)
                 (reg-write reg-write)
                 (curinst (car curblock))
@@ -323,13 +337,13 @@
               (let ((*jmp (car4-4 *dst))
                     (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
                 (cond ((cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
-                        (eval reg memory progtree stdin (flatten nil (lookup-tree progtree (reverse-helper jmp nil)))))
+                        (eval reg memory progtree stdin (expand-prog-at jmp)))
                       (t
                         (eval-reg reg))))
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-              (eval reg memory progtree stdin (flatten nil (lookup-tree progtree (reverse-helper src nil))))
+              (eval reg memory progtree stdin (expand-prog-at src))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst-memory])

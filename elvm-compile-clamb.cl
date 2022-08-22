@@ -14,7 +14,7 @@
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 500)
-;; (format t (write-to-string (curry (macroexpand-lazy main-clamb))))
+;; (format t (write-to-string (curry (macroexpand-lazy main))))
 
 ;; ;; Print in curried De Bruijn notation
 ;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy main)))))
