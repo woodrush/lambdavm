@@ -271,19 +271,16 @@
 ;; TODO: take the PC as the argument
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cons "E" (cond ((isnil curblock)
-          (cons "N" 
-          SYS-STRING-TERM
-          ;; (let ((nextpc (increment (reg-read reg reg-PC)))
-          ;;       (nextblock (lookup-tree progtree nextpc)))
-          ;;   (cond
-          ;;     ((isnil nextblock)
-          ;;       SYS-STRING-TERM)
-          ;;     (t
-          ;;       (eval
-          ;;         (reg-write reg nextpc reg-PC)
-          ;;         memory progtree stdin nextblock))))
-                  
-                  ))
+          (cons "N"
+          (let ((nextpc (increment (reg-read reg reg-PC)))
+                (nextblock (lookup-progtree progtree nextpc)))
+            (cond
+              ((isnil nextblock)
+                (cons "T" SYS-STRING-TERM))
+              (t
+                (eval
+                  (reg-write reg nextpc reg-PC)
+                  memory progtree stdin nextblock))))))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
