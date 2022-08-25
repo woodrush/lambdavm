@@ -172,6 +172,10 @@
   (do
     (<- (reg) (memory-write* reg regptr value))
     (cont reg)))
+;; (defun-lazy reg-write* (reg value regptr cont)
+;;   (do
+;;     (let* reg (memory-write reg regptr value))
+;;     (cont reg)))
 
 
 
@@ -428,10 +432,10 @@
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
               (do
-                (let* reg (reg-write reg src reg-PC))
+                (<- (reg) (reg-write* reg src reg-PC))
                 (<- (nextblock) (lookup-progtree progtree src))
                 (cons "J" (eval
-                  reg ;(reg-write reg src reg-PC)
+                  reg
                   memory progtree stdin nextblock)))
 
               ;; ==== inst-mov ====
@@ -462,7 +466,6 @@
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
-
         (list
           (cons4 inst-io-int t (8-to-24-bit "L") io-int-putc)
           (cons4 inst-io-int t (8-to-24-bit "M") io-int-putc)
