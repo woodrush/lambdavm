@@ -5,24 +5,24 @@
 (def-lazy SYS-N-BITS (+ 16 8))
 ;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 (def-lazy int-zero
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
 
 (def-lazy int-one
-  (cons t (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
+  (cons nil (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
 
 (def-lazy int-two
-  (cons nil (cons t (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
+  (cons t (cons nil (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
 
 (def-lazy address-one
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons t nil)))))))))))))))))))))))))
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
 
 ;;================================================================
 ;; Memory and program
@@ -74,7 +74,7 @@
       (cont value))
     ((isnil memory)
       (do
-        (<- (tree) (memory-write* nil (cdr address) value))
+        (<- (tree) (memory-write* memory (cdr address) value))
         (if (car address)
           (cont (cons tree nil))
           (cont (cons nil tree)))))
@@ -120,13 +120,13 @@
     (t
       (do
         (let* curbit (xor (car pc) carry))
-        (let* nextcarry (and (car pc) carry))
+        (let* nextcarry (not (or (car pc) carry)))
         (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont)))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
     (<- (pc) (reverse* pc))
-    (<- (pc-rev) (increment-pc-reverse pc nil t))
+    (<- (pc-rev) (increment-pc-reverse pc nil nil))
     (cont pc-rev)))
 
 (defrec-lazy add-reverse* (n m curlist carry cont)
@@ -136,10 +136,10 @@
     (t
       (do
         (let* curbit (xor (car n) (xor (car m) carry)))
-        (let* nextcarry (or
-                          (and (car n) carry)
-                          (and (car m) carry)
-                          (and (car n) (car m))))
+        (let* nextcarry (not (or
+                          (not (or (car n) carry))
+                          (not (or (car m) carry))
+                          (not (or (car n) (car m))))))
         (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))
 
 
@@ -319,7 +319,10 @@
     ((isnil n)
       (cont curlist))
     (t
-      (invert-bits-rev* (cdr n) (cons (not (car n)) curlist) cont))))
+      (do
+        (let* x (not (car n)))
+        (let* x (cons x curlist))
+        (invert-bits-rev* (cdr n) x cont)))))
 
 
 (defun-lazy 8-to-24-bit* (n cont)
@@ -334,9 +337,26 @@
 (defun-lazy 24-to-8-bit* (n cont)
   (do
     (<- (n-rev) (invert-bits-rev* n nil))
-    (let* ret
-      (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr 
-      (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr n-rev)))))))))))))))))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+    (let* ret (cdr n-rev))
+
     (cont ret)))
 
 (defun-lazy 8-to-24-bit (n)
@@ -490,47 +510,59 @@
 
 
 (defun-lazy main (memtree progtree stdin)
-  (let (
-        ;; (list2tree list2tree)
-        (take take)
-        (int-zero int-zero))
+  (do
+    (let* take take)
+    (let* int-zero int-zero)
+    (<- (S-24bit) (8-to-24-bit* "S"))
+    (<- (A-24bit) (8-to-24-bit* "A"))
     (eval
       nil
       ;; (car (list2tree memlist int-zero car*))
       ;; (car (list2tree proglist int-zero (lambda (x) x)))
       memtree
       ;; progree
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
+      (cons (cons (cons (cons (cons (cons (cons (cons 
+      (cons (cons (cons (cons (cons (cons (cons (cons 
+      (cons (cons (cons (cons (cons (cons (cons (cons
+        (list
+          (cons4 inst-mov t S-24bit reg-A)
+          ;; (cons4 inst-add t int-two reg-A)
+          ;; (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-add t int-two reg-A)
+          ;; (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-add t int-two reg-A)
+          ;; (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-add t int-two reg-A)
+          ;; (cons4 inst-io-int nil reg-A io-int-putc)
+          )
         (list
           (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-jmp t address-one nil)
-          )
-        (list
-          (cons4 inst-mov t (8-to-24-bit "S") reg-A)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          )
-          ))))))))))))))))))))))))
+          (cons4 inst-jmp t address-one nil) 
+          )      
+      )
+      nil) nil) nil) nil) nil) nil) nil)
+      nil) nil) nil) nil) nil) nil) nil) nil)
+      nil) nil) nil) nil) nil) nil) nil) nil)
+
+      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
+      ;;     ))))))))))))))))))))))))
       ;; nil
       stdin
       (list
-        (cons4 inst-io-int t (8-to-24-bit "A") io-int-putc)
+        (cons4 inst-io-int t A-24bit io-int-putc)
+        (cons4 inst-io-int t A-24bit io-int-putc)
         ;; (cons4 inst-mov t (8-to-24-bit "J") reg-A)
         ;; (cons4 inst-io-int nil reg-A io-int-putc)
         ;; (cons4 inst-io-int nil reg-B io-int-getc)
         ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "B") io-int-putc)
-        (cons4 inst-jmp t int-zero nil)))))
+        (cons4 inst-jmp t int-zero nil)))
+    )
+  )
 
 (defun-lazy debug (stdin)
   (do
