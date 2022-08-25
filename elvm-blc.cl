@@ -124,6 +124,19 @@
     (<- (pc-rev) (increment-pc-reverse pc nil t))
     (cont pc-rev)))
 
+(defrec-lazy add-reverse* (n m curlist carry cont)
+  (cond
+    ((isnil n)
+      (cont curlist))
+    (t
+      (do
+        (let* curbit (xor (car n) (xor (car m) carry)))
+        (let* nextcarry (or
+                          (and (car n) carry)
+                          (and (car m) carry)
+                          (and (car n) (car m))))
+        (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))
+
 ;;================================================================
 ;; Registers
 ;;================================================================
@@ -458,7 +471,7 @@
               ;; TODO: fix add from inc to add
               (do
                 (<- (x) (reg-read* reg *dst))
-                (<- (x-rev) (increment-pc-reverse x nil t))
+                (<- (x-rev) (add-reverse* src x nil nil))
                 (<- (x) (reverse* x-rev))
                 (<- (reg) (reg-write* reg x *dst))
                 (eval reg memory progtree stdin nextblock))))))))
