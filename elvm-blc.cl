@@ -14,6 +14,11 @@
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
 
+(def-lazy int-two
+  (cons nil (cons t (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
+
 (def-lazy address-one
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
@@ -137,28 +142,11 @@
                           (and (car n) (car m))))
         (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))
 
+
+
 ;;================================================================
 ;; Registers
 ;;================================================================
-;; (defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r6)
-;; (defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r5)
-;; (defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r4)
-;; (defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r3)
-;; (defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r2)
-;; (defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r1)
-;; (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
-;;   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
-
-
-;; (defun-lazy regptr2regaddr (regptr)
-;;   (regptr
-;;     (list nil nil nil)
-;;     (list t nil nil)
-;;     (list nil t nil)
-;;     (list t t nil)
-;;     (list nil nil t)
-;;     (list t nil t)))
-
 (def-lazy reg-A  (list nil nil nil))
 (def-lazy reg-B  (list t nil nil))
 (def-lazy reg-C  (list nil t nil))
@@ -166,7 +154,6 @@
 (def-lazy reg-SP (list nil nil t))
 (def-lazy reg-BP (list t nil t))
 (def-lazy reg-PC (list nil t t))
-
 
 
 (defun-lazy reg-read (reg regptr)
@@ -318,23 +305,45 @@
 ;; (defmacro-lazy int2bit (n)
 ;;   `(reverse-helper (int2bit* ,n revpowerlist) (take 16 (inflist nil))))
 
-(defrec-lazy invert-bits (n)
+(defrec-lazy invert-bits* (n curlist cont)
   (cond
     ((isnil n)
-      nil)
+      (do
+        (<- (ret) (reverse* curlist))
+        (cont ret)))
     (t
-      (cons (not (car n)) (invert-bits (cdr n))))))
+      (invert-bits* (cdr n) (cons (not (car n)) curlist) cont))))
+
+(defrec-lazy invert-bits-rev* (n curlist cont)
+  (cond
+    ((isnil n)
+      (cont curlist))
+    (t
+      (invert-bits-rev* (cdr n) (cons (not (car n)) curlist) cont))))
+
+
+(defun-lazy 8-to-24-bit* (n cont)
+  (do
+    (<- (n-inv) (invert-bits* n nil))
+    (let* ret-rev
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil n-inv)))))))))))))))))
+    (<- (ret) (reverse* ret-rev))
+    (cont ret)))
+
+(defun-lazy 24-to-8-bit* (n cont)
+  (do
+    (<- (n-rev) (invert-bits-rev* n nil))
+    (let* ret
+      (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr 
+      (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr n-rev)))))))))))))))))
+    (cont ret)))
 
 (defun-lazy 8-to-24-bit (n)
-  (reverse
-    (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-    (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (invert-bits n)))))))))))))))))))
+  (8-to-24-bit* n (lambda (x) x)))
 
 (defun-lazy 24-to-8-bit (n)
-  (invert-bits
-    (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr 
-    (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr (reverse n)))))))))))))))))))
-
+  (24-to-8-bit* n (lambda (x) x)))
 
 ;;================================================================
 ;; Evaluation
@@ -411,11 +420,14 @@
                 (cond ((isnil stdin)
                         (eval-reg-write int-zero *src))
                       (t
-                        (eval
-                          (reg-write reg (8-to-24-bit (car stdin)) *src)
-                          memory progtree (cdr stdin) nextblock)))
+                        (do
+                          (<- (c) (8-to-24-bit* (car stdin)))
+                          (<- (reg) (reg-write* reg c *src))
+                          (eval reg memory progtree (cdr stdin) nextblock))))
                 ;; putc
-                (cons (24-to-8-bit src) (eval reg memory progtree stdin nextblock)))
+                (cons "C" (do
+                  (<- (c) (24-to-8-bit* src))
+                  (cons c (eval reg memory progtree stdin nextblock)))))
 
               ;; ==== inst-sub ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -498,19 +510,16 @@
           )
         (list
           (cons4 inst-mov t (8-to-24-bit "S") reg-A)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
           (cons4 inst-jmp t int-zero nil)
           )
           ))))))))))))))))))))))))
