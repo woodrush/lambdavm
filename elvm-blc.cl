@@ -3,7 +3,11 @@
 
 
 (def-lazy SYS-N-BITS (+ 16 8))
-(def-lazy int-zero (take SYS-N-BITS (inflist nil)))
+;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
+(def-lazy int-zero
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
 
 ;;================================================================
 ;; Memory and program
@@ -16,6 +20,15 @@
       progtree)
     (t
       (lookup-tree (progtree (car address)) (cdr address)))))
+
+(defrec-lazy lookup-progtree (progtree address)
+  (cond
+    ((isnil progtree)
+      progtree)
+    ((isnil address)
+      progtree)
+    (t
+      (lookup-progtree (progtree (car address)) (cdr address)))))
 
 (defrec-lazy memory-write (memory address value)
   (let ((next (lambda (x) (memory-write x (cdr address) value))))
@@ -31,20 +44,20 @@
           (cons (next (car memory)) (cdr memory))
           (cons (car memory) (next (cdr memory))))))))
 
-(defrec-lazy list2tree (memlist depth decorator)
-  (cond
-    ((isnil memlist)
-      (cons nil nil))
-    ((isnil depth)
-      (cons (decorator memlist) (cdr memlist)))
-    (t
-      (let ((rightstate (list2tree memlist (cdr depth) decorator))
-            (righttree (car rightstate))
-            (right-restmemlist (cdr rightstate))
-            (leftstate (list2tree right-restmemlist (cdr depth) decorator))
-            (lefttree (car leftstate))
-            (left-restmemlist (cdr leftstate)))
-        (cons (cons lefttree righttree) left-restmemlist)))))
+;; (defrec-lazy list2tree (memlist depth decorator)
+;;   (cond
+;;     ((isnil memlist)
+;;       (cons nil nil))
+;;     ((isnil depth)
+;;       (cons (decorator memlist) (cdr memlist)))
+;;     (t
+;;       (let ((rightstate (list2tree memlist (cdr depth) decorator))
+;;             (righttree (car rightstate))
+;;             (right-restmemlist (cdr rightstate))
+;;             (leftstate (list2tree right-restmemlist (cdr depth) decorator))
+;;             (lefttree (car leftstate))
+;;             (left-restmemlist (cdr leftstate)))
+;;         (cons (cons lefttree righttree) left-restmemlist)))))
 
 
 ;;================================================================
@@ -75,6 +88,7 @@
 (def-lazy reg-D  (list t t nil))
 (def-lazy reg-SP (list nil nil t))
 (def-lazy reg-BP (list t nil t))
+(def-lazy reg-PC (list nil t t))
 
 
 
@@ -139,6 +153,9 @@
 
 (defmacro-lazy sub (n m)
   `(add-carry ,n ,m t t))
+
+(defmacro-lazy increment (n)
+  `(add-carry ,n int-zero t nil))
 
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
@@ -251,15 +268,28 @@
         (t
           (cons (car curlist) (flatten (cdr curlist) listlist)))))
 
+;; TODO: take the PC as the argument
 (defrec-lazy eval (reg memory progtree stdin curblock)
-  (cond ((isnil curblock)
-          SYS-STRING-TERM)
+  (cons "E" (cond ((isnil curblock)
+          (cons "N" 
+          SYS-STRING-TERM
+          ;; (let ((nextpc (increment (reg-read reg reg-PC)))
+          ;;       (nextblock (lookup-tree progtree nextpc)))
+          ;;   (cond
+          ;;     ((isnil nextblock)
+          ;;       SYS-STRING-TERM)
+          ;;     (t
+          ;;       (eval
+          ;;         (reg-write reg nextpc reg-PC)
+          ;;         memory progtree stdin nextblock))))
+                  
+                  ))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
                 (memory-write memory-write)
                 (reverse-helper reverse-helper)
-                (expand-prog-at (lambda (pc) (flatten nil (lookup-tree progtree (reverse-helper pc nil)))))
+                (expand-prog-at (lambda (pc) (lookup-progtree progtree pc)))
                 ;; (powerlist powerlist)
                 (add-carry add-carry)
                 (cmp cmp)
@@ -315,6 +345,8 @@
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
+              
+              ;; TODO: rewrite PC on jump
               (let ((*jmp (car4-4 *dst))
                     (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
                 (eval reg memory progtree stdin
@@ -324,7 +356,9 @@
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-              (eval reg memory progtree stdin (expand-prog-at src))
+              (cons "J" (eval
+                reg ;(reg-write reg src reg-PC)
+                memory progtree stdin (expand-prog-at src)))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -337,33 +371,44 @@
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (eval-reg-write (add src (reg-read reg *dst)) *dst))))))
+              (eval-reg-write (add src (reg-read reg *dst)) *dst)))))))
 
 
-(defun-lazy main (memlist proglist stdin)
-  (let ((list2tree list2tree)
+(defun-lazy main (memtree progtree stdin)
+  (let (
+        ;; (list2tree list2tree)
         (take take)
         (int-zero int-zero))
     (eval
       nil
-      (car (list2tree memlist int-zero car*))
+      ;; (car (list2tree memlist int-zero car*))
       ;; (car (list2tree proglist int-zero (lambda (x) x)))
-      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)))))))))))))))))))))))))
+      memtree
+      ;; progree
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
       nil
+        ;; (list
+        ;;   (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
+        ;;   (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
+        ;;   )
+          ))))))))))))))))))))))))
+      ;; nil
       stdin
       (list
-        (cons4 inst-io-int t (8-to-24-bit "G") io-int-putc)
-        (cons4 inst-mov t (8-to-24-bit "J") reg-A)
-        (cons4 inst-io-int nil reg-A io-int-putc)
-        (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
+        (cons4 inst-io-int t (8-to-24-bit "A") io-int-putc)
+        ;; (cons4 inst-mov t (8-to-24-bit "J") reg-A)
+        ;; (cons4 inst-io-int nil reg-A io-int-putc)
+        ;; (cons4 inst-io-int nil reg-B io-int-getc)
+        ;; (cons4 inst-io-int nil reg-B io-int-putc)
+        ;; (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
+        ;; (cons4 inst-io-int t (8-to-24-bit "B") io-int-putc)
         (cons4 inst-jmp t int-zero nil)))))
 
 (defun-lazy debug (stdin)
   (do
-    (let* memlist nil)
-    (main memlist nil stdin)))
+    (main nil nil stdin)))
 
 (def-lazy SYS-STRING-TERM nil)
 
