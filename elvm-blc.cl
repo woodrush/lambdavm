@@ -86,7 +86,7 @@
   (do
     (<- (pc) (reverse* pc))
     (<- (pc-rev) (increment-pc-reverse pc nil t))
-    (cont pc)))
+    (cont pc-rev)))
 
 ;;================================================================
 ;; Registers
