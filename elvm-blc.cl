@@ -50,14 +50,14 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
-(defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r6)
-(defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r5)
-(defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r4)
-(defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r3)
-(defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r2)
-(defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r1)
-(defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
-  `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
+;; (defun-lazy reg-A  (r1 r2 r3 r4 r5 r6) r6)
+;; (defun-lazy reg-B  (r1 r2 r3 r4 r5 r6) r5)
+;; (defun-lazy reg-C  (r1 r2 r3 r4 r5 r6) r4)
+;; (defun-lazy reg-D  (r1 r2 r3 r4 r5 r6) r3)
+;; (defun-lazy reg-SP (r1 r2 r3 r4 r5 r6) r2)
+;; (defun-lazy reg-BP (r1 r2 r3 r4 r5 r6) r1)
+;; (defmacro-lazy cons6 (r1 r2 r3 r4 r5 r6)
+;;   `(lambda (f) (f ,r1 ,r2 ,r3 ,r4 ,r5 ,r6)))
 
 
 ;; (defun-lazy regptr2regaddr (regptr)
@@ -68,6 +68,15 @@
 ;;     (list t t nil)
 ;;     (list nil nil t)
 ;;     (list t nil t)))
+
+(def-lazy reg-A  (list nil nil nil))
+(def-lazy reg-B  (list t nil nil))
+(def-lazy reg-C  (list nil t nil))
+(def-lazy reg-D  (list t t nil))
+(def-lazy reg-SP (list nil nil t))
+(def-lazy reg-BP (list t nil t))
+
+
 
 (defun-lazy reg-read (reg regptr)
   (lookup-tree reg
@@ -318,7 +327,7 @@
               (eval reg memory progtree stdin (expand-prog-at src))
 
               ;; ==== inst-mov ====
-              ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst-memory])
+              ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
               (eval-reg-write src *dst)
 
               ;; ==== inst-store ====
@@ -345,6 +354,9 @@
       nil
       stdin
       (list
+        (cons4 inst-io-int t (8-to-24-bit "G") io-int-putc)
+        (cons4 inst-mov t (8-to-24-bit "J") reg-A)
+        (cons4 inst-io-int nil reg-A io-int-putc)
         (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
         (cons4 inst-jmp t int-zero nil)))))
 
