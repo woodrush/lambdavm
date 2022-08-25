@@ -10,14 +10,14 @@
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
 
 (def-lazy int-one
-  (cons nil (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
 
 (def-lazy int-two
-  (cons t (cons nil (cons t (cons t (cons t (cons t (cons t (cons t 
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons nil (cons t nil)))))))))))))))))))))))))
 
 (def-lazy address-one
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
@@ -119,8 +119,8 @@
       (cont curlist))
     (t
       (do
-        (let* curbit (xor (car pc) carry))
-        (let* nextcarry (not (or (car pc) carry)))
+        (let* curbit (not (xor (car pc) carry)))
+        (let* nextcarry (or (car pc) carry))
         (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont)))))
 
 (defun-lazy increment-pc* (pc cont)
@@ -135,11 +135,11 @@
       (cont curlist))
     (t
       (do
-        (let* curbit (xor (car n) (xor (car m) carry)))
+        (let* curbit (not (xor (not (car n)) (xor (not (car m)) (not carry)))))
         (let* nextcarry (not (or
-                          (not (or (car n) carry))
-                          (not (or (car m) carry))
-                          (not (or (car n) (car m))))))
+                          (and (car n) carry)
+                          (and (car m) carry)
+                          (and (car n) (car m)))))
         (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))
 
 
@@ -327,16 +327,17 @@
 
 (defun-lazy 8-to-24-bit* (n cont)
   (do
-    (<- (n-inv) (invert-bits* n nil))
-    (let* ret-rev
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil n-inv)))))))))))))))))
-    (<- (ret) (reverse* ret-rev))
-    (cont ret)))
+    ;; (<- (n-inv) (invert-bits* n nil))
+    ;; (let* ret-rev
+    ;;   )
+    ;; (<- (ret) (reverse* ret-rev))
+    (cont
+      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t n)))))))))))))))))))
 
-(defun-lazy 24-to-8-bit* (n cont)
+(defun-lazy 24-to-8-bit* (n-rev cont)
   (do
-    (<- (n-rev) (invert-bits-rev* n nil))
+    ;; (<- (n-rev) (invert-bits-rev* n nil))
     (let* ret (cdr n-rev))
     (let* ret (cdr n-rev))
     (let* ret (cdr n-rev))
@@ -503,8 +504,8 @@
               ;; TODO: fix add from inc to add
               (do
                 (<- (x) (reg-read* reg *dst))
-                (<- (x-rev) (add-reverse* src x nil nil))
-                (<- (x) (reverse* x-rev))
+                (<- (x-rev) (reverse* x))
+                (<- (x) (add-reverse* src x-rev nil t))
                 (<- (reg) (reg-write* reg x *dst))
                 (eval reg memory progtree stdin nextblock))))))))
 
@@ -525,7 +526,8 @@
       (cons (cons (cons (cons (cons (cons (cons (cons 
       (cons (cons (cons (cons (cons (cons (cons (cons
         (list
-          (cons4 inst-mov t S-24bit reg-A)
+          (cons4 inst-io-int t S-24bit io-int-putc)
+          (cons4 inst-mov t A-24bit reg-A)
           ;; (cons4 inst-add t int-two reg-A)
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           ;; (cons4 inst-add t int-two reg-A)
@@ -536,9 +538,9 @@
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           )
         (list
-          (cons4 inst-add t int-two reg-A)
+          ;; (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-jmp t address-one nil) 
+          (cons4 inst-jmp t int-one nil) 
           )      
       )
       nil) nil) nil) nil) nil) nil) nil)
