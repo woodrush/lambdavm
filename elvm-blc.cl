@@ -64,6 +64,29 @@
 ;;             (left-restmemlist (cdr leftstate)))
 ;;         (cons (cons lefttree righttree) left-restmemlist)))))
 
+(defrec-lazy reverse** (l curlist cont)
+  (if (isnil l)
+    (cont curlist)
+    (reverse** (cdr l) (cons (car l) curlist) cont)))
+
+(defun-lazy reverse* (l cont)
+  (reverse** l nil cont))
+
+(defrec-lazy increment-pc-reverse (pc curlist carry cont)
+  (cond
+    ((isnil pc)
+      (cont curlist))
+    (t
+      (do
+        (let* curbit (xor (car pc) carry))
+        (let* nextcarry (and (car pc) carry))
+        (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont)))))
+
+(defun-lazy increment-pc* (pc cont)
+  (do
+    (<- (pc) (reverse* pc))
+    (<- (pc-rev) (increment-pc-reverse pc nil t))
+    (cont pc)))
 
 ;;================================================================
 ;; Registers
@@ -159,8 +182,9 @@
 (defmacro-lazy sub (n m)
   `(add-carry ,n ,m t t))
 
-(defmacro-lazy increment (n)
-  `(add-carry ,n int-zero t nil))
+;; (defmacro-lazy increment (n)
+;;   `(add-carry ,n int-zero t nil))
+
 
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
@@ -278,7 +302,8 @@
   (cons "E" (cond ((isnil curblock)
           (cons "N"
             (do
-              (let* nextpc (reg-read reg reg-PC))
+              (let* pc (reg-read reg reg-PC))
+              (<- (nextpc) (increment-pc* pc))
               ;; (let* nextpc (increment nextpc))
               ;; (let* nextpc (reverse nextpc))
               (<- (nextblock) (lookup-progtree progtree nextpc))
