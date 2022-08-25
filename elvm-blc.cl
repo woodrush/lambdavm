@@ -9,10 +9,10 @@
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
 
-(def-lazy int-one
+(def-lazy address-one
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons T nil)))))))))))))))))))))))))
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons t nil)))))))))))))))))))))))))
 
 ;;================================================================
 ;; Memory and program
@@ -26,14 +26,14 @@
     (t
       (lookup-tree (progtree (car address)) (cdr address)))))
 
-(defrec-lazy lookup-progtree (progtree address)
+(defrec-lazy lookup-progtree (progtree address cont)
   (cond
     ((isnil progtree)
-      progtree)
+      (cont progtree))
     ((isnil address)
-      progtree)
+      (cont progtree))
     (t
-      (lookup-progtree (progtree (car address)) (cdr address)))))
+      (lookup-progtree (progtree (car address)) (cdr address) cont))))
 
 (defrec-lazy memory-write (memory address value)
   (let ((next (lambda (x) (memory-write x (cdr address) value))))
@@ -277,18 +277,18 @@
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cons "E" (cond ((isnil curblock)
           (cons "N"
-          (let (
-                (nextpc (increment (reg-read reg reg-PC)))
-                ;; (nextpc (reg-read reg reg-PC))
-                (nextpc (reverse nextpc))
-                (nextblock (lookup-progtree progtree nextpc)))
-            (cond
-              ((isnil nextblock)
-                (cons "T" SYS-STRING-TERM))
-              (t
-                (cons "P" (eval
-                  (reg-write reg nextpc reg-PC)
-                  memory progtree stdin nextblock)))))))
+            (do
+              (let* nextpc (reg-read reg reg-PC))
+              ;; (let* nextpc (increment nextpc))
+              ;; (let* nextpc (reverse nextpc))
+              (<- (nextblock) (lookup-progtree progtree nextpc))
+              (cond
+                ((isnil nextblock)
+                  (cons "T" SYS-STRING-TERM))
+                (t
+                  (cons "P" (eval
+                    (reg-write reg nextpc reg-PC)
+                    memory progtree stdin nextblock)))))))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
@@ -352,6 +352,7 @@
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
               
               ;; TODO: rewrite PC on jump
+              ;; TODO: do not use expand-prog-at
               (let ((*jmp (car4-4 *dst))
                     (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
                 (eval reg memory progtree stdin
@@ -361,9 +362,12 @@
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-              (cons "J" (eval
-                reg ;(reg-write reg src reg-PC)
-                memory progtree stdin (expand-prog-at src)))
+              (do
+                (let* reg (reg-write reg src reg-PC))
+                (<- (nextblock) (lookup-progtree progtree src))
+                (cons "J" (eval
+                  reg ;(reg-write reg src reg-PC)
+                  memory progtree stdin nextblock)))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -395,13 +399,13 @@
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
 
         (list
-          (cons4 inst-io-int t (8-to-24-bit "K") io-int-putc)
           (cons4 inst-io-int t (8-to-24-bit "L") io-int-putc)
+          (cons4 inst-io-int t (8-to-24-bit "M") io-int-putc)
           )
         (list
           (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
           (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
-          (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
+          (cons4 inst-io-int t (8-to-24-bit "K") io-int-putc)
           )
           ))))))))))))))))))))))))
       ;; nil
@@ -414,7 +418,7 @@
         ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "B") io-int-putc)
-        (cons4 inst-jmp t int-one nil)))))
+        (cons4 inst-jmp t int-zero nil)))))
 
 (defun-lazy debug (stdin)
   (do
