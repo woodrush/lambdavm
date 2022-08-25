@@ -58,6 +58,28 @@
           (cons (next (car memory)) (cdr memory))
           (cons (car memory) (next (cdr memory))))))))
 
+(defrec-lazy memory-write* (memory address value cont)
+  (cond
+    ((isnil address)
+      (cont value))
+    ((isnil memory)
+      (do
+        (<- (tree) (memory-write* nil (cdr address) value))
+        (if (car address)
+          (cont (cons tree nil))
+          (cont (cons nil tree)))))
+    (t
+      (cond
+        ((car address)
+          (do
+            (<- (tree) (memory-write* (car memory) (cdr address) value))
+            (cont (cons tree (cdr memory)))))
+        (t
+          (do
+            (<- (tree) (memory-write* (cdr memory) (cdr address) value))
+            (cont (cons (car memory) tree))))))))
+
+
 ;; (defrec-lazy list2tree (memlist depth decorator)
 ;;   (cond
 ;;     ((isnil memlist)
@@ -148,7 +170,7 @@
 
 (defun-lazy reg-write* (reg value regptr cont)
   (do
-    (let* reg (memory-write reg regptr value))
+    (<- (reg) (memory-write* reg regptr value))
     (cont reg)))
 
 
