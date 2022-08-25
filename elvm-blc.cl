@@ -9,6 +9,11 @@
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
 
+(def-lazy int-one
+  (cons t (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
+
 (def-lazy address-one
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
@@ -375,7 +380,9 @@
                 (nextblock (cdr curblock))
                 (eval-reg-write
                   (lambda (src dst)
-                    (eval (reg-write reg src dst) memory progtree stdin nextblock))))
+                    (do
+                      (<- (reg) (reg-write* reg src dst))
+                      (eval reg memory progtree stdin nextblock)))))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -434,9 +441,7 @@
               (do
                 (<- (reg) (reg-write* reg src reg-PC))
                 (<- (nextblock) (lookup-progtree progtree src))
-                (cons "J" (eval
-                  reg
-                  memory progtree stdin nextblock)))
+                (cons "J" (eval reg memory progtree stdin nextblock)))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -449,7 +454,14 @@
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (eval-reg-write (add src (reg-read reg *dst)) *dst)))))))
+
+              ;; TODO: fix add from inc to add
+              (do
+                (<- (x) (reg-read* reg *dst))
+                (<- (x-rev) (increment-pc-reverse x nil t))
+                (<- (x) (reverse* x-rev))
+                (<- (reg) (reg-write* reg x *dst))
+                (eval reg memory progtree stdin nextblock))))))))
 
 
 (defun-lazy main (memtree progtree stdin)
@@ -472,9 +484,21 @@
           (cons4 inst-jmp t int-zero nil)
           )
         (list
-          (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
-          (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
-          (cons4 inst-io-int t (8-to-24-bit "K") io-int-putc)
+          (cons4 inst-mov t (8-to-24-bit "S") reg-A)
+          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
+          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
+          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-mov t (8-to-24-bit "R") reg-A)
+          (cons4 inst-jmp t int-zero nil)
           )
           ))))))))))))))))))))))))
       ;; nil
