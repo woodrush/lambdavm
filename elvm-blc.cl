@@ -9,6 +9,11 @@
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
   (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil nil)))))))))))))))))))))))))
 
+(def-lazy int-one
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+  (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons T nil)))))))))))))))))))))))))
+
 ;;================================================================
 ;; Memory and program
 ;;================================================================
@@ -272,15 +277,18 @@
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cons "E" (cond ((isnil curblock)
           (cons "N"
-          (let ((nextpc (increment (reg-read reg reg-PC)))
+          (let (
+                (nextpc (increment (reg-read reg reg-PC)))
+                ;; (nextpc (reg-read reg reg-PC))
+                (nextpc (reverse nextpc))
                 (nextblock (lookup-progtree progtree nextpc)))
             (cond
               ((isnil nextblock)
                 (cons "T" SYS-STRING-TERM))
               (t
-                (eval
+                (cons "P" (eval
                   (reg-write reg nextpc reg-PC)
-                  memory progtree stdin nextblock))))))
+                  memory progtree stdin nextblock)))))))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
@@ -384,12 +392,17 @@
       ;; progree
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
       (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
-      nil
-        ;; (list
-        ;;   (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
-        ;;   (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
-        ;;   )
+      (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
+
+        (list
+          (cons4 inst-io-int t (8-to-24-bit "K") io-int-putc)
+          (cons4 inst-io-int t (8-to-24-bit "L") io-int-putc)
+          )
+        (list
+          (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
+          (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
+          (cons4 inst-io-int t (8-to-24-bit "J") io-int-putc)
+          )
           ))))))))))))))))))))))))
       ;; nil
       stdin
@@ -401,7 +414,7 @@
         ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "B") io-int-putc)
-        (cons4 inst-jmp t int-zero nil)))))
+        (cons4 inst-jmp t int-one nil)))))
 
 (defun-lazy debug (stdin)
   (do
