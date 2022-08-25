@@ -135,16 +135,21 @@
   ;; (regptr2regaddr regptr)
   ))
 
-(defun-lazy reg-read* (reg regptr cont)
-  (do
-    (<- (value) (lookup-memory* reg regptr))
-    (cont value)))
-
 (defun-lazy reg-write (reg value regptr)
   (memory-write reg
   regptr
   ;; (regptr2regaddr regptr)
   value))
+
+(defun-lazy reg-read* (reg regptr cont)
+  (do
+    (<- (value) (lookup-memory* reg regptr))
+    (cont value)))
+
+(defun-lazy reg-write* (reg value regptr cont)
+  (do
+    (let* reg (memory-write reg regptr value))
+    (cont reg)))
 
 
 
@@ -318,16 +323,15 @@
             (do
               (<- (pc) (reg-read* reg reg-PC))
               (<- (nextpc) (increment-pc* pc))
-              ;; (let* nextpc (increment nextpc))
-              ;; (let* nextpc (reverse nextpc))
               (<- (nextblock) (lookup-progtree progtree nextpc))
               (cond
                 ((isnil nextblock)
                   (cons "T" SYS-STRING-TERM))
                 (t
-                  (cons "P" (eval
-                    (reg-write reg nextpc reg-PC)
-                    memory progtree stdin nextblock)))))))
+                  (cons "P"
+                    (do
+                      (<- (reg) (reg-write* reg nextpc reg-PC))
+                      (eval reg memory progtree stdin nextblock))))))))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
