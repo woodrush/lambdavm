@@ -26,6 +26,15 @@
     (t
       (lookup-tree (progtree (car address)) (cdr address)))))
 
+(defrec-lazy lookup-memory* (progtree address cont)
+  (cond
+    ((isnil progtree)
+      (cont int-zero))
+    ((isnil address)
+      (cont progtree))
+    (t
+      (lookup-memory* (progtree (car address)) (cdr address) cont))))
+
 (defrec-lazy lookup-progtree (progtree address cont)
   (cond
     ((isnil progtree)
@@ -125,6 +134,11 @@
   regptr
   ;; (regptr2regaddr regptr)
   ))
+
+(defun-lazy reg-read* (reg regptr cont)
+  (do
+    (<- (value) (lookup-memory* reg regptr))
+    (cont value)))
 
 (defun-lazy reg-write (reg value regptr)
   (memory-write reg
@@ -302,7 +316,7 @@
   (cons "E" (cond ((isnil curblock)
           (cons "N"
             (do
-              (let* pc (reg-read reg reg-PC))
+              (<- (pc) (reg-read* reg reg-PC))
               (<- (nextpc) (increment-pc* pc))
               ;; (let* nextpc (increment nextpc))
               ;; (let* nextpc (reverse nextpc))
@@ -426,6 +440,7 @@
         (list
           (cons4 inst-io-int t (8-to-24-bit "L") io-int-putc)
           (cons4 inst-io-int t (8-to-24-bit "M") io-int-putc)
+          (cons4 inst-jmp t int-zero nil)
           )
         (list
           (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
