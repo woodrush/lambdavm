@@ -13,20 +13,6 @@
         (cont ,b)))))
 
 
-(def-lazy SYS-N-BITS (+ 16 8))
-;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
-;; (def-lazy int-zero
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
-
-;; (def-lazy int-one
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
-
-;; (def-lazy int-one (8-to-24-bit* (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t)))))))) (lambda (x) x)))
-
 (def-lazy int-zero
   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
@@ -43,30 +29,21 @@
   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node nil nil)))))))))))))))))))))))))
 
-;; (def-lazy int-two
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons nil (cons t nil)))))))))))))))))))))))))
-
-;; (def-lazy address-one
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-;;   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
 
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defrec-lazy lookup-memory* (progtree address cont)
+(defrec-lazy lookup-memory* (memory address cont)
   (cond
-    ((isnil progtree)
+    ((isnil memory)
       (cont int-zero))
     ((isnil address)
-      (cont progtree))
+      (cont memory))
     (t
       (do
         (<- (car-address) ((cdr address) t))
         (<- (cdr-address) ((cdr address) nil))
-        (<- (next-memory) ((cdr progtree) car-address))
+        (<- (next-memory) ((cdr memory) car-address))
         (lookup-memory* next-memory cdr-address cont)))))
 
 (defrec-lazy lookup-progtree (progtree* address cont)
@@ -104,14 +81,6 @@
         (if car-address
           (cont (new-bintree-node memory-rewritten memory-orig))
           (cont (new-bintree-node memory-orig memory-rewritten)))))))
-
-;; (defrec-lazy reverse** (l curlist cont)
-;;   (if (isnil l)
-;;     (cont curlist)
-;;     (reverse** (cdr l) (cons (car l) curlist) cont)))
-
-;; (defun-lazy reverse* (l cont)
-;;   (reverse** l nil cont))
 
 (defrec-lazy reverse-generator* (g curgen cont)
   (if (isnil g)
@@ -196,14 +165,6 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
-;; (def-lazy reg-A  (list nil nil nil))
-;; (def-lazy reg-B  (list t nil nil))
-;; (def-lazy reg-C  (list nil t nil))
-;; (def-lazy reg-D  (list t t nil))
-;; (def-lazy reg-SP (list nil nil t))
-;; (def-lazy reg-BP (list t nil t))
-;; (def-lazy reg-PC (list nil t t))
-
 (def-lazy reg-A  (new-bintree-node nil (new-bintree-node nil (new-bintree-node nil nil))))
 (def-lazy reg-B  (new-bintree-node t   (new-bintree-node nil (new-bintree-node nil nil))))
 (def-lazy reg-C  (new-bintree-node nil (new-bintree-node t   (new-bintree-node nil nil))))
@@ -331,7 +292,6 @@
 
 (defun-lazy 24-to-8-bit* (n cont)
   (do
-    ;; (<- (n-rev) (invert-bits-rev* n nil))
     (let* ret (gen2list n))
     (let* ret (cdr ret))
     (let* ret (cdr ret))
@@ -593,10 +553,6 @@
                     (<- (value) (reg-read* reg *dst))
                     (<- (memory) (memory-write* memory src value))
                     (eval reg memory progtree stdin nextblock))))
-              ;; (do
-              ;;   (<- (value) (reg-read* reg *dst))
-              ;;   (<- (memory) (memory-write* memory src value))
-              ;;   (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -618,18 +574,7 @@
                     (<- (v-src-rev) (reverse* src))
                     (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
                     (<- (reg) (reg-write* reg x *dst))
-                    (eval reg memory progtree stdin nextblock))))
-
-
-              ;; (do
-              ;;   (<- (v-dst) (reg-read* reg *dst))
-              ;;   (<- (v-dst-rev) (reverse* v-dst))
-              ;;   (<- (v-src-rev) (reverse* src))
-              ;;   (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
-              ;;   (<- (reg) (reg-write* reg x *dst))
-              ;;   (eval reg memory progtree stdin nextblock))
-
-                )))))
+                    (eval reg memory progtree stdin nextblock)))))))))
 
 
 (defun-lazy main (memtree progtree-cont stdin)
@@ -706,9 +651,6 @@
     (main nil nil stdin)))
 
 (def-lazy SYS-STRING-TERM nil)
-
-;; (def-lazy "*" (cons t (cons t (cons nil (cons t (cons nil (cons t (cons nil (cons t nil)))))))))
-
 
 
 ;;================================================================
