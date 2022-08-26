@@ -38,16 +38,16 @@
         (lookup-memory* (progtree t) (cdr address) cont)
         (lookup-memory* (progtree nil) (cdr address) cont)))))
 
-(defrec-lazy lookup-progtree (progtree address cont)
+(defrec-lazy lookup-progtree (progtree* address cont)
   (cond
-    ((isnil progtree)
+    ((isnil progtree*)
       (cont nil))
     ((isnil address)
-      (cont progtree))
+      (cont progtree*))
     (t
-      (if (car address)
-        (lookup-progtree (progtree t) (cdr address) cont)
-        (lookup-progtree (progtree nil) (cdr address) cont)))))
+      (do
+        (<- (progtree-next*) ((cdr progtree*) (car address)))
+        (lookup-progtree progtree-next* (cdr address) cont)))))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -540,7 +540,7 @@
                 )))))
 
 
-(defun-lazy main (memtree progtree stdin)
+(defun-lazy main (memtree progtree-cont stdin)
   (do
     (let* take take)
     (let* int-zero int-zero)
@@ -587,7 +587,7 @@
     (eval
       nil
       memtree
-      progtree
+      progtree-cont
 
       ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
       ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
