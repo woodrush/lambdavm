@@ -53,23 +53,8 @@
 (defun-lazy lookup-memory* (memory address cont)
   ((lookup-tree-template int-zero) memory address cont))
 
-(defrec-lazy lookup-progtree (memory address cont)
-  (cond
-    ((isnil memory)
-      (cont nil))
-    ((isnil address)
-      (cont memory))
-    (t
-      (do
-        (<- (car-address) ((cdr address) t))
-        (<- (cdr-address) ((cdr address) nil))
-        (<- (next-memory) ((lambda (cont)
-          (do
-            (<- (car-tree cdr-tree) (memory))
-            (if car-address (cont car-tree) (cont cdr-tree))))))
-        (lookup-progtree next-memory cdr-address cont)))))
-;; (defun-lazy lookup-progtree (progtree address cont)
-;;   ((lookup-tree-template nil) progtree address cont))
+(defun-lazy lookup-progtree (memory address cont)
+  ((lookup-tree-template nil) memory address cont))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -79,30 +64,16 @@
       (do
         (<- (car-address) ((cdr address) t))
         (<- (cdr-address) ((cdr address) nil))
-        (let* memory-orig
+        (<- (memory-orig memory-target) ((lambda (cont)
           (cond
             ((isnil memory)
-              nil)
-            (car-address
-              (cdr memory))
+              (cont nil nil))
             (t
-              (car memory))))
-        (let* memory-target
-          (cond
-            ((isnil memory)
-              nil)
-            (car-address
-              (car memory))
-            (t
-              (cdr memory))))
-        ;; (let* memory-target (if car-address (car memory) (cdr memory)))
-        ;; (<- (memory-orig memory-target) ((lambda (cont)
-        ;;   (if (isnil memory)
-        ;;     (cont nil nil)
-        ;;     (do
-        ;;       (<- (memory-orig) ((cdr memory) (not car-address)))
-        ;;       (<- (memory-target) ((cdr memory) car-address))
-        ;;       (cont memory-orig memory-target))))))
+              (do
+                (<- (car-memory cdr-memory) (memory))
+                (if car-address
+                  (cont cdr-memory car-memory)
+                  (cont car-memory cdr-memory))))))))
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
