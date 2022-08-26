@@ -12,22 +12,35 @@
         (cont ,a)
         (cont ,b)))))
 
+(defun-lazy new-bintree-node** (a b)
+  (cons-cdr-only
+    (lambda (x cont)
+      (if x
+        (cont a)
+        (cont b)))))
 
-(def-lazy int-zero
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t nil)))))))))))))))))))))))))
-
+(def-lazy int-zero (16 (new-bintree-node** t) (8 (new-bintree-node** t) nil)))
 (def-lazy int-one
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-  (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node nil nil)))))))))))))))))))))))))
+  (16 (new-bintree-node** t)
+    (4 (new-bintree-node** t)
+      (2 (new-bintree-node** t)
+        (new-bintree-node** t
+          (new-bintree-node** nil nil))))))
+;; (def-lazy int-zero
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t nil)))))))))))))))))))))))))
+
+;; (def-lazy int-one
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
+;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node nil nil)))))))))))))))))))))))))
 
 
 ;;================================================================
@@ -421,6 +434,7 @@
 (defun-lazy main (memtree progtree-cont stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
+    (let* new-bintree-node** new-bintree-node**)
     (let* int-zero int-zero)
     (let* int-one int-one)
     (let* lookup-memory* lookup-memory*)
