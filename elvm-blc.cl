@@ -293,7 +293,7 @@
 (defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x1)
 
 (defun-lazy cmp (n m enum-cmp)
-  ((cmp* (reverse n) (reverse m))
+  ((cmp* n m)
     (enum-cmp nil t   t   t   nil nil)
     (enum-cmp t   nil t   nil t   nil)
     (enum-cmp t   t   nil nil nil t  )))
@@ -494,11 +494,22 @@
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-              (let ((*dst-cmp (cdr *dst))
-                    (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
-                (eval-reg-write
-                  (if cmp-result (cons t (cdr int-zero)) int-zero)
-                  *dst-cmp))
+              ;; (let ((*dst-cmp (cdr *dst))
+              ;;       (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
+              ;;   (eval-reg-write
+              ;;     (if cmp-result (cons t (cdr int-zero)) int-zero)
+              ;;     *dst-cmp))
+              (do
+                (let* *dst-cmp (cdr *dst))
+                (<- (dst-value (reg-read* reg *dst-cmp)))
+                (if (cmp dst-value src (car *dst))
+                  (do
+                    (<- (reg) (reg-write* reg int-one *dst-cmp))
+                    (eval reg memory progtree stdin nextblock))
+                  (do
+                    (<- (reg) (reg-write* reg int-zero *dst-cmp))
+                    (eval reg memory progtree stdin nextblock))))
+
 
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
@@ -524,7 +535,7 @@
                         (<- (nextblock) (lookup-progtree progtree src))
                         (cons "J" (eval reg memory progtree stdin nextblock)))
                       (do
-                        (eval reg memory progtree stdin nextblock)))))
+                        (eval reg memory progtree stdin nextblock))))
                   (do
                     (<- (jmp) (reg-read* reg *jmp))
                     (if (cmp dst-value src (car4-1 *dst))
@@ -533,7 +544,7 @@
                         (<- (nextblock) (lookup-progtree progtree src))
                         (cons "J" (eval reg memory progtree stdin nextblock)))
                       (do
-                        (eval reg memory progtree stdin nextblock)))))
+                        (eval reg memory progtree stdin nextblock))))))
               
 
               ;; ==== inst-jmp ====
@@ -604,9 +615,14 @@
           (cons4 inst-sub t int-one reg-B)
           (cons4 inst-store t int-zero reg-B)
 
-          ;; (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-          (cons4 inst-jumpcmp t int-one (cons4 cmp-gt reg-A t int-one))
-          )      
+          ;; (cons4 inst-mov nil reg-B reg-D)
+          ;; (cons4 inst-cmp t int-one (cons cmp-gt reg-D))
+          ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-eq reg-D t int-one))
+          
+          (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
+          )
+
+
       )
       nil) nil) nil) nil) nil) nil) nil)
       nil) nil) nil) nil) nil) nil) nil) nil)
