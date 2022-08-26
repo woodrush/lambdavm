@@ -422,7 +422,6 @@
         (t
           (cons (car curlist) (flatten (cdr curlist) listlist)))))
 
-;; TODO: take the PC as the argument
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cons "E" (cond ((isnil curblock)
           (cons "N"
@@ -499,9 +498,13 @@
 
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-              (eval-reg-write
-                (lookup-tree memory (reverse-helper src nil))
-                *dst)
+              (do
+                (<- (value) (lookup-memory* memory src))
+                (<- (reg) (reg-write* reg value *dst))
+                (eval reg memory progtree stdin nextblock))
+              ;; (eval-reg-write
+              ;;   (lookup-tree memory (reverse-helper src nil))
+              ;;   *dst)
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -529,7 +532,10 @@
               ;; ==== inst-store ====
               ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
               ;; Note that the destination is stored in the variable *src
-              (eval reg (memory-write memory (reverse-helper src nil) (reg-read reg *dst)) progtree stdin nextblock)
+              (do
+                (<- (value) (reg-read* reg *dst))
+                (<- (memory) (memory-write* memory src value))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -572,9 +578,11 @@
           )
         (list
           (cons4 inst-io-int nil reg-A io-int-getc)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
+          (cons4 inst-store t int-zero reg-A)
+          (cons4 inst-load t int-zero reg-B)
+          (cons4 inst-io-int nil reg-B io-int-putc)
+          (cons4 inst-add t int-one reg-B)
+          (cons4 inst-io-int nil reg-B io-int-putc)
           (cons4 inst-jmp t int-one nil)
           )      
       )
