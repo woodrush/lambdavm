@@ -240,25 +240,25 @@
 ;;================================================================
 ;; Arithmetic
 ;;================================================================
-(defrec-lazy add-carry (n m carry invert)
-  (cond ((isnil n)
-          nil)
-        (t
-          (let ((next (lambda (x y) (cons x (add-carry (cdr n) (cdr m) y invert))))
-                (diff (next (not carry) carry)))
-            (if (xor invert (car m))
-              (if (car n)
-                (next carry t)
-                diff)
-              (if (car n)
-                diff
-                (next carry nil)))))))
+;; (defrec-lazy add-carry (n m carry invert)
+;;   (cond ((isnil n)
+;;           nil)
+;;         (t
+;;           (let ((next (lambda (x y) (cons x (add-carry (cdr n) (cdr m) y invert))))
+;;                 (diff (next (not carry) carry)))
+;;             (if (xor invert (car m))
+;;               (if (car n)
+;;                 (next carry t)
+;;                 diff)
+;;               (if (car n)
+;;                 diff
+;;                 (next carry nil)))))))
 
-(defmacro-lazy add (n m)
-  `(add-carry ,n ,m nil nil))
+;; (defmacro-lazy add (n m)
+;;   `(add-carry ,n ,m nil nil))
 
-(defmacro-lazy sub (n m)
-  `(add-carry ,n ,m t t))
+;; (defmacro-lazy sub (n m)
+;;   `(add-carry ,n ,m t t))
 
 
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
@@ -295,17 +295,6 @@
 ;;================================================================
 ;; I/O
 ;;================================================================
-(defrec-lazy invert-bits* (n curlist cont)
-  (cond
-    ((isnil n)
-      (do
-        (<- (ret) (reverse* curlist))
-        (cont ret)))
-    (t
-      (if (not (car n))
-        (invert-bits* (cdr n) (cons t curlist) cont)
-        (invert-bits* (cdr n) (cons nil curlist) cont)))))
-
 (defrec-lazy invert-bits-rev* (n curlist cont)
   (cond
     ((isnil n)
@@ -318,10 +307,6 @@
 
 (defun-lazy 8-to-24-bit* (n cont)
   (do
-    ;; (<- (n-inv) (invert-bits* n nil))
-    ;; (let* ret-rev
-    ;;   )
-    ;; (<- (ret) (reverse* ret-rev))
     (cont
       (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
       (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t n)))))))))))))))))))
@@ -351,36 +336,10 @@
 
     (cont ret)))
 
-;; (defun-lazy 8-to-24-bit (n)
-;;   (8-to-24-bit* n (lambda (x) x)))
-
-;; (defun-lazy 24-to-8-bit (n)
-;;   (24-to-8-bit* n (lambda (x) x)))
 
 ;;================================================================
 ;; Evaluation
 ;;================================================================
-(defmacro-lazy await (stdin-top body)
-  ;; The key ingredient to managing the I/O control flow.
-  ;; By inspecting the value of the top character of the standard input and branching depending on its value,
-  ;; `await` is able to halt the further execution of `body` until the input is actually provided.
-  ;; Since elements of `stdin` are always a number, this form is guaranteed to evaluate to `body`.
-  ;; However, since most interpreters do not use that fact during beta reduction
-  ;; and expect `stdin` to be an arbitrary lambda form,
-  ;; such interpreters cannot deduce that this form always reduces to `body`,
-  ;; effectively making this form a method for halting evaluation until the standard input is provided.
-  `(if (iszero (succ ,stdin-top))
-    nil
-    ,body))
-
-(defrec-lazy flatten (curlist listlist)
-  (cond ((isnil curlist)
-          (if (isnil listlist)
-            nil
-            (flatten (car listlist) (cdr listlist))))
-        (t
-          (cons (car curlist) (flatten (cdr curlist) listlist)))))
-
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cons "E" (cond ((isnil curblock)
           (do
@@ -401,7 +360,7 @@
                 (reverse-helper reverse-helper)
                 (expand-prog-at (lambda (pc) (lookup-progtree progtree pc)))
                 ;; (powerlist powerlist)
-                (add-carry add-carry)
+                ;; (add-carry add-carry)
                 (cmp cmp)
                 (reg-read reg-read)
                 (curinst (car curblock))
