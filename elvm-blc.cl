@@ -278,12 +278,15 @@
     (t
       (do
         (<- (curinst) ((cdr curblock) t))
-        (let* *src (car4-3 curinst))
-        (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
-        (let* *dst (car4-4 curinst))
+        (<- (inst-type src-is-imm *src *dst) (curinst))
+        ;; (let* *src (car4-3 curinst))
+        ;; (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
+        ;; (let* *dst (car4-4 curinst))
+        (<- (src) (lookup-src-if-imm reg src-is-imm *src))
         (<- (nextblock) ((cdr curblock) nil))
         ;; Typematch on the current instruction's tag
-        ((car4-1 curinst)
+        (inst-type
+          ;; (car4-1 curinst)
           io-int-case
           sub-case
           cmp-case
@@ -415,10 +418,6 @@
       progtree-cont
       stdin
       (new-bintree-node (cons4 inst-jmp t int-zero nil) nil))))
-
-(defun-lazy debug (stdin)
-  (do
-    (main nil nil stdin)))
 
 (def-lazy SYS-STRING-TERM nil)
 
