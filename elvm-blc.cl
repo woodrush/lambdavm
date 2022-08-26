@@ -209,10 +209,6 @@
   (do
     (<- (reg) (memory-write* reg regptr value))
     (cont reg)))
-;; (defun-lazy reg-write* (reg value regptr cont)
-;;   (do
-;;     (let* reg (memory-write reg regptr value))
-;;     (cont reg)))
 
 
 
@@ -264,9 +260,6 @@
 (defmacro-lazy sub (n m)
   `(add-carry ,n ,m t t))
 
-;; (defmacro-lazy increment (n)
-;;   `(add-carry ,n int-zero t nil))
-
 
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
@@ -302,41 +295,6 @@
 ;;================================================================
 ;; I/O
 ;;================================================================
-;; (def-lazy powerlist
-;;   ((letrec-lazy powerlist (n bits)
-;;     (cond ((isnil bits)
-;;             nil)
-;;           (t
-;;             (cons n (powerlist (+ n n) (cdr bits))))))
-;;     1 (take 8 (inflist t))))
-
-;; (def-lazy revpowerlist
-;;   (reverse powerlist))
-
-;; (defrec-lazy bit2int* (n powerlist)
-;;   (let ((next (bit2int* (cdr n) (cdr powerlist))))
-;;     (cond ((isnil powerlist)
-;;             0)
-;;           ((car n)
-;;             (+ (car powerlist) next))
-;;           (t
-;;             next))))
-
-;; (defmacro-lazy bit2int (n)
-;;   `(bit2int* ,n powerlist))
-
-;; (defrec-lazy int2bit* (n revpowerlist)
-;;   (let ((next (lambda (x) (int2bit* x (cdr revpowerlist)))))
-;;     (cond ((isnil revpowerlist)
-;;             nil)
-;;           ((<= (car revpowerlist) n)
-;;             (cons t (next (- n (car revpowerlist)))))
-;;           (t
-;;             (cons nil (next n))))))
-
-;; (defmacro-lazy int2bit (n)
-;;   `(reverse-helper (int2bit* ,n revpowerlist) (take 16 (inflist nil))))
-
 (defrec-lazy invert-bits* (n curlist cont)
   (cond
     ((isnil n)
@@ -393,11 +351,11 @@
 
     (cont ret)))
 
-(defun-lazy 8-to-24-bit (n)
-  (8-to-24-bit* n (lambda (x) x)))
+;; (defun-lazy 8-to-24-bit (n)
+;;   (8-to-24-bit* n (lambda (x) x)))
 
-(defun-lazy 24-to-8-bit (n)
-  (24-to-8-bit* n (lambda (x) x)))
+;; (defun-lazy 24-to-8-bit (n)
+;;   (24-to-8-bit* n (lambda (x) x)))
 
 ;;================================================================
 ;; Evaluation
@@ -450,12 +408,7 @@
                 (*src (car4-3 curinst))
                 (src (if (car4-2 curinst) *src (reg-read reg *src)))
                 (*dst (car4-4 curinst))
-                (nextblock (cdr curblock))
-                (eval-reg-write
-                  (lambda (src dst)
-                    (do
-                      (<- (reg) (reg-write* reg src dst))
-                      (eval reg memory progtree stdin nextblock)))))
+                (nextblock (cdr curblock)))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -469,7 +422,9 @@
                 SYS-STRING-TERM
                 ;; getc
                 (cond ((isnil stdin)
-                        (eval-reg-write int-zero *src))
+                        (do
+                          (<- (reg) (reg-write* reg int-zero *src))
+                          (eval reg memory progtree (cdr stdin) nextblock)))
                       (t
                         (do
                           (<- (c) (8-to-24-bit* (car stdin)))
@@ -492,11 +447,6 @@
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-              ;; (let ((*dst-cmp (cdr *dst))
-              ;;       (cmp-result (cmp (reg-read reg *dst-cmp) src (car *dst))))
-              ;;   (eval-reg-write
-              ;;     (if cmp-result (cons t (cdr int-zero)) int-zero)
-              ;;     *dst-cmp))
               (do
                 (let* *dst-cmp (cdr *dst))
                 (<- (dst-value) (reg-read* reg *dst-cmp))
