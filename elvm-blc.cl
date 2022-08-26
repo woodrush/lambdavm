@@ -537,10 +537,9 @@
 
               (do
                 (<- (v-dst) (reg-read* reg *dst))
-                ;; (<- (v-dst-rev) (reverse* v-dst))
-                ;; (<- (v-src-rev) (reverse* src))
-                ;; (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
-                (<- (x) (increment-pc* v-dst))
+                (<- (v-dst-rev) (reverse* v-dst))
+                (<- (v-src-rev) (reverse* src))
+                (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
                 (<- (reg) (reg-write* reg x *dst))
                 (eval reg memory progtree stdin nextblock))))))))
 
@@ -574,9 +573,9 @@
           )
         (list
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-two reg-A)
+          (cons4 inst-add t int-one reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-two reg-A)
+          (cons4 inst-add t int-one reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
           ;; (cons4 inst-jmp t int-one nil) 
           )      
