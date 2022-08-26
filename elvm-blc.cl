@@ -5,23 +5,23 @@
 (def-lazy SYS-N-BITS (+ 16 8))
 ;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 (def-lazy int-zero
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t nil)))))))))))))))))))))))))
 
 (def-lazy int-one
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
 
 (def-lazy int-two
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
   (cons t (cons t (cons t (cons t (cons t (cons t (cons nil (cons t nil)))))))))))))))))))))))))
 
 (def-lazy address-one
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
-  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
+  (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
   (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons nil nil)))))))))))))))))))))))))
 
 ;;================================================================
@@ -161,7 +161,7 @@
                   (and (car n) carry)
                   (and (car m) carry)
                   (and (car n) (car m)))
-              ;; nextcarry 
+              ;; nextcarry
               (add-reverse* (cdr n) (cdr m) (cons curbit curlist) t cont)
               (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nil cont)))
           (do
@@ -170,7 +170,7 @@
                   (and (car n) carry)
                   (and (car m) carry)
                   (and (car n) (car m)))
-              ;; nextcarry 
+              ;; nextcarry
               (add-reverse* (cdr n) (cdr m) (cons curbit curlist) t cont)
               (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nil cont))))))))
 
@@ -364,7 +364,7 @@
     ;;   )
     ;; (<- (ret) (reverse* ret-rev))
     (cont
-      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t 
+      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
       (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t n)))))))))))))))))))
 
 (defun-lazy 24-to-8-bit* (n-rev cont)
@@ -520,7 +520,7 @@
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-              
+
               ;; TODO: rewrite PC on jump
               ;; TODO: do not use expand-prog-at
               (do
@@ -545,7 +545,7 @@
                         (cons "J" (eval reg memory progtree stdin nextblock)))
                       (do
                         (eval reg memory progtree stdin nextblock))))))
-              
+
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -583,60 +583,60 @@
   (do
     (let* take take)
     (let* int-zero int-zero)
+    ;; (let* progtree
+    ;;   (cons (cons (cons (cons (cons (cons (cons (cons
+    ;;   (cons (cons (cons (cons (cons (cons (cons (cons
+    ;;   (cons (cons (cons (cons (cons (cons (cons (cons
+    ;;     (list
+    ;;       ;; (cons4 inst-io-int t S-24bit io-int-putc)
+    ;;       ;; (cons4 inst-mov t A-24bit reg-A)
+    ;;       ;; (cons4 inst-add t int-two reg-A)
+    ;;       ;; (cons4 inst-io-int nil reg-A io-int-putc)
+    ;;       ;; (cons4 inst-add t int-two reg-A)
+    ;;       ;; (cons4 inst-io-int nil reg-A io-int-putc)
+    ;;       ;; (cons4 inst-add t int-two reg-A)
+    ;;       ;; (cons4 inst-io-int nil reg-A io-int-putc)
+    ;;       ;; (cons4 inst-add t int-two reg-A)
+    ;;       ;; (cons4 inst-io-int nil reg-A io-int-putc)
+    ;;       (cons4 inst-io-int nil reg-A io-int-getc)
+    ;;       (cons4 inst-mov nil reg-A reg-C)
+    ;;       (cons4 inst-store t int-zero reg-C)
+    ;;       )
+    ;;     (list
+    ;;       (cons4 inst-load t int-zero reg-B)
+    ;;       (cons4 inst-io-int nil reg-B io-int-putc)
+    ;;       (cons4 inst-sub t int-one reg-B)
+    ;;       (cons4 inst-store t int-zero reg-B)
+
+    ;;       (cons4 inst-mov nil reg-B reg-D)
+    ;;       (cons4 inst-cmp t int-one (cons cmp-eq reg-D))
+    ;;       (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
+
+    ;;       ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
+    ;;       )
+
+
+    ;;   )
+    ;;   nil) nil) nil) nil) nil) nil) nil)
+    ;;   nil) nil) nil) nil) nil) nil) nil) nil)
+    ;;   nil) nil) nil) nil) nil) nil) nil) nil))
+
     (<- (S-24bit) (8-to-24-bit* "S"))
     (<- (A-24bit) (8-to-24-bit* "A"))
     (eval
       nil
-      ;; (car (list2tree memlist int-zero car*))
-      ;; (car (list2tree proglist int-zero (lambda (x) x)))
       memtree
-      ;; progree
-      (cons (cons (cons (cons (cons (cons (cons (cons 
-      (cons (cons (cons (cons (cons (cons (cons (cons 
-      (cons (cons (cons (cons (cons (cons (cons (cons
-        (list
-          ;; (cons4 inst-io-int t S-24bit io-int-putc)
-          ;; (cons4 inst-mov t A-24bit reg-A)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          ;; (cons4 inst-add t int-two reg-A)
-          ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-io-int nil reg-A io-int-getc)
-          (cons4 inst-mov nil reg-A reg-C)
-          (cons4 inst-store t int-zero reg-C)
-          )
-        (list
-          (cons4 inst-load t int-zero reg-B)
-          (cons4 inst-io-int nil reg-B io-int-putc)
-          (cons4 inst-sub t int-one reg-B)
-          (cons4 inst-store t int-zero reg-B)
+      progtree
 
-          (cons4 inst-mov nil reg-B reg-D)
-          (cons4 inst-cmp t int-one (cons cmp-eq reg-D))
-          (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
-          
-          ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
-          )
-
-
-      )
-      nil) nil) nil) nil) nil) nil) nil)
-      nil) nil) nil) nil) nil) nil) nil) nil)
-      nil) nil) nil) nil) nil) nil) nil) nil)
-
-      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
-      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil 
+      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
+      ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil
       ;; (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons nil (cons
       ;;     ))))))))))))))))))))))))
       ;; nil
       stdin
       (list
-        (cons4 inst-io-int t A-24bit io-int-putc)
-        (cons4 inst-io-int t A-24bit io-int-putc)
+        ;; (cons4 inst-io-int t A-24bit io-int-putc)
+        ;; (cons4 inst-io-int t A-24bit io-int-putc)
         ;; (cons4 inst-mov t (8-to-24-bit "J") reg-A)
         ;; (cons4 inst-io-int nil reg-A io-int-putc)
         ;; (cons4 inst-io-int nil reg-B io-int-getc)
@@ -662,7 +662,7 @@
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
 ;; (format t (compile-to-ski-lazy main))
-(format t (compile-to-blc-lazy debug))
+(format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
