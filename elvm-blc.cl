@@ -53,8 +53,23 @@
 (defun-lazy lookup-memory* (memory address cont)
   ((lookup-tree-template int-zero) memory address cont))
 
-(defun-lazy lookup-progtree (progtree address cont)
-  ((lookup-tree-template nil) progtree address cont))
+(defrec-lazy lookup-progtree (memory address cont)
+  (cond
+    ((isnil memory)
+      (cont nil))
+    ((isnil address)
+      (cont memory))
+    (t
+      (do
+        (<- (car-address) ((cdr address) t))
+        (<- (cdr-address) ((cdr address) nil))
+        (<- (next-memory) ((lambda (cont)
+          (do
+            (<- (car-tree cdr-tree) (memory))
+            (if car-address (cont car-tree) (cont cdr-tree))))))
+        (lookup-progtree next-memory cdr-address cont)))))
+;; (defun-lazy lookup-progtree (progtree address cont)
+;;   ((lookup-tree-template nil) progtree address cont))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
