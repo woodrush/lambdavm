@@ -484,9 +484,13 @@
 
               ;; ==== inst-sub ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (eval-reg-write
-                (sub (reg-read reg *dst) src)
-                *dst)
+              (do
+                (<- (v-dst) (reg-read* reg *dst))
+                (<- (v-dst-rev) (reverse* v-dst))
+                (<- (v-src-rev) (invert-bits-rev* src nil))
+                (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
+                (<- (reg) (reg-write* reg x *dst))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
@@ -502,9 +506,6 @@
                 (<- (value) (lookup-memory* memory src))
                 (<- (reg) (reg-write* reg value *dst))
                 (eval reg memory progtree stdin nextblock))
-              ;; (eval-reg-write
-              ;;   (lookup-tree memory (reverse-helper src nil))
-              ;;   *dst)
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -539,7 +540,6 @@
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-
               (do
                 (<- (v-dst) (reg-read* reg *dst))
                 (<- (v-dst-rev) (reverse* v-dst))
@@ -565,8 +565,8 @@
       (cons (cons (cons (cons (cons (cons (cons (cons 
       (cons (cons (cons (cons (cons (cons (cons (cons
         (list
-          (cons4 inst-io-int t S-24bit io-int-putc)
-          (cons4 inst-mov t A-24bit reg-A)
+          ;; (cons4 inst-io-int t S-24bit io-int-putc)
+          ;; (cons4 inst-mov t A-24bit reg-A)
           ;; (cons4 inst-add t int-two reg-A)
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           ;; (cons4 inst-add t int-two reg-A)
@@ -575,14 +575,14 @@
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           ;; (cons4 inst-add t int-two reg-A)
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
-          )
-        (list
           (cons4 inst-io-int nil reg-A io-int-getc)
           (cons4 inst-store t int-zero reg-A)
+          )
+        (list
           (cons4 inst-load t int-zero reg-B)
           (cons4 inst-io-int nil reg-B io-int-putc)
-          (cons4 inst-add t int-one reg-B)
-          (cons4 inst-io-int nil reg-B io-int-putc)
+          (cons4 inst-sub t int-one reg-B)
+          (cons4 inst-store t int-zero reg-B)
           (cons4 inst-jmp t int-one nil)
           )      
       )
