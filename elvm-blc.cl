@@ -141,19 +141,19 @@
             (if (or car-pc carry)
               (do
                 ;; (let* nextcarry t)
-                (increment-pc-reverse cdr-pc (cons t curlist) t cont))
+                (increment-pc-reverse cdr-pc (new-bintree-node t curlist) t cont))
               (do
                 ;; (let* nextcarry nil)
-                (increment-pc-reverse cdr-pc (cons t curlist) nil cont))))
+                (increment-pc-reverse cdr-pc (new-bintree-node t curlist) nil cont))))
           (do
             ;; (let* curbit nil)
             (if (or car-pc carry)
               (do
                 ;; (let* nextcarry t)
-                (increment-pc-reverse cdr-pc (cons nil curlist) t cont))
+                (increment-pc-reverse cdr-pc (new-bintree-node nil curlist) t cont))
               (do
                 ;; (let* nextcarry nil)
-                (increment-pc-reverse cdr-pc (cons nil curlist) nil cont)))))))))
+                (increment-pc-reverse cdr-pc (new-bintree-node nil curlist) nil cont)))))))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
@@ -179,8 +179,8 @@
                   (and car-m carry)
                   (and car-n car-m))
               ;; nextcarry
-              (add-reverse* cdr-n cdr-m (cons nil curlist) t cont)
-              (add-reverse* cdr-n cdr-m (cons nil curlist) nil cont)))
+              (add-reverse* cdr-n cdr-m (new-bintree-node nil curlist) t cont)
+              (add-reverse* cdr-n cdr-m (new-bintree-node nil curlist) nil cont)))
           (do
             ;; (let* curbit t)
             (if (or
@@ -188,8 +188,8 @@
                   (and car-m carry)
                   (and car-n car-m))
               ;; nextcarry
-              (add-reverse* cdr-n cdr-m (cons t curlist) t cont)
-              (add-reverse* cdr-n cdr-m (cons t curlist) nil cont))))))))
+              (add-reverse* cdr-n cdr-m (new-bintree-node t curlist) t cont)
+              (add-reverse* cdr-n cdr-m (new-bintree-node t curlist) nil cont))))))))
 
 
 
@@ -325,7 +325,9 @@
     (do
       (<- (car-gen) ((cdr gen) t))
       (<- (cdr-gen) ((cdr gen) nil))
-      (cons car-gen (gen2list cdr-gen)))))
+      (if car-gen
+        (cons t (gen2list cdr-gen))
+        (cons nil (gen2list cdr-gen))))))
 
 (defun-lazy 24-to-8-bit* (n cont)
   (do
@@ -358,8 +360,6 @@
 ;; Evaluation
 ;;================================================================
 (defrec-lazy eval (reg memory progtree stdin curblock)
-    (
-      ;; cons "E" 
       (cond ((isnil curblock)
           (do
             (<- (pc) (reg-read* reg reg-PC))
@@ -629,7 +629,7 @@
               ;;   (<- (reg) (reg-write* reg x *dst))
               ;;   (eval reg memory progtree stdin nextblock))
 
-                ))))))
+                )))))
 
 
 (defun-lazy main (memtree progtree-cont stdin)
