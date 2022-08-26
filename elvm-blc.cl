@@ -344,17 +344,18 @@
         (<- (ret) (reverse* curlist))
         (cont ret)))
     (t
-      (invert-bits* (cdr n) (cons (not (car n)) curlist) cont))))
+      (if (not (car n))
+        (invert-bits* (cdr n) (cons t curlist) cont)
+        (invert-bits* (cdr n) (cons nil curlist) cont)))))
 
 (defrec-lazy invert-bits-rev* (n curlist cont)
   (cond
     ((isnil n)
       (cont curlist))
     (t
-      (do
-        (let* x (not (car n)))
-        (let* x (cons x curlist))
-        (invert-bits-rev* (cdr n) x cont)))))
+      (if (not (car n))
+        (invert-bits-rev* (cdr n) (cons t curlist) cont)
+        (invert-bits-rev* (cdr n) (cons nil curlist) cont)))))
 
 
 (defun-lazy 8-to-24-bit* (n cont)
@@ -423,7 +424,7 @@
           (cons (car curlist) (flatten (cdr curlist) listlist)))))
 
 (defrec-lazy eval (reg memory progtree stdin curblock)
-  (cond ((isnil curblock)
+  (cons "E" (cond ((isnil curblock)
           (do
             (<- (pc) (reg-read* reg reg-PC))
             (<- (nextpc) (increment-pc* pc))
@@ -520,7 +521,7 @@
 
               ;; TODO: rewrite PC on jump
               ;; TODO: do not use expand-prog-at
-              (do
+              (cons "J" (do
                 (let* *jmp (car4-4 *dst))
                 (<- (dst-value) (reg-read* reg (car4-2 *dst)))
                 (if (car4-3 *dst)
@@ -541,7 +542,7 @@
                         (<- (nextblock) (lookup-progtree progtree jmp))
                         (eval reg memory progtree stdin nextblock))
                       (do
-                        (eval reg memory progtree stdin nextblock))))))
+                        (eval reg memory progtree stdin nextblock)))))))
 
 
               ;; ==== inst-jmp ====
@@ -573,7 +574,7 @@
                 (<- (v-src-rev) (reverse* src))
                 (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
                 (<- (reg) (reg-write* reg x *dst))
-                (eval reg memory progtree stdin nextblock)))))))
+                (eval reg memory progtree stdin nextblock))))))))
 
 
 (defun-lazy main (memtree progtree stdin)
