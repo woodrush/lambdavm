@@ -319,6 +319,13 @@
 ;;================================================================
 ;; Evaluation
 ;;================================================================
+(defun-lazy lookup-src-if-imm (reg src-is-imm *src cont)
+  (if src-is-imm
+    (cont *src)
+    (do
+      (<- (src) (reg-read* reg *src))
+      (cont src))))
+
 (defrec-lazy eval (reg memory progtree stdin curblock)
       (cond ((isnil curblock)
           (do
@@ -335,16 +342,12 @@
         (t
           ;; Prevent frequently used functions from being inlined every time
 
-          (do   (let* cmp cmp)
+          (do   
+                (let* cmp cmp)
                 (<- (curinst) ((cdr curblock) t))
                 (let* *src (car4-3 curinst))
                 (let* src-is-imm (car4-2 curinst))
-                (let* src
-                  (do
-                    (if-then-return (car4-2 curinst)
-                      *src)
-                    (<- (src) (reg-read* reg *src))
-                    src))
+                (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
                 (let* *dst (car4-4 curinst))
                 (<- (nextblock) ((cdr curblock) nil))
             ;; Typematch on the current instruction's tag
@@ -369,212 +372,96 @@
                           (<- (reg) (reg-write* reg c *src))
                           (eval reg memory progtree (cdr stdin) nextblock))))
                 ;; putc
-                (cond
-                  (src-is-imm
-                    (do
-                      (let* src *src)
-                      (<- (c) (24-to-8-bit* src))
-                      (cons c (eval reg memory progtree stdin nextblock))))
-                  (t
-                    (do
-                      (<- (src) (reg-read* reg *src))
-                      (<- (c) (24-to-8-bit* src))
-                      (cons c (eval reg memory progtree stdin nextblock))))))
+                (do
+                  (<- (c) (24-to-8-bit* src))
+                  (cons c (eval reg memory progtree stdin nextblock))))
 
               ;; ==== inst-sub ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
               (do
                 (<- (v-dst) (reg-read* reg *dst))
                 (<- (v-dst-rev) (reverse* v-dst))
-                (cond
-                  (src-is-imm
-                    (do
-                      (let* src *src)
-                      (<- (v-src-rev) (invert-bits-rev* src nil))
-                      (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
-                      (<- (reg) (reg-write* reg x *dst))
-                      (eval reg memory progtree stdin nextblock)))
-                  (t
-                    (do
-                      (<- (src) (reg-read* reg *src))
-                      (<- (v-src-rev) (invert-bits-rev* src nil))
-                      (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
-                      (<- (reg) (reg-write* reg x *dst))
-                      (eval reg memory progtree stdin nextblock)))))
+                (<- (v-src-rev) (invert-bits-rev* src nil))
+                (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
+                (<- (reg) (reg-write* reg x *dst))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-              (cond
-                (src-is-imm
+              (do
+                (let* *dst-cmp (cdr *dst))
+                (<- (dst-value) (reg-read* reg *dst-cmp))
+                (if (cmp dst-value src (car *dst))
                   (do
-                    (let* src *src)
-                    (do
-                      (let* *dst-cmp (cdr *dst))
-                      (<- (dst-value) (reg-read* reg *dst-cmp))
-                      (if (cmp dst-value src (car *dst))
-                        (do
-                          (<- (reg) (reg-write* reg int-one *dst-cmp))
-                          (eval reg memory progtree stdin nextblock))
-                        (do
-                          (<- (reg) (reg-write* reg int-zero *dst-cmp))
-                          (eval reg memory progtree stdin nextblock))))))
-                (t
+                    (<- (reg) (reg-write* reg int-one *dst-cmp))
+                    (eval reg memory progtree stdin nextblock))
                   (do
-                    (<- (src) (reg-read* reg *src))
-                    (do
-                      (let* *dst-cmp (cdr *dst))
-                      (<- (dst-value) (reg-read* reg *dst-cmp))
-                      (if (cmp dst-value src (car *dst))
-                        (do
-                          (<- (reg) (reg-write* reg int-one *dst-cmp))
-                          (eval reg memory progtree stdin nextblock))
-                        (do
-                          (<- (reg) (reg-write* reg int-zero *dst-cmp))
-                          (eval reg memory progtree stdin nextblock)))))))
-
-
+                    (<- (reg) (reg-write* reg int-zero *dst-cmp))
+                    (eval reg memory progtree stdin nextblock))))
+ 
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-              (cond
-                (src-is-imm
-                  (do
-                    (let* src *src)
-                    (<- (value) (lookup-memory* memory src))
-                    (<- (reg) (reg-write* reg value *dst))
-                    (eval reg memory progtree stdin nextblock)))
-                (t
-                  (do
-                    (<- (src) (reg-read* reg *src))
-                    (<- (value) (lookup-memory* memory src))
-                    (<- (reg) (reg-write* reg value *dst))
-                    (eval reg memory progtree stdin nextblock))))
+              (do
+                (let* src *src)
+                (<- (value) (lookup-memory* memory src))
+                (<- (reg) (reg-write* reg value *dst))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-              (cond
-                (src-is-imm
+              (do
+                (let* *jmp (car4-4 *dst))
+                (<- (dst-value) (reg-read* reg (car4-2 *dst)))
+                (if (car4-3 *dst)
                   (do
-                    (let* src *src)
-                    (do
-                      (let* *jmp (car4-4 *dst))
-                      (<- (dst-value) (reg-read* reg (car4-2 *dst)))
-                      (if (car4-3 *dst)
-                        (do
-                          (let* jmp *jmp)
-                          (if (cmp dst-value src (car4-1 *dst))
-                            (do
-                              (<- (reg) (reg-write* reg jmp reg-PC))
-                              (<- (nextblock) (lookup-progtree progtree jmp))
-                              (eval reg memory progtree stdin nextblock))
-                            (do
-                              (eval reg memory progtree stdin nextblock))))
-                        (do
-                          (<- (jmp) (reg-read* reg *jmp))
-                          (if (cmp dst-value src (car4-1 *dst))
-                            (do
-                              (<- (reg) (reg-write* reg jmp reg-PC))
-                              (<- (nextblock) (lookup-progtree progtree jmp))
-                              (eval reg memory progtree stdin nextblock))
-                            (do
-                              (eval reg memory progtree stdin nextblock))))))))
-                (t
+                    (let* jmp *jmp)
+                    (if (cmp dst-value src (car4-1 *dst))
+                      (do
+                        (<- (reg) (reg-write* reg jmp reg-PC))
+                        (<- (nextblock) (lookup-progtree progtree jmp))
+                        (eval reg memory progtree stdin nextblock))
+                      (do
+                        (eval reg memory progtree stdin nextblock))))
                   (do
-                    (<- (src) (reg-read* reg *src))
-                    (do
-                      (let* *jmp (car4-4 *dst))
-                      (<- (dst-value) (reg-read* reg (car4-2 *dst)))
-                      (if (car4-3 *dst)
-                        (do
-                          (let* jmp *jmp)
-                          (if (cmp dst-value src (car4-1 *dst))
-                            (do
-                              (<- (reg) (reg-write* reg jmp reg-PC))
-                              (<- (nextblock) (lookup-progtree progtree jmp))
-                              (eval reg memory progtree stdin nextblock))
-                            (do
-                              (eval reg memory progtree stdin nextblock))))
-                        (do
-                          (<- (jmp) (reg-read* reg *jmp))
-                          (if (cmp dst-value src (car4-1 *dst))
-                            (do
-                              (<- (reg) (reg-write* reg jmp reg-PC))
-                              (<- (nextblock) (lookup-progtree progtree jmp))
-                              (eval reg memory progtree stdin nextblock))
-                            (do
-                              (eval reg memory progtree stdin nextblock)))))))))
-
+                    (<- (jmp) (reg-read* reg *jmp))
+                    (if (cmp dst-value src (car4-1 *dst))
+                      (do
+                        (<- (reg) (reg-write* reg jmp reg-PC))
+                        (<- (nextblock) (lookup-progtree progtree jmp))
+                        (eval reg memory progtree stdin nextblock))
+                      (do
+                        (eval reg memory progtree stdin nextblock))))))
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-              (cond
-                (src-is-imm
-                  (do
-                    (let* src *src)
-                    (<- (reg) (reg-write* reg src reg-PC))
-                    (<- (nextblock) (lookup-progtree progtree src))
-                    (eval reg memory progtree stdin nextblock)))
-                (t
-                  (do
-                    (<- (src) (reg-read* reg *src))
-                    (<- (reg) (reg-write* reg src reg-PC))
-                    (<- (nextblock) (lookup-progtree progtree src))
-                    (eval reg memory progtree stdin nextblock))))
+              (do
+                (<- (reg) (reg-write* reg src reg-PC))
+                (<- (nextblock) (lookup-progtree progtree src))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-              (cond
-                (src-is-imm
-                  (do
-                    (let* src *src)
-                    (<- (reg) (reg-write* reg src *dst))
-                    (eval reg memory progtree stdin nextblock)))
-                (t
-                  (do
-                    (<- (src) (reg-read* reg *src))
-                    (<- (reg) (reg-write* reg src *dst))
-                    (eval reg memory progtree stdin nextblock))))
-              ;; (do
-              ;;   (<- (reg) (reg-write* reg src *dst))
-              ;;   (eval reg memory progtree stdin nextblock))
+              (do
+                (<- (reg) (reg-write* reg src *dst))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-store ====
               ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
               ;; Note that the destination is stored in the variable *src
-              (cond
-                (src-is-imm
-                  (do
-                    (let* src *src)
-                    (<- (value) (reg-read* reg *dst))
-                    (<- (memory) (memory-write* memory src value))
-                    (eval reg memory progtree stdin nextblock)))
-                (t
-                  (do
-                    (<- (src) (reg-read* reg *src))
-                    (<- (value) (reg-read* reg *dst))
-                    (<- (memory) (memory-write* memory src value))
-                    (eval reg memory progtree stdin nextblock))))
+              (do
+                (<- (value) (reg-read* reg *dst))
+                (<- (memory) (memory-write* memory src value))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-              (cond
-                (src-is-imm
-                  (do
-                    (let* src *src)
-                    (<- (v-dst) (reg-read* reg *dst))
-                    (<- (v-dst-rev) (reverse* v-dst))
-                    (<- (v-src-rev) (reverse* src))
-                    (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
-                    (<- (reg) (reg-write* reg x *dst))
-                    (eval reg memory progtree stdin nextblock)))
-                (t
-                  (do
-                    (<- (src) (reg-read* reg *src))
-                    (<- (v-dst) (reg-read* reg *dst))
-                    (<- (v-dst-rev) (reverse* v-dst))
-                    (<- (v-src-rev) (reverse* src))
-                    (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
-                    (<- (reg) (reg-write* reg x *dst))
-                    (eval reg memory progtree stdin nextblock)))))))))
+              (do
+                (<- (v-dst) (reg-read* reg *dst))
+                (<- (v-dst-rev) (reverse* v-dst))
+                (<- (v-src-rev) (reverse* src))
+                (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
+                (<- (reg) (reg-write* reg x *dst))
+                (eval reg memory progtree stdin nextblock)))))))
 
 
 (defun-lazy main (memtree progtree-cont stdin)
