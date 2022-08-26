@@ -316,7 +316,7 @@
       (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
       (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t n))))))))))))))))
       nil))
-    (<- (gen) (listint-to-gen-rev* rev-gen nil))
+    (<- (gen) (reverse* rev-gen))
     (cont gen)))
 
 (defrec-lazy gen2list (gen)
