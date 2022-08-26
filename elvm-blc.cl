@@ -27,15 +27,6 @@
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defrec-lazy lookup-tree (progtree address)
-  (cond
-    ((isnil progtree)
-      int-zero)
-    ((isnil address)
-      progtree)
-    (t
-      (lookup-tree (progtree (car address)) (cdr address)))))
-
 (defrec-lazy lookup-memory* (progtree address cont)
   (cond
     ((isnil progtree)
@@ -58,20 +49,6 @@
         (lookup-progtree (progtree t) (cdr address) cont)
         (lookup-progtree (progtree nil) (cdr address) cont)))))
 
-(defrec-lazy memory-write (memory address value)
-  (let ((next (lambda (x) (memory-write x (cdr address) value))))
-    (cond
-      ((isnil address)
-        value)
-      ((isnil memory)
-        ((car address)
-          (cons (next nil) nil)
-          (cons nil (next nil))))
-      (t
-        ((car address)
-          (cons (next (car memory)) (cdr memory))
-          (cons (car memory) (next (cdr memory))))))))
-
 (defrec-lazy memory-write* (memory address value cont)
   (cond
     ((isnil address)
@@ -92,22 +69,6 @@
           (do
             (<- (tree) (memory-write* (cdr memory) (cdr address) value))
             (cont (cons (car memory) tree))))))))
-
-
-;; (defrec-lazy list2tree (memlist depth decorator)
-;;   (cond
-;;     ((isnil memlist)
-;;       (cons nil nil))
-;;     ((isnil depth)
-;;       (cons (decorator memlist) (cdr memlist)))
-;;     (t
-;;       (let ((rightstate (list2tree memlist (cdr depth) decorator))
-;;             (righttree (car rightstate))
-;;             (right-restmemlist (cdr rightstate))
-;;             (leftstate (list2tree right-restmemlist (cdr depth) decorator))
-;;             (lefttree (car leftstate))
-;;             (left-restmemlist (cdr leftstate)))
-;;         (cons (cons lefttree righttree) left-restmemlist)))))
 
 (defrec-lazy reverse** (l curlist cont)
   (if (isnil l)
@@ -187,13 +148,6 @@
 (def-lazy reg-BP (list t nil t))
 (def-lazy reg-PC (list nil t t))
 
-
-(defun-lazy reg-read (reg regptr)
-  (lookup-tree reg
-  regptr
-  ;; (regptr2regaddr regptr)
-  ))
-
 (defun-lazy reg-read* (reg regptr cont)
   (do
     (<- (value) (lookup-memory* reg regptr))
@@ -234,27 +188,6 @@
 ;;================================================================
 ;; Arithmetic
 ;;================================================================
-;; (defrec-lazy add-carry (n m carry invert)
-;;   (cond ((isnil n)
-;;           nil)
-;;         (t
-;;           (let ((next (lambda (x y) (cons x (add-carry (cdr n) (cdr m) y invert))))
-;;                 (diff (next (not carry) carry)))
-;;             (if (xor invert (car m))
-;;               (if (car n)
-;;                 (next carry t)
-;;                 diff)
-;;               (if (car n)
-;;                 diff
-;;                 (next carry nil)))))))
-
-;; (defmacro-lazy add (n m)
-;;   `(add-carry ,n ,m nil nil))
-
-;; (defmacro-lazy sub (n m)
-;;   `(add-carry ,n ,m t t))
-
-
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
 (defun-lazy cmpret-gt (r1 r2 r3) r3)
@@ -350,14 +283,7 @@
         (t
           ;; Prevent frequently used functions from being inlined every time
 
-          (do   (let* lookup-tree lookup-tree)
-                (let* memory-write memory-write)
-                (let* reverse-helper reverse-helper)
-                (let* expand-prog-at (lambda (pc) (lookup-progtree progtree pc)))
-                ;; (powerlist powerlist)
-                ;; (add-carry add-carry)
-                (let* cmp cmp)
-                (let* reg-read reg-read)
+          (do   (let* cmp cmp)
                 (let* curinst (car curblock))
                 (let* *src (car4-3 curinst))
                 (let* src-is-imm (car4-2 curinst))
@@ -471,16 +397,8 @@
                     (<- (reg) (reg-write* reg value *dst))
                     (eval reg memory progtree stdin nextblock))))
 
-              ;; (do
-              ;;   (<- (value) (lookup-memory* memory src))
-              ;;   (<- (reg) (reg-write* reg value *dst))
-              ;;   (eval reg memory progtree stdin nextblock))
-
               ;; ==== inst-jumpcmp ====
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
-
-              ;; TODO: rewrite PC on jump
-              ;; TODO: do not use expand-prog-at
               (cond
                 (src-is-imm
                   (do
