@@ -43,7 +43,9 @@
     ((isnil address)
       (cont progtree))
     (t
-      (lookup-memory* (progtree (car address)) (cdr address) cont))))
+      (if (car address)
+        (lookup-memory* (progtree t) (cdr address) cont)
+        (lookup-memory* (progtree nil) (cdr address) cont)))))
 
 (defrec-lazy lookup-progtree (progtree address cont)
   (cond
@@ -122,23 +124,23 @@
     (t
       (if (not (xor (car pc) carry))
         (do
-          (let* curbit t)
+          ;; (let* curbit t)
           (if (or (car pc) carry)
             (do
-              (let* nextcarry t)
-              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))
+              ;; (let* nextcarry t)
+              (increment-pc-reverse (cdr pc) (cons t curlist) t cont))
             (do
-              (let* nextcarry nil)
-              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))))
+              ;; (let* nextcarry nil)
+              (increment-pc-reverse (cdr pc) (cons t curlist) nil cont))))
         (do
-          (let* curbit nil)
+          ;; (let* curbit nil)
           (if (or (car pc) carry)
             (do
-              (let* nextcarry t)
-              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))
+              ;; (let* nextcarry t)
+              (increment-pc-reverse (cdr pc) (cons nil curlist) t cont))
             (do
-              (let* nextcarry nil)
-              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))))))))
+              ;; (let* nextcarry nil)
+              (increment-pc-reverse (cdr pc) (cons nil curlist) nil cont))))))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
@@ -468,13 +470,14 @@
                 ;; exit
                 SYS-STRING-TERM
                 ;; getc
-                (cond ((isnil stdin)
-                        (eval-reg-write int-zero *src))
-                      (t
-                        (do
-                          (<- (c) (8-to-24-bit* (car stdin)))
-                          (<- (reg) (reg-write* reg c *src))
-                          (eval reg memory progtree (cdr stdin) nextblock))))
+                (cons "G"
+                  (cond ((isnil stdin)
+                          (eval-reg-write int-zero *src))
+                        (t
+                          (do
+                            (<- (c) (8-to-24-bit* (car stdin)))
+                            (<- (reg) (reg-write* reg c *src))
+                            (eval reg memory progtree (cdr stdin) nextblock)))))
                 ;; putc
                 (cons "C" (do
                   (<- (c) (24-to-8-bit* src))
@@ -568,62 +571,7 @@
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           )
         (list
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
-          (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-add t int-one reg-A)
+          (cons4 inst-io-int nil reg-A io-int-getc)
           (cons4 inst-io-int nil reg-A io-int-putc)
           (cons4 inst-add t int-one reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
