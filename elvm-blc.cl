@@ -528,7 +528,9 @@
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-              (eval-reg-write src *dst)
+              (do
+                (<- (reg) (reg-write* reg src *dst))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-store ====
               ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -576,7 +578,8 @@
           ;; (cons4 inst-add t int-two reg-A)
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           (cons4 inst-io-int nil reg-A io-int-getc)
-          (cons4 inst-store t int-zero reg-A)
+          (cons4 inst-mov nil reg-A reg-C)
+          (cons4 inst-store t int-zero reg-C)
           )
         (list
           (cons4 inst-load t int-zero reg-B)
