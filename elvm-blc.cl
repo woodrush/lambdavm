@@ -49,9 +49,12 @@
         (<- (progtree-next*) ((cdr progtree*) (car address)))
         (lookup-progtree progtree-next* (cdr address) cont)))))
 
+
+(defmacro-lazy cons-cdr-only (x)
+  `(lambda (f) (f f ,x)))
+
 (defmacro-lazy new-bintree-node (a b)
-  `(cons
-    (lambda (x) x)
+  `(cons-cdr-only
     (lambda (x cont)
       (if x
         (cont ,a)
