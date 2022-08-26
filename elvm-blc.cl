@@ -532,7 +532,7 @@
                     (if (cmp dst-value src (car4-1 *dst))
                       (do
                         (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree src))
+                        (<- (nextblock) (lookup-progtree progtree jmp))
                         (cons "J" (eval reg memory progtree stdin nextblock)))
                       (do
                         (eval reg memory progtree stdin nextblock))))
@@ -541,7 +541,7 @@
                     (if (cmp dst-value src (car4-1 *dst))
                       (do
                         (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree src))
+                        (<- (nextblock) (lookup-progtree progtree jmp))
                         (cons "J" (eval reg memory progtree stdin nextblock)))
                       (do
                         (eval reg memory progtree stdin nextblock))))))
@@ -615,11 +615,11 @@
           (cons4 inst-sub t int-one reg-B)
           (cons4 inst-store t int-zero reg-B)
 
-          ;; (cons4 inst-mov nil reg-B reg-D)
+          (cons4 inst-mov nil reg-B reg-D)
           ;; (cons4 inst-cmp t int-one (cons cmp-gt reg-D))
-          ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-eq reg-D t int-one))
+          ;; (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
           
-          (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
+          (cons4 inst-jumpcmp t int-one (cons4 cmp-gt reg-B t int-one))
           )
 
 
