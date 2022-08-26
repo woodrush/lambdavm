@@ -118,10 +118,25 @@
     ((isnil pc)
       (cont curlist))
     (t
-      (do
-        (let* curbit (not (xor (car pc) carry)))
-        (let* nextcarry (or (car pc) carry))
-        (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont)))))
+      (if (not (xor (car pc) carry))
+        (do
+          (let* curbit t)
+          (if (or (car pc) carry)
+            (do
+              (let* nextcarry t)
+              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))
+            (do
+              (let* nextcarry nil)
+              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))))
+        (do
+          (let* curbit nil)
+          (if (or (car pc) carry)
+            (do
+              (let* nextcarry t)
+              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))
+            (do
+              (let* nextcarry nil)
+              (increment-pc-reverse (cdr pc) (cons curbit curlist) nextcarry cont))))))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
@@ -135,12 +150,31 @@
       (cont curlist))
     (t
       (do
-        (let* curbit (not (xor (not (car n)) (xor (not (car m)) (not carry)))))
-        (let* nextcarry (not (or
-                          (and (car n) carry)
-                          (and (car m) carry)
-                          (and (car n) (car m)))))
-        (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))
+        (if (xor (not (car n)) (xor (not (car m)) (not carry)))
+          (do
+            (let* curbit nil)
+            (if (or
+                  (and (car n) carry)
+                  (and (car m) carry)
+                  (and (car n) (car m)))
+              (do
+                (let* nextcarry t)
+                (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont))
+              (do
+                (let* nextcarry nil)
+                (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont))))
+          (do
+            (let* curbit t)
+            (if (or
+                  (and (car n) carry)
+                  (and (car m) carry)
+                  (and (car n) (car m)))
+              (do
+                (let* nextcarry t)
+                (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont))
+              (do
+                (let* nextcarry nil)
+                (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nextcarry cont)))))))))
 
 
 
@@ -501,11 +535,12 @@
               ;; ==== inst-add ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
 
-              ;; TODO: fix add from inc to add
               (do
-                (<- (x) (reg-read* reg *dst))
-                (<- (x-rev) (reverse* x))
-                (<- (x) (add-reverse* src x-rev nil t))
+                (<- (v-dst) (reg-read* reg *dst))
+                ;; (<- (v-dst-rev) (reverse* v-dst))
+                ;; (<- (v-src-rev) (reverse* src))
+                ;; (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
+                (<- (x) (increment-pc* v-dst))
                 (<- (reg) (reg-write* reg x *dst))
                 (eval reg memory progtree stdin nextblock))))))))
 
@@ -538,9 +573,12 @@
           ;; (cons4 inst-io-int nil reg-A io-int-putc)
           )
         (list
-          ;; (cons4 inst-add t int-two reg-A)
           (cons4 inst-io-int nil reg-A io-int-putc)
-          (cons4 inst-jmp t int-one nil) 
+          (cons4 inst-add t int-two reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          (cons4 inst-add t int-two reg-A)
+          (cons4 inst-io-int nil reg-A io-int-putc)
+          ;; (cons4 inst-jmp t int-one nil) 
           )      
       )
       nil) nil) nil) nil) nil) nil) nil)
