@@ -47,7 +47,7 @@
         (do
           (<- (car-address) ((cdr address) t))
           (<- (cdr-address) ((cdr address) nil))
-          (<- (next-memory) ((cdr memory) car-address))
+          (let* next-memory (memory car-address))
           (lookup-memory* next-memory cdr-address cont))))))
 
 (defun-lazy lookup-memory* (memory address cont)
@@ -79,17 +79,34 @@
       (do
         (<- (car-address) ((cdr address) t))
         (<- (cdr-address) ((cdr address) nil))
-        (<- (memory-orig memory-target) ((lambda (cont)
-          (if (isnil memory)
-            (cont nil nil)
-            (do
-              (<- (memory-orig) ((cdr memory) (not car-address)))
-              (<- (memory-target) ((cdr memory) car-address))
-              (cont memory-orig memory-target))))))
+        (let* memory-orig
+          (cond
+            ((isnil memory)
+              nil)
+            (car-address
+              (cdr memory))
+            (t
+              (car memory))))
+        (let* memory-target
+          (cond
+            ((isnil memory)
+              nil)
+            (car-address
+              (car memory))
+            (t
+              (cdr memory))))
+        ;; (let* memory-target (if car-address (car memory) (cdr memory)))
+        ;; (<- (memory-orig memory-target) ((lambda (cont)
+        ;;   (if (isnil memory)
+        ;;     (cont nil nil)
+        ;;     (do
+        ;;       (<- (memory-orig) ((cdr memory) (not car-address)))
+        ;;       (<- (memory-target) ((cdr memory) car-address))
+        ;;       (cont memory-orig memory-target))))))
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
         (if car-address
-          (cont (new-bintree-node** memory-rewritten memory-orig))
-          (cont (new-bintree-node** memory-orig memory-rewritten)))))))
+          (cont (cons memory-rewritten memory-orig))
+          (cont (cons memory-orig memory-rewritten)))))))
 
 (defrec-lazy reverse-generator* (g curgen cont)
   (if (isnil g)
