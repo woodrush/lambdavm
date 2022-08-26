@@ -273,10 +273,7 @@
 
 (defun-lazy 8-to-24-bit* (n cont)
   (do
-    (<- (rev-gen) (listint-to-gen-rev*
-      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t
-      (cons t (cons t (cons t (cons t (cons t (cons t (cons t (cons t n))))))))))))))))
-      nil))
+    (<- (rev-gen) (listint-to-gen-rev* (16 (cons* t) n) nil))
     (<- (gen) (reverse* rev-gen))
     (cont gen)))
 
@@ -286,34 +283,10 @@
     (do
       (<- (car-gen) ((cdr gen) t))
       (<- (cdr-gen) ((cdr gen) nil))
-      (if car-gen
-        (cons t (gen2list cdr-gen))
-        (cons nil (gen2list cdr-gen))))))
+      (cons car-gen (gen2list cdr-gen)))))
 
 (defun-lazy 24-to-8-bit* (n cont)
-  (do
-    (let* ret (gen2list n))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-    (let* ret (cdr ret))
-
-    (cont ret)))
+  (cont (16 cdr* (gen2list n))))
 
 
 ;;================================================================
@@ -332,24 +305,17 @@
             (<- (pc) (reg-read* reg reg-PC))
             (<- (nextpc) (increment-pc* pc))
             (<- (nextblock) (lookup-progtree progtree nextpc))
-            (cond
-              ((isnil nextblock)
-                SYS-STRING-TERM)
-              (t
-                (do
-                  (<- (reg) (reg-write* reg nextpc reg-PC))
-                  (eval reg memory progtree stdin nextblock))))))
+            (if-then-return (isnil nextblock)
+              SYS-STRING-TERM)
+            (<- (reg) (reg-write* reg nextpc reg-PC))
+            (eval reg memory progtree stdin nextblock)))
         (t
-          ;; Prevent frequently used functions from being inlined every time
-
-          (do   
-                (let* cmp cmp)
-                (<- (curinst) ((cdr curblock) t))
-                (let* *src (car4-3 curinst))
-                (let* src-is-imm (car4-2 curinst))
-                (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
-                (let* *dst (car4-4 curinst))
-                (<- (nextblock) ((cdr curblock) nil))
+          (do
+            (<- (curinst) ((cdr curblock) t))
+            (let* *src (car4-3 curinst))
+            (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
+            (let* *dst (car4-4 curinst))
+            (<- (nextblock) ((cdr curblock) nil))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -362,24 +328,15 @@
                 ;; exit
                 SYS-STRING-TERM
                 ;; getc
-                ;; (do
-                ;;   (<- (c) ((lambda (cont)
-                ;;     (if (isnil stdin)
-                ;;       (cont int-zero)
-                ;;       (do
-                ;;         (<- (c) (8-to-24-bit* (car stdin)))
-                ;;         (cont c))))))
-                ;;   (<- (reg) (reg-write* reg c *src))
-                ;;   (eval reg memory progtree (cdr stdin) nextblock))
-                (cond ((isnil stdin)
-                        (do
-                          (<- (reg) (reg-write* reg int-zero *src))
-                          (eval reg memory progtree stdin nextblock)))
-                      (t
-                        (do
-                          (<- (c) (8-to-24-bit* (car stdin)))
-                          (<- (reg) (reg-write* reg c *src))
-                          (eval reg memory progtree (cdr stdin) nextblock))))
+                (do
+                  (<- (c stdin) ((lambda (cont)
+                    (if (isnil stdin)
+                      (cont int-zero stdin)
+                      (do
+                        (<- (c) (8-to-24-bit* (car stdin)))
+                        (cont c (cdr stdin)))))))
+                  (<- (reg) (reg-write* reg c *src))
+                  (eval reg memory progtree stdin nextblock))
                 ;; putc
                 (do
                   (<- (c) (24-to-8-bit* src))
@@ -463,6 +420,7 @@
 
 (defun-lazy main (memtree progtree-cont stdin)
   (do
+    ;; Share references to functions to prevent them from being inlined multiple times
     (let* int-zero int-zero)
     (let* int-one int-one)
     (let* lookup-memory* lookup-memory*)
@@ -472,6 +430,7 @@
     (let* add-reverse* add-reverse*)
     (let* reg-read* reg-read*)
     (let* reg-write* reg-write*)
+    (let* cmp cmp)
     (eval
       nil
       memtree
