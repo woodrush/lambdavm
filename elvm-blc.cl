@@ -362,6 +362,15 @@
                 ;; exit
                 SYS-STRING-TERM
                 ;; getc
+                ;; (do
+                ;;   (<- (c) ((lambda (cont)
+                ;;     (if (isnil stdin)
+                ;;       (cont int-zero)
+                ;;       (do
+                ;;         (<- (c) (8-to-24-bit* (car stdin)))
+                ;;         (cont c))))))
+                ;;   (<- (reg) (reg-write* reg c *src))
+                ;;   (eval reg memory progtree (cdr stdin) nextblock))
                 (cond ((isnil stdin)
                         (do
                           (<- (reg) (reg-write* reg int-zero *src))
@@ -391,13 +400,12 @@
               (do
                 (let* *dst-cmp (cdr *dst))
                 (<- (dst-value) (reg-read* reg *dst-cmp))
-                (if (cmp dst-value src (car *dst))
-                  (do
-                    (<- (reg) (reg-write* reg int-one *dst-cmp))
-                    (eval reg memory progtree stdin nextblock))
-                  (do
-                    (<- (reg) (reg-write* reg int-zero *dst-cmp))
-                    (eval reg memory progtree stdin nextblock))))
+                (<- (ret) ((lambda (cont)
+                  (if (cmp dst-value src (car *dst))
+                    (cont int-one)
+                    (cont int-zero)))))
+                (<- (reg) (reg-write* reg ret *dst-cmp))
+                (eval reg memory progtree stdin nextblock))
  
               ;; ==== inst-load ====
               ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
@@ -410,26 +418,16 @@
               ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
               (do
                 (let* *jmp (car4-4 *dst))
+                (<- (jmp) (lookup-src-if-imm reg (car4-3 *dst) *jmp))
                 (<- (dst-value) (reg-read* reg (car4-2 *dst)))
-                (if (car4-3 *dst)
-                  (do
-                    (let* jmp *jmp)
-                    (if (cmp dst-value src (car4-1 *dst))
-                      (do
-                        (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree jmp))
-                        (eval reg memory progtree stdin nextblock))
-                      (do
-                        (eval reg memory progtree stdin nextblock))))
-                  (do
-                    (<- (jmp) (reg-read* reg *jmp))
-                    (if (cmp dst-value src (car4-1 *dst))
-                      (do
-                        (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree jmp))
-                        (eval reg memory progtree stdin nextblock))
-                      (do
-                        (eval reg memory progtree stdin nextblock))))))
+                (<- (reg nextblock) ((lambda (cont)
+                  (if (cmp dst-value src (car4-1 *dst))
+                    (do
+                      (<- (reg) (reg-write* reg jmp reg-PC))
+                      (<- (nextblock) (lookup-progtree progtree jmp))
+                      (cont reg nextblock))
+                    (cont reg nextblock)))))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
