@@ -423,20 +423,18 @@
           (cons (car curlist) (flatten (cdr curlist) listlist)))))
 
 (defrec-lazy eval (reg memory progtree stdin curblock)
-  (cons "E" (cond ((isnil curblock)
-          (cons "N"
-            (do
-              (<- (pc) (reg-read* reg reg-PC))
-              (<- (nextpc) (increment-pc* pc))
-              (<- (nextblock) (lookup-progtree progtree nextpc))
-              (cond
-                ((isnil nextblock)
-                  (cons "T" SYS-STRING-TERM))
-                (t
-                  (cons "P"
-                    (do
-                      (<- (reg) (reg-write* reg nextpc reg-PC))
-                      (eval reg memory progtree stdin nextblock))))))))
+  (cond ((isnil curblock)
+          (do
+            (<- (pc) (reg-read* reg reg-PC))
+            (<- (nextpc) (increment-pc* pc))
+            (<- (nextblock) (lookup-progtree progtree nextpc))
+            (cond
+              ((isnil nextblock)
+                SYS-STRING-TERM)
+              (t
+                (do
+                  (<- (reg) (reg-write* reg nextpc reg-PC))
+                  (eval reg memory progtree stdin nextblock))))))
         (t
           ;; Prevent frequently used functions from being inlined every time
           (let ((lookup-tree lookup-tree)
@@ -469,18 +467,17 @@
                 ;; exit
                 SYS-STRING-TERM
                 ;; getc
-                (cons "G"
-                  (cond ((isnil stdin)
-                          (eval-reg-write int-zero *src))
-                        (t
-                          (do
-                            (<- (c) (8-to-24-bit* (car stdin)))
-                            (<- (reg) (reg-write* reg c *src))
-                            (eval reg memory progtree (cdr stdin) nextblock)))))
+                (cond ((isnil stdin)
+                        (eval-reg-write int-zero *src))
+                      (t
+                        (do
+                          (<- (c) (8-to-24-bit* (car stdin)))
+                          (<- (reg) (reg-write* reg c *src))
+                          (eval reg memory progtree (cdr stdin) nextblock))))
                 ;; putc
-                (cons "C" (do
+                (do
                   (<- (c) (24-to-8-bit* src))
-                  (cons c (eval reg memory progtree stdin nextblock)))))
+                  (cons c (eval reg memory progtree stdin nextblock))))
 
               ;; ==== inst-sub ====
               ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -533,7 +530,7 @@
                       (do
                         (<- (reg) (reg-write* reg jmp reg-PC))
                         (<- (nextblock) (lookup-progtree progtree jmp))
-                        (cons "J" (eval reg memory progtree stdin nextblock)))
+                        (eval reg memory progtree stdin nextblock))
                       (do
                         (eval reg memory progtree stdin nextblock))))
                   (do
@@ -542,7 +539,7 @@
                       (do
                         (<- (reg) (reg-write* reg jmp reg-PC))
                         (<- (nextblock) (lookup-progtree progtree jmp))
-                        (cons "J" (eval reg memory progtree stdin nextblock)))
+                        (eval reg memory progtree stdin nextblock))
                       (do
                         (eval reg memory progtree stdin nextblock))))))
 
@@ -552,7 +549,7 @@
               (do
                 (<- (reg) (reg-write* reg src reg-PC))
                 (<- (nextblock) (lookup-progtree progtree src))
-                (cons "J" (eval reg memory progtree stdin nextblock)))
+                (eval reg memory progtree stdin nextblock))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -576,7 +573,7 @@
                 (<- (v-src-rev) (reverse* src))
                 (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
                 (<- (reg) (reg-write* reg x *dst))
-                (eval reg memory progtree stdin nextblock))))))))
+                (eval reg memory progtree stdin nextblock)))))))
 
 
 (defun-lazy main (memtree progtree stdin)
