@@ -512,12 +512,29 @@
               
               ;; TODO: rewrite PC on jump
               ;; TODO: do not use expand-prog-at
-              (let ((*jmp (car4-4 *dst))
-                    (jmp (if (car4-3 *dst) *jmp (reg-read reg *jmp))))
-                (eval reg memory progtree stdin
-                  (if (cmp (reg-read reg (car4-2 *dst)) src (car4-1 *dst))
-                    (expand-prog-at jmp)
-                    nextblock)))
+              (do
+                (let* *jmp (car4-4 *dst))
+                (<- (dst-value) (reg-read* reg (car4-2 *dst)))
+                (if (car4-3 *dst)
+                  (do
+                    (let* jmp *jmp)
+                    (if (cmp dst-value src (car4-1 *dst))
+                      (do
+                        (<- (reg) (reg-write* reg jmp reg-PC))
+                        (<- (nextblock) (lookup-progtree progtree src))
+                        (cons "J" (eval reg memory progtree stdin nextblock)))
+                      (do
+                        (eval reg memory progtree stdin nextblock)))))
+                  (do
+                    (<- (jmp) (reg-read* reg *jmp))
+                    (if (cmp dst-value src (car4-1 *dst))
+                      (do
+                        (<- (reg) (reg-write* reg jmp reg-PC))
+                        (<- (nextblock) (lookup-progtree progtree src))
+                        (cons "J" (eval reg memory progtree stdin nextblock)))
+                      (do
+                        (eval reg memory progtree stdin nextblock)))))
+              
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -586,7 +603,9 @@
           (cons4 inst-io-int nil reg-B io-int-putc)
           (cons4 inst-sub t int-one reg-B)
           (cons4 inst-store t int-zero reg-B)
-          (cons4 inst-jmp t int-one nil)
+
+          ;; (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
+          (cons4 inst-jumpcmp t int-one (cons4 cmp-gt reg-A t int-one))
           )      
       )
       nil) nil) nil) nil) nil) nil) nil)
