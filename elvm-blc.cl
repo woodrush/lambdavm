@@ -41,7 +41,7 @@
 (defrec-lazy lookup-progtree (progtree address cont)
   (cond
     ((isnil progtree)
-      (cont progtree))
+      (cont nil))
     ((isnil address)
       (cont progtree))
     (t
@@ -117,23 +117,23 @@
       (do
         (if (xor (not (car n)) (xor (not (car m)) (not carry)))
           (do
-            (let* curbit nil)
+            ;; (let* curbit nil)
             (if (or
                   (and (car n) carry)
                   (and (car m) carry)
                   (and (car n) (car m)))
               ;; nextcarry
-              (add-reverse* (cdr n) (cdr m) (cons curbit curlist) t cont)
-              (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nil cont)))
+              (add-reverse* (cdr n) (cdr m) (cons nil curlist) t cont)
+              (add-reverse* (cdr n) (cdr m) (cons nil curlist) nil cont)))
           (do
-            (let* curbit t)
+            ;; (let* curbit t)
             (if (or
                   (and (car n) carry)
                   (and (car m) carry)
                   (and (car n) (car m)))
               ;; nextcarry
-              (add-reverse* (cdr n) (cdr m) (cons curbit curlist) t cont)
-              (add-reverse* (cdr n) (cdr m) (cons curbit curlist) nil cont))))))))
+              (add-reverse* (cdr n) (cdr m) (cons t curlist) t cont)
+              (add-reverse* (cdr n) (cdr m) (cons t curlist) nil cont))))))))
 
 
 
