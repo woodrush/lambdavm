@@ -335,7 +335,7 @@
 ;; Evaluation
 ;;================================================================
 (defrec-lazy eval (reg memory progtree stdin curblock)
-  (cons "E" (cond ((isnil curblock)
+    (cond ((isnil curblock)
           (do
             (<- (pc) (reg-read* reg reg-PC))
             (<- (nextpc) (increment-pc* pc))
@@ -384,7 +384,7 @@
                 (cond ((isnil stdin)
                         (do
                           (<- (reg) (reg-write* reg int-zero *src))
-                          (eval reg memory progtree (cdr stdin) nextblock)))
+                          (eval reg memory progtree stdin nextblock)))
                       (t
                         (do
                           (<- (c) (8-to-24-bit* (car stdin)))
@@ -426,16 +426,33 @@
 
               ;; ==== inst-cmp ====
               ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-              (do
-                (let* *dst-cmp (cdr *dst))
-                (<- (dst-value) (reg-read* reg *dst-cmp))
-                (if (cmp dst-value src (car *dst))
+              (cond
+                (src-is-imm
                   (do
-                    (<- (reg) (reg-write* reg int-one *dst-cmp))
-                    (eval reg memory progtree stdin nextblock))
+                    (let* src *src)
+                    (do
+                      (let* *dst-cmp (cdr *dst))
+                      (<- (dst-value) (reg-read* reg *dst-cmp))
+                      (if (cmp dst-value src (car *dst))
+                        (do
+                          (<- (reg) (reg-write* reg int-one *dst-cmp))
+                          (eval reg memory progtree stdin nextblock))
+                        (do
+                          (<- (reg) (reg-write* reg int-zero *dst-cmp))
+                          (eval reg memory progtree stdin nextblock))))))
+                (t
                   (do
-                    (<- (reg) (reg-write* reg int-zero *dst-cmp))
-                    (eval reg memory progtree stdin nextblock))))
+                    (<- (src) (reg-read* reg *src))
+                    (do
+                      (let* *dst-cmp (cdr *dst))
+                      (<- (dst-value) (reg-read* reg *dst-cmp))
+                      (if (cmp dst-value src (car *dst))
+                        (do
+                          (<- (reg) (reg-write* reg int-one *dst-cmp))
+                          (eval reg memory progtree stdin nextblock))
+                        (do
+                          (<- (reg) (reg-write* reg int-zero *dst-cmp))
+                          (eval reg memory progtree stdin nextblock)))))))
 
 
               ;; ==== inst-load ====
@@ -464,33 +481,62 @@
 
               ;; TODO: rewrite PC on jump
               ;; TODO: do not use expand-prog-at
-              (do
-                (let* *jmp (car4-4 *dst))
-                (<- (dst-value) (reg-read* reg (car4-2 *dst)))
-                (if (car4-3 *dst)
+              (cond
+                (src-is-imm
                   (do
-                    (let* jmp *jmp)
-                    (if (cmp dst-value src (car4-1 *dst))
-                      (do
-                        (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree jmp))
-                        (eval reg memory progtree stdin nextblock))
-                      (do
-                        (eval reg memory progtree stdin nextblock))))
+                    (let* src *src)
+                    (do
+                      (let* *jmp (car4-4 *dst))
+                      (<- (dst-value) (reg-read* reg (car4-2 *dst)))
+                      (if (car4-3 *dst)
+                        (do
+                          (let* jmp *jmp)
+                          (if (cmp dst-value src (car4-1 *dst))
+                            (do
+                              (<- (reg) (reg-write* reg jmp reg-PC))
+                              (<- (nextblock) (lookup-progtree progtree jmp))
+                              (eval reg memory progtree stdin nextblock))
+                            (do
+                              (eval reg memory progtree stdin nextblock))))
+                        (do
+                          (<- (jmp) (reg-read* reg *jmp))
+                          (if (cmp dst-value src (car4-1 *dst))
+                            (do
+                              (<- (reg) (reg-write* reg jmp reg-PC))
+                              (<- (nextblock) (lookup-progtree progtree jmp))
+                              (eval reg memory progtree stdin nextblock))
+                            (do
+                              (eval reg memory progtree stdin nextblock))))))))
+                (t
                   (do
-                    (<- (jmp) (reg-read* reg *jmp))
-                    (if (cmp dst-value src (car4-1 *dst))
-                      (do
-                        (<- (reg) (reg-write* reg jmp reg-PC))
-                        (<- (nextblock) (lookup-progtree progtree jmp))
-                        (eval reg memory progtree stdin nextblock))
-                      (do
-                        (eval reg memory progtree stdin nextblock))))))
+                    (<- (src) (reg-read* reg *src))
+                    (do
+                      (let* *jmp (car4-4 *dst))
+                      (<- (dst-value) (reg-read* reg (car4-2 *dst)))
+                      (if (car4-3 *dst)
+                        (do
+                          (let* jmp *jmp)
+                          (if (cmp dst-value src (car4-1 *dst))
+                            (do
+                              (<- (reg) (reg-write* reg jmp reg-PC))
+                              (<- (nextblock) (lookup-progtree progtree jmp))
+                              (eval reg memory progtree stdin nextblock))
+                            (do
+                              (eval reg memory progtree stdin nextblock))))
+                        (do
+                          (<- (jmp) (reg-read* reg *jmp))
+                          (if (cmp dst-value src (car4-1 *dst))
+                            (do
+                              (<- (reg) (reg-write* reg jmp reg-PC))
+                              (<- (nextblock) (lookup-progtree progtree jmp))
+                              (eval reg memory progtree stdin nextblock))
+                            (do
+                              (eval reg memory progtree stdin nextblock)))))))))
 
 
               ;; ==== inst-jmp ====
               ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-              (cons "J" (cond
+              (cond
                 (src-is-imm
                   (do
                     (let* src *src)
@@ -502,7 +548,7 @@
                     (<- (src) (reg-read* reg *src))
                     (<- (reg) (reg-write* reg src reg-PC))
                     (<- (nextblock) (lookup-progtree progtree src))
-                    (eval reg memory progtree stdin nextblock)))))
+                    (eval reg memory progtree stdin nextblock))))
 
               ;; ==== inst-mov ====
               ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -516,7 +562,7 @@
                   (do
                     (<- (src) (reg-read* reg *src))
                     (<- (reg) (reg-write* reg src *dst))
-                (eval reg memory progtree stdin nextblock))))
+                    (eval reg memory progtree stdin nextblock))))
               ;; (do
               ;;   (<- (reg) (reg-write* reg src *dst))
               ;;   (eval reg memory progtree stdin nextblock))
@@ -573,7 +619,7 @@
               ;;   (<- (reg) (reg-write* reg x *dst))
               ;;   (eval reg memory progtree stdin nextblock))
 
-                ))))))
+                )))))
 
 
 (defun-lazy main (memtree progtree stdin)
