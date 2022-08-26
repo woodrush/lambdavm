@@ -31,51 +31,47 @@
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defrec-lazy lookup-memory* (memory address cont)
-  (cond
-    ((isnil memory)
-      (cont int-zero))
-    ((isnil address)
-      (cont memory))
-    (t
-      (do
-        (<- (car-address) ((cdr address) t))
-        (<- (cdr-address) ((cdr address) nil))
-        (<- (next-memory) ((cdr memory) car-address))
-        (lookup-memory* next-memory cdr-address cont)))))
+(defun-lazy eval-bool (expr cont)
+  (if expr
+    (cont t)
+    (cont nil)))
 
-(defrec-lazy lookup-progtree (progtree* address cont)
-  (cond
-    ((isnil progtree*)
-      (cont nil))
-    ((isnil address)
-      (cont progtree*))
-    (t
-      (do
-        (<- (car-address) ((cdr address) t))
-        (<- (cdr-address) ((cdr address) nil))
-        (<- (progtree-next*) ((cdr progtree*) car-address))
-        (lookup-progtree progtree-next* cdr-address cont)))))
+(defun-lazy lookup-tree-template (default)
+  (letrec-lazy lookup-memory* (memory address cont)
+    (cond
+      ((isnil memory)
+        (cont default))
+      ((isnil address)
+        (cont memory))
+      (t
+        (do
+          (<- (car-address) ((cdr address) t))
+          (<- (cdr-address) ((cdr address) nil))
+          (<- (next-memory) ((cdr memory) car-address))
+          (lookup-memory* next-memory cdr-address cont))))))
+
+(defun-lazy lookup-memory* (memory address cont)
+  ((lookup-tree-template int-zero) memory address cont))
+
+(defun-lazy lookup-progtree (progtree address cont)
+  ((lookup-tree-template nil) progtree address cont))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
     ((isnil address)
       (cont value))
-    ((isnil memory)
-      (do
-        (<- (car-address) ((cdr address) t))
-        (<- (cdr-address) ((cdr address) nil))
-        (<- (memory-rewritten) (memory-write* nil cdr-address value))
-        (if car-address
-          (cont (new-bintree-node** memory-rewritten nil))
-          (cont (new-bintree-node** nil memory-rewritten)))))
     (t
       (do
         (<- (car-address) ((cdr address) t))
         (<- (cdr-address) ((cdr address) nil))
-        (<- (memory-target) ((cdr memory) car-address))
+        (<- (memory-orig memory-target) ((lambda (cont)
+          (if (isnil memory)
+            (cont nil nil)
+            (do
+              (<- (memory-orig) ((cdr memory) (not car-address)))
+              (<- (memory-target) ((cdr memory) car-address))
+              (cont memory-orig memory-target))))))
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
-        (<- (memory-orig) ((cdr memory) (not car-address)))
         (if car-address
           (cont (new-bintree-node** memory-rewritten memory-orig))
           (cont (new-bintree-node** memory-orig memory-rewritten)))))))
@@ -86,9 +82,7 @@
     (do
       (<- (car-g) ((cdr g) t))
       (<- (cdr-g) ((cdr g) nil))
-      (if car-g
-        (reverse-generator* cdr-g (new-bintree-node** t curgen) cont)
-        (reverse-generator* cdr-g (new-bintree-node** nil curgen) cont)))))
+      (reverse-generator* cdr-g (new-bintree-node** car-g curgen) cont))))
 
 (defun-lazy reverse* (l cont)
   (reverse-generator* l nil cont))
@@ -102,25 +96,9 @@
       (do
         (<- (car-pc) ((cdr pc) t))
         (<- (cdr-pc) ((cdr pc) nil))
-        (if (not (xor car-pc carry))
-          (do
-            ;; (let* curbit t)
-            (if (or car-pc carry)
-              (do
-                ;; (let* nextcarry t)
-                (increment-pc-reverse cdr-pc (new-bintree-node t curlist) t cont))
-              (do
-                ;; (let* nextcarry nil)
-                (increment-pc-reverse cdr-pc (new-bintree-node t curlist) nil cont))))
-          (do
-            ;; (let* curbit nil)
-            (if (or car-pc carry)
-              (do
-                ;; (let* nextcarry t)
-                (increment-pc-reverse cdr-pc (new-bintree-node nil curlist) t cont))
-              (do
-                ;; (let* nextcarry nil)
-                (increment-pc-reverse cdr-pc (new-bintree-node nil curlist) nil cont)))))))))
+        (<- (curbit) (eval-bool (not (xor car-pc carry))))
+        (<- (nextcarry) (eval-bool (or car-pc carry)))
+        (increment-pc-reverse cdr-pc (new-bintree-node curbit curlist) nextcarry cont)))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
@@ -138,39 +116,18 @@
         (<- (cdr-n) ((cdr n) nil))
         (<- (car-m) ((cdr m) t))
         (<- (cdr-m) ((cdr m) nil))
-        (if (xor (not car-n) (xor (not car-m) (not carry)))
-          (do
-            ;; (let* curbit nil)
-            (if (or
-                  (and car-n carry)
-                  (and car-m carry)
-                  (and car-n car-m))
-              ;; nextcarry
-              (add-reverse* cdr-n cdr-m (new-bintree-node nil curlist) t cont)
-              (add-reverse* cdr-n cdr-m (new-bintree-node nil curlist) nil cont)))
-          (do
-            ;; (let* curbit t)
-            (if (or
-                  (and car-n carry)
-                  (and car-m carry)
-                  (and car-n car-m))
-              ;; nextcarry
-              (add-reverse* cdr-n cdr-m (new-bintree-node t curlist) t cont)
-              (add-reverse* cdr-n cdr-m (new-bintree-node t curlist) nil cont))))))))
+        (<- (curbit) (eval-bool (not (xor (not car-n) (xor (not car-m) (not carry))))))
+        (<- (nextcarry) (eval-bool (or
+                                    (and car-n carry)
+                                    (and car-m carry)
+                                    (and car-n car-m))))
+        (add-reverse* cdr-n cdr-m (new-bintree-node curbit curlist) nextcarry cont)))))
 
 
 
 ;;================================================================
 ;; Registers
 ;;================================================================
-;; (def-lazy reg-A  (new-bintree-node nil (new-bintree-node nil (new-bintree-node nil nil))))
-;; (def-lazy reg-B  (new-bintree-node t   (new-bintree-node nil (new-bintree-node nil nil))))
-;; (def-lazy reg-C  (new-bintree-node nil (new-bintree-node t   (new-bintree-node nil nil))))
-;; (def-lazy reg-D  (new-bintree-node t   (new-bintree-node t   (new-bintree-node nil nil))))
-;; (def-lazy reg-SP (new-bintree-node nil (new-bintree-node nil (new-bintree-node t   nil))))
-;; (def-lazy reg-BP (new-bintree-node t   (new-bintree-node nil (new-bintree-node t   nil))))
-;; (def-lazy reg-PC (new-bintree-node nil (new-bintree-node t   (new-bintree-node t   nil))))
-
 (def-lazy reg-A  (lambda (x) (x nil nil nil)))
 (def-lazy reg-B  (lambda (x) (x t   nil nil)))
 (def-lazy reg-C  (lambda (x) (x nil t   nil)))
@@ -267,18 +224,17 @@
       (do
         (<- (car-n) ((cdr n) t))
         (<- (cdr-n) ((cdr n) nil))
-        (if (not car-n)
-          (invert-bits-rev* cdr-n (new-bintree-node t curlist) cont)
-          (invert-bits-rev* cdr-n (new-bintree-node nil curlist) cont))))))
+        (<- (not-car-n) (eval-bool (not car-n)))
+        (invert-bits-rev* cdr-n (new-bintree-node not-car-n curlist) cont)))))
 
 (defrec-lazy listint-to-gen-rev* (l curgen cont)
   (cond
     ((isnil l)
       (cont curgen))
     (t
-      (if (car l)
-        (listint-to-gen-rev* (cdr l) (new-bintree-node t curgen) cont)
-        (listint-to-gen-rev* (cdr l) (new-bintree-node nil curgen) cont)))))
+      (do
+        (<- (car-l) (eval-bool (car l)))
+        (listint-to-gen-rev* (cdr l) (new-bintree-node car-l curgen) cont)))))
 
 (defun-lazy 8-to-24-bit* (n cont)
   (do
@@ -446,6 +402,7 @@
     (let* new-bintree-node** new-bintree-node**)
     (let* int-zero int-zero)
     (let* int-one int-one)
+    (let* lookup-tree-template lookup-tree-template)
     (let* lookup-memory* lookup-memory*)
     (let* lookup-progtree lookup-progtree)
     (let* memory-write* memory-write*)
