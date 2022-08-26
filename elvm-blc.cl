@@ -47,7 +47,13 @@
         (do
           (<- (car-address) ((cdr address) t))
           (<- (cdr-address) ((cdr address) nil))
-          (let* next-memory (memory car-address))
+          (<- (next-memory) ((lambda (cont)
+            (do
+              (<- (car-memory cdr-memory) (memory))
+              (if car-address
+                (cont car-memory)
+                (cont cdr-memory))))))
+          ;; (let* next-memory (memory car-address))
           (lookup-memory* next-memory cdr-address cont))))))
 
 (defun-lazy lookup-memory* (memory address cont)
