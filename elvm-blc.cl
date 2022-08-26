@@ -501,7 +501,7 @@
               ;;     *dst-cmp))
               (do
                 (let* *dst-cmp (cdr *dst))
-                (<- (dst-value (reg-read* reg *dst-cmp)))
+                (<- (dst-value) (reg-read* reg *dst-cmp))
                 (if (cmp dst-value src (car *dst))
                   (do
                     (<- (reg) (reg-write* reg int-one *dst-cmp))
@@ -616,7 +616,7 @@
           (cons4 inst-store t int-zero reg-B)
 
           (cons4 inst-mov nil reg-B reg-D)
-          ;; (cons4 inst-cmp t int-one (cons cmp-gt reg-D))
+          (cons4 inst-cmp t int-one (cons cmp-eq reg-D))
           (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
           
           ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
