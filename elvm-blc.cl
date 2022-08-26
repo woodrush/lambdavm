@@ -26,21 +26,6 @@
       (2 (new-bintree-node** t)
         (new-bintree-node** t
           (new-bintree-node** nil nil))))))
-;; (def-lazy int-zero
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t nil)))))))))))))))))))))))))
-
-;; (def-lazy int-one
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t 
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node t   
-;;   (new-bintree-node t (new-bintree-node t (new-bintree-node t (new-bintree-node nil nil)))))))))))))))))))))))))
 
 
 ;;================================================================
@@ -82,8 +67,8 @@
         (<- (cdr-address) ((cdr address) nil))
         (<- (memory-rewritten) (memory-write* nil cdr-address value))
         (if car-address
-          (cont (new-bintree-node memory-rewritten nil))
-          (cont (new-bintree-node nil memory-rewritten)))))
+          (cont (new-bintree-node** memory-rewritten nil))
+          (cont (new-bintree-node** nil memory-rewritten)))))
     (t
       (do
         (<- (car-address) ((cdr address) t))
@@ -92,8 +77,8 @@
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
         (<- (memory-orig) ((cdr memory) (not car-address)))
         (if car-address
-          (cont (new-bintree-node memory-rewritten memory-orig))
-          (cont (new-bintree-node memory-orig memory-rewritten)))))))
+          (cont (new-bintree-node** memory-rewritten memory-orig))
+          (cont (new-bintree-node** memory-orig memory-rewritten)))))))
 
 (defrec-lazy reverse-generator* (g curgen cont)
   (if (isnil g)
@@ -102,8 +87,8 @@
       (<- (car-g) ((cdr g) t))
       (<- (cdr-g) ((cdr g) nil))
       (if car-g
-        (reverse-generator* cdr-g (new-bintree-node t curgen) cont)
-        (reverse-generator* cdr-g (new-bintree-node nil curgen) cont)))))
+        (reverse-generator* cdr-g (new-bintree-node** t curgen) cont)
+        (reverse-generator* cdr-g (new-bintree-node** nil curgen) cont)))))
 
 (defun-lazy reverse* (l cont)
   (reverse-generator* l nil cont))
@@ -178,22 +163,33 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
-(def-lazy reg-A  (new-bintree-node nil (new-bintree-node nil (new-bintree-node nil nil))))
-(def-lazy reg-B  (new-bintree-node t   (new-bintree-node nil (new-bintree-node nil nil))))
-(def-lazy reg-C  (new-bintree-node nil (new-bintree-node t   (new-bintree-node nil nil))))
-(def-lazy reg-D  (new-bintree-node t   (new-bintree-node t   (new-bintree-node nil nil))))
-(def-lazy reg-SP (new-bintree-node nil (new-bintree-node nil (new-bintree-node t   nil))))
-(def-lazy reg-BP (new-bintree-node t   (new-bintree-node nil (new-bintree-node t   nil))))
-(def-lazy reg-PC (new-bintree-node nil (new-bintree-node t   (new-bintree-node t   nil))))
+;; (def-lazy reg-A  (new-bintree-node nil (new-bintree-node nil (new-bintree-node nil nil))))
+;; (def-lazy reg-B  (new-bintree-node t   (new-bintree-node nil (new-bintree-node nil nil))))
+;; (def-lazy reg-C  (new-bintree-node nil (new-bintree-node t   (new-bintree-node nil nil))))
+;; (def-lazy reg-D  (new-bintree-node t   (new-bintree-node t   (new-bintree-node nil nil))))
+;; (def-lazy reg-SP (new-bintree-node nil (new-bintree-node nil (new-bintree-node t   nil))))
+;; (def-lazy reg-BP (new-bintree-node t   (new-bintree-node nil (new-bintree-node t   nil))))
+;; (def-lazy reg-PC (new-bintree-node nil (new-bintree-node t   (new-bintree-node t   nil))))
+
+(def-lazy reg-A  (lambda (x) (x nil nil nil)))
+(def-lazy reg-B  (lambda (x) (x t   nil nil)))
+(def-lazy reg-C  (lambda (x) (x nil t   nil)))
+(def-lazy reg-D  (lambda (x) (x t   t   nil)))
+(def-lazy reg-SP (lambda (x) (x nil nil t  )))
+(def-lazy reg-BP (lambda (x) (x t   nil t  )))
+(def-lazy reg-PC (lambda (x) (x nil t   t  )))
+
+(defun-lazy regcode-to-regptr (regcode)
+  (regcode (lambda (x y z) (new-bintree-node** x (new-bintree-node** y (new-bintree-node** z nil))))))
 
 (defun-lazy reg-read* (reg regptr cont)
   (do
-    (<- (value) (lookup-memory* reg regptr))
+    (<- (value) (lookup-memory* reg (regcode-to-regptr regptr)))
     (cont value)))
 
 (defun-lazy reg-write* (reg value regptr cont)
   (do
-    (<- (reg) (memory-write* reg regptr value))
+    (<- (reg) (memory-write* reg (regcode-to-regptr regptr) value))
     (cont reg)))
 
 
@@ -434,6 +430,8 @@
 (defun-lazy main (memtree progtree-cont stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
+    (let* cmp cmp)
+    (let* add-reverse* add-reverse*)
     (let* new-bintree-node** new-bintree-node**)
     (let* int-zero int-zero)
     (let* int-one int-one)
@@ -441,10 +439,8 @@
     (let* lookup-progtree lookup-progtree)
     (let* memory-write* memory-write*)
     (let* reverse* reverse*)
-    (let* add-reverse* add-reverse*)
     (let* reg-read* reg-read*)
     (let* reg-write* reg-write*)
-    (let* cmp cmp)
     (eval
       nil
       memtree
