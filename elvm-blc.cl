@@ -35,8 +35,8 @@
       (cont progtree))
     (t
       (do
-        (<- (memtree-next*) ((cdr progtree) (car address)))
-        (lookup-memory* memtree-next* (cdr address) cont)))))
+        (<- (next-memory) ((cdr progtree) (car address)))
+        (lookup-memory* next-memory (cdr address) cont)))))
 
 (defrec-lazy lookup-progtree (progtree* address cont)
   (cond
@@ -49,7 +49,7 @@
         (<- (progtree-next*) ((cdr progtree*) (car address)))
         (lookup-progtree progtree-next* (cdr address) cont)))))
 
-(defmacro-lazy new-bintree-cont-node (a b)
+(defmacro-lazy new-bintree-node (a b)
   `(cons
     (lambda (x) x)
     (lambda (x cont)
@@ -63,19 +63,18 @@
       (cont value))
     ((isnil memory)
       (do
-        (<- (tree-target) (memory (car address)))
-        (<- (tree-rewritten) (memory-write* tree-target (cdr address) value))
+        (<- (memory-rewritten) (memory-write* nil (cdr address) value))
         (if (car address)
-          (cont (new-bintree-cont-node tree-rewritten nil))
-          (cont (new-bintree-cont-node nil tree-rewritten)))))
+          (cont (new-bintree-node memory-rewritten nil))
+          (cont (new-bintree-node nil memory-rewritten)))))
     (t
       (do
-        (<- (tree-target) (memory (car address)))
-        (<- (tree-rewritten) (memory-write* tree-target (cdr address) value))
-        (<- (tree-orig) (memory (not (car address))))
+        (<- (memory-target) ((cdr memory) (car address)))
+        (<- (memory-rewritten) (memory-write* memory-target (cdr address) value))
+        (<- (memory-orig) ((cdr memory) (not (car address))))
         (if (car address)
-          (cont (new-bintree-cont-node tree-rewritten tree-orig))
-          (cont (new-bintree-cont-node tree-orig tree-rewritten)))))))
+          (cont (new-bintree-node memory-rewritten memory-orig))
+          (cont (new-bintree-node memory-orig memory-rewritten)))))))
 
 (defrec-lazy reverse** (l curlist cont)
   (if (isnil l)
