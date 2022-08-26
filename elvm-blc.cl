@@ -128,6 +128,14 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
+;; (def-lazy reg-A  (lambda (x) (x nil nil nil)))
+;; (def-lazy reg-B  (lambda (x) (x t   nil nil)))
+;; (def-lazy reg-C  (lambda (x) (x nil t   nil)))
+;; (def-lazy reg-D  (lambda (x) (x t   t   nil)))
+;; (def-lazy reg-SP (lambda (x) (x nil nil t  )))
+;; (def-lazy reg-BP (lambda (x) (x t   nil t  )))
+;; (def-lazy reg-PC (lambda (x) (x nil t   t  )))
+
 (def-lazy reg-A  (lambda (x) (x nil nil nil)))
 (def-lazy reg-B  (lambda (x) (x t   nil nil)))
 (def-lazy reg-C  (lambda (x) (x nil t   nil)))
@@ -148,32 +156,6 @@
   (do
     (<- (reg) (memory-write* reg (regcode-to-regptr regptr) value))
     (cont reg)))
-
-
-
-;;================================================================
-;; Instructions
-;;================================================================
-(defun-lazy inst-add     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i9)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8 i9) i8)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i7)
-(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9) i5)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8 i9) i4)
-(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i3)
-(defun-lazy inst-sub     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i2)
-(defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i1)
-
-(defun-lazy io-int-putc (x1 x2 x3) x3)
-(defun-lazy io-int-getc (x1 x2 x3) x2)
-(defun-lazy io-int-exit (x1 x2 x3) x1)
-
-(defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
-(defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
-(defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
-(defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
-(defmacro-lazy cons4 (x1 x2 x3 x4)
-  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
 
 
 ;;================================================================
@@ -277,25 +259,57 @@
         (eval reg memory progtree stdin nextblock)))
     (t
       (do
-        (<- (curinst) ((cdr curblock) t))
+        (<- (curinst nextblock) (curblock))
+        ;; (<- (curinst) ((cdr curblock) t))
         (<- (inst-type src-is-imm *src *dst) (curinst))
         ;; (let* *src (car4-3 curinst))
         ;; (<- (src) (lookup-src-if-imm reg (car4-2 curinst) *src))
         ;; (let* *dst (car4-4 curinst))
         (<- (src) (lookup-src-if-imm reg src-is-imm *src))
-        (<- (nextblock) ((cdr curblock) nil))
+        ;; (<- (nextblock) ((cdr curblock) nil))
         ;; Typematch on the current instruction's tag
-        (inst-type
-          ;; (car4-1 curinst)
-          io-int-case
-          sub-case
-          cmp-case
-          load-case
-          jumpcmp-case
-          jmp-case
-          mov-case
-          store-case
-          add-case)))))
+        **instruction-typematch**))))
+
+;;================================================================
+;; Instructions
+;;================================================================
+(defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8 i9) i1)
+(defun-lazy inst-sub     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i2)
+(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9) i3)
+(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i4)
+(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i5)
+(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8 i9) i6)
+(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8 i9) i7)
+(defun-lazy inst-add     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i8)
+(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8 i9) i9)
+
+(def-lazy **instruction-typematch**
+  (inst-type
+    io-int-case
+    sub-case
+    jumpcmp-case
+    cmp-case
+    jmp-case
+    load-case
+    store-case
+    add-case
+    mov-case
+    ))
+
+(defun-lazy io-int-putc (x1 x2 x3) x3)
+(defun-lazy io-int-getc (x1 x2 x3) x2)
+(defun-lazy io-int-exit (x1 x2 x3) x1)
+
+(defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
+(defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
+(defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
+(defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
+(defmacro-lazy cons4 (x1 x2 x3 x4)
+  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
+
+(defmacro-lazy cons4 (x1 x2 x3 x4)
+  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
+
 
 (def-lazy add-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -417,7 +431,7 @@
       memtree
       progtree-cont
       stdin
-      (new-bintree-node (cons4 inst-jmp t int-zero nil) nil))))
+      (list (cons4 inst-jmp t int-zero nil)))))
 
 (def-lazy SYS-STRING-TERM nil)
 
