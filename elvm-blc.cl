@@ -279,9 +279,9 @@
           (let ((ncar (car n))
                 (mcar (car m)))
             (cond ((and (not ncar) mcar)
-                    cmpret-lt)
-                  ((and ncar (not mcar))
                     cmpret-gt)
+                  ((and ncar (not mcar))
+                    cmpret-lt)
                   (t
                     (cmp* (cdr n) (cdr m))))))))
 
@@ -617,9 +617,9 @@
 
           (cons4 inst-mov nil reg-B reg-D)
           ;; (cons4 inst-cmp t int-one (cons cmp-gt reg-D))
-          ;; (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
+          (cons4 inst-jumpcmp nil reg-D (cons4 cmp-eq reg-D t int-one))
           
-          (cons4 inst-jumpcmp t int-one (cons4 cmp-gt reg-B t int-one))
+          ;; (cons4 inst-jumpcmp t int-one (cons4 cmp-lt reg-B t int-one))
           )
 
 
