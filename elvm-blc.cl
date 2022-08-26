@@ -293,7 +293,7 @@
           ;; Prevent frequently used functions from being inlined every time
 
           (do   (let* cmp cmp)
-                (let* curinst (car curblock))
+                (<- (curinst) ((cdr curblock) t))
                 (let* *src (car4-3 curinst))
                 (let* src-is-imm (car4-2 curinst))
                 (let* src
@@ -303,7 +303,7 @@
                     (<- (src) (reg-read* reg *src))
                     src))
                 (let* *dst (car4-4 curinst))
-                (let* nextblock (cdr curblock))
+                (<- (nextblock) ((cdr curblock) nil))
             ;; Typematch on the current instruction's tag
             ((car4-1 curinst)
               ;; ==== inst-io-int ====
@@ -604,7 +604,7 @@
       ;;     ))))))))))))))))))))))))
       ;; nil
       stdin
-      (list
+      (new-bintree-node
         ;; (cons4 inst-io-int t A-24bit io-int-putc)
         ;; (cons4 inst-io-int t A-24bit io-int-putc)
         ;; (cons4 inst-mov t (8-to-24-bit "J") reg-A)
@@ -613,7 +613,8 @@
         ;; (cons4 inst-io-int nil reg-B io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "I") io-int-putc)
         ;; (cons4 inst-io-int t (8-to-24-bit "B") io-int-putc)
-        (cons4 inst-jmp t int-zero nil)))
+        (cons4 inst-jmp t int-zero nil)
+        nil))
     )
   )
 
