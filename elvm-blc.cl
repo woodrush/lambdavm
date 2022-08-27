@@ -2,19 +2,13 @@
 (load "./blc-numbers.cl")
 
 
-(defmacro-lazy new-bintree-node (a b)
-  `(cons ,a ,b))
-
-(defun-lazy new-bintree-node** (a b)
-  (cons a b))
-
-(def-lazy int-zero (16 (new-bintree-node** t) (8 (new-bintree-node** t) nil)))
+(def-lazy int-zero (16 (cons* t) (8 (cons* t) nil)))
 (def-lazy int-one
-  (16 (new-bintree-node** t)
-    (4 (new-bintree-node** t)
-      (2 (new-bintree-node** t)
-        (new-bintree-node** t
-          (new-bintree-node** nil nil))))))
+  (16 (cons* t)
+    (4 (cons* t)
+      (2 (cons* t)
+        (cons* t
+          (cons* nil nil))))))
 
 
 ;;================================================================
@@ -76,7 +70,7 @@
     (cont curgen)
     (do
       (<- (car-g cdr-g) (g))
-      (reverse** cdr-g (new-bintree-node** car-g curgen) cont))))
+      (reverse** cdr-g (cons car-g curgen) cont))))
 
 (defun-lazy reverse* (l cont)
   (reverse** l nil cont))
@@ -91,7 +85,7 @@
         (<- (car-pc cdr-pc) (pc))
         (<- (curbit) (eval-bool (not (xor car-pc carry))))
         (<- (nextcarry) (eval-bool (or car-pc carry)))
-        (increment-pc-reverse cdr-pc (new-bintree-node curbit curlist) nextcarry cont)))))
+        (increment-pc-reverse cdr-pc (cons curbit curlist) nextcarry cont)))))
 
 (defun-lazy increment-pc* (pc cont)
   (do
@@ -112,7 +106,7 @@
                                     (and car-n carry)
                                     (and car-m carry)
                                     (and car-n car-m))))
-        (add-reverse* cdr-n cdr-m (new-bintree-node curbit curlist) nextcarry cont)))))
+        (add-reverse* cdr-n cdr-m (cons curbit curlist) nextcarry cont)))))
 
 
 
@@ -128,7 +122,7 @@
 (def-lazy reg-PC (lambda (x) (x nil t   t  )))
 
 (defun-lazy regcode-to-regptr (regcode)
-  (regcode (lambda (x y z) (new-bintree-node** x (new-bintree-node** y (new-bintree-node** z nil))))))
+  (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
 
 (defun-lazy reg-read* (reg regptr cont)
   (do
@@ -187,7 +181,7 @@
       (do
         (<- (car-n cdr-n) (n))
         (<- (not-car-n) (eval-bool (not car-n)))
-        (invert-bits-rev* cdr-n (new-bintree-node not-car-n curlist) cont)))))
+        (invert-bits-rev* cdr-n (cons not-car-n curlist) cont)))))
 
 (defmacro-lazy 8-to-24-bit* (n)
   `(16 (cons* t) ,n))
@@ -365,7 +359,7 @@
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* cmp cmp)
     (let* add-reverse* add-reverse*)
-    (let* new-bintree-node** new-bintree-node**)
+    (let* cons* cons*)
     (let* int-zero int-zero)
     (let* int-one int-one)
     (let* lookup-tree-template lookup-tree-template)
