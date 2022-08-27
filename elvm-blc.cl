@@ -252,9 +252,7 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  ((reg-write* reg src reg-PC
-    ((lookup-tree* progtree src)
-      (eval memory progtree stdin)))))
+  (jumpto src))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -262,11 +260,10 @@
     (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
     (((lookup-src-if-imm reg jmp-is-imm *jmp)
         ((reg-read* reg *cmp-dst)
-          (lambda (dst-value jmp cont)
+          (lambda (dst-value jmp)
             (if (cmp dst-value src enum-cmp)
-              ((reg-write* reg jmp reg-PC ((lookup-tree* progtree jmp) cont)))
-              (cont nextblock reg)))))
-        (eval memory progtree stdin))))
+              (jumpto jmp)
+              (eval memory progtree stdin nextblock reg))))))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
