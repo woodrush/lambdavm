@@ -201,7 +201,7 @@
 ;; Instructions
 ;;================================================================
 (def-lazy   inst-exit    nil)
-(defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8) i1)
+(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
 (defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8) i2)
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
 (defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8) i4)
@@ -212,8 +212,7 @@
 
 (def-lazy **instruction-typematch**
   (inst-type
-    io-int-case
-    ;; sub-case
+    io-case
     jumpcmp-case
     cmp-case
     jmp-case
@@ -223,9 +222,8 @@
     mov-case
     ))
 
-(defun-lazy io-int-putc (x1 x2 x3) x3)
-(defun-lazy io-int-getc (x1 x2 x3) x2)
-(defun-lazy io-int-exit (x1 x2 x3) x1)
+(defun-lazy io-putc (x1 x2) x2)
+(defun-lazy io-getc (x1 x2) x1)
 
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
@@ -282,11 +280,10 @@
           (cont int-zero))))
      (reg-write** reg dst eval-reg))))
 
-(def-lazy io-int-case
+(def-lazy io-case
   ;; Instruction structure:
-  ;;   exit: (cons4 inst-io-int nil         nil   io-int-exit)
-  ;;   getc: (cons4 inst-io-int nil         [dst] io-int-getc)
-  ;;   putc: (cons4 inst-io-int [src-isimm] [src] io-int-putc)
+  ;;   getc: (cons4 inst-io nil         [dst] io-getc)
+  ;;   putc: (cons4 inst-io [src-isimm] [src] io-putc)
   ;; Typematch over the inst. type
   (*dst
     ;; exit

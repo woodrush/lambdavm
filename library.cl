@@ -32,7 +32,7 @@
     (list t nil t)
 
     inst-exit
-    inst-io-int
+    inst-io
     inst-jumpcmp
     inst-cmp
     inst-jmp
