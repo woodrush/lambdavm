@@ -367,7 +367,7 @@
     (let* 16 16)
     (<- (int-zero) ((lambda (cont)
       (let ((cons-t (lambda (x f) (f t x))))
-        (16 cons-t (8 cons-t nil))))))
+        (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree-template lookup-tree-template)
     (let* lookup-memory* lookup-memory*)
     (let* lookup-progtree lookup-progtree)
