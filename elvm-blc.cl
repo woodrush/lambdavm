@@ -172,24 +172,30 @@
 
 (defmacro-lazy isnil-4 (item) `(,item (lambda (a b c d x) nil) t))
 (defrec-lazy eval (memory progtree stdin curblock reg)
-  (cond
-    ((isnil curblock)
-      (do
-        (<- (nextpc)
-          ((reg-read* reg reg-PC (reverse*))
-            (add-reverse* nil nil t int-zero)))
-        (reg-write* reg nextpc reg-PC
-          (lookup-tree* progtree nextpc
-            (eval memory progtree stdin)))))
-    ((isnil-4 (car curblock))
-      SYS-STRING-TERM)
-    (t
-      (do
-        (<- (curinst nextblock) (curblock))
-        (let* eval-reg (eval memory progtree stdin nextblock))
-        (<- (inst-type src-is-imm *src *dst) (curinst))
-        (<- (src) (lookup-src-if-imm reg src-is-imm *src))
-        **instruction-typematch**))))
+  (do
+    (let* jumpto
+      (lambda (jmp)
+        ((reg-write* reg jmp reg-PC
+          ((lookup-tree* progtree jmp)
+            (eval memory progtree stdin))))))
+    (cond
+        ((isnil curblock)
+          (do
+            (<- (nextpc)
+              ((do
+                (reg-read* reg reg-PC)
+                (reverse*))
+              (add-reverse* nil nil t int-zero)))
+            (jumpto nextpc)))
+        ((isnil-4 (car curblock))
+          SYS-STRING-TERM)
+        (t
+          (do
+            (<- (curinst nextblock) (curblock))
+            (let* eval-reg (eval memory progtree stdin nextblock))
+            (<- (inst-type src-is-imm *src *dst) (curinst))
+            (<- (src) (lookup-src-if-imm reg src-is-imm *src))
+            **instruction-typematch**)))))
 
 ;;================================================================
 ;; Instructions
