@@ -46,7 +46,6 @@
           (cont (cons memory-rewritten memory-orig))
           (cont (cons memory-orig memory-rewritten)))))))
 
-
 (defun-lazy reverse* (l cont)
   ((letrec-lazy reverse** (g curgen)
     (if (isnil g)
@@ -308,6 +307,7 @@
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
+    (let* isnil isnil)
     (let* cmp* cmp*)
     (let* add-reverse* add-reverse*)
     (let* 16 16)
