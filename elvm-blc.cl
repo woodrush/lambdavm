@@ -66,7 +66,7 @@
 (defun-lazy reverse* (l cont)
   (reverse** l nil cont))
 
-(defrec-lazy add-reverse* (n m curlist carry cont)
+(defrec-lazy add-reverse* (n m curlist carry invert cont)
   (cond
     ((isnil n)
       (cont curlist))
@@ -74,6 +74,7 @@
       (do
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
+        (let* car-m (if invert (not car-m) car-m))
         (<- (curbit)
           (eval-bool
             (if car-n
@@ -96,7 +97,7 @@
                 (if carry
                   t nil)
                 nil))))
-        (add-reverse* cdr-n cdr-m (cons curbit curlist) nextcarry cont)))))
+        (add-reverse* cdr-n cdr-m (cons curbit curlist) nextcarry invert cont)))))
 
 
 
@@ -200,7 +201,7 @@
       (do
         (<- (pc) (reg-read* reg reg-PC))
         (<- (pc) (reverse* pc))
-        (<- (nextpc) (add-reverse* pc int-zero nil nil))
+        (<- (nextpc) (add-reverse* pc int-zero nil nil nil))
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
@@ -251,10 +252,9 @@
 (def-lazy add-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
   (do
-    ;; (<- (v-dst) )
     (<- (v-dst-rev) (reg-read* reg *dst (reverse*)))
     (<- (v-src-rev) (reverse* src))
-    (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
+    (<- (x) (add-reverse* v-src-rev v-dst-rev nil t nil))
     (<- (reg) (reg-write* reg x *dst))
     (eval-reg reg)))
 
@@ -318,8 +318,8 @@
   (do
     (<- (v-dst) (reg-read* reg *dst))
     (<- (v-dst-rev) (reverse* v-dst))
-    (<- (v-src-rev) (invert-bits-rev* src nil))
-    (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
+    (<- (v-src-rev) (reverse* src))
+    (<- (x) (add-reverse* v-dst-rev v-src-rev nil nil t))
     (<- (reg) (reg-write* reg x *dst))
     (eval-reg reg)))
 
