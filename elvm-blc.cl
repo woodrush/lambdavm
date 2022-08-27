@@ -165,7 +165,7 @@
 ;;================================================================
 ;; Evaluation
 ;;================================================================
-(defun-lazy lookup-src-if-imm (reg src-is-imm *src cont)
+(defun-lazy lookup-src-if-imm* (reg src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
     (reg-read* reg *src cont)))
@@ -192,7 +192,7 @@
             (<- (curinst nextblock) (curblock))
             (let* eval-reg (eval memory progtree stdin nextblock))
             (<- (inst-type src-is-imm *src *dst) (curinst))
-            (<- (src) (lookup-src-if-imm reg src-is-imm *src))
+            (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
             **instruction-typematch**)))))
 
 ;;================================================================
@@ -231,10 +231,11 @@
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
   (do
     (<- (*dst is-add) (*dst))
-    (((reverse* src) ; src
-        ((reg-read* reg *dst (reverse*)) ; dst
-          (add-reverse* nil is-add is-add)))
-     (reg-write** reg *dst eval-reg))))
+    ((do
+      (reverse* src) ; src
+      (reg-read* reg *dst (reverse*)) ; dst
+      (add-reverse* nil is-add is-add)))
+    (reg-write** reg *dst eval-reg)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -255,12 +256,12 @@
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
-    (((lookup-src-if-imm reg jmp-is-imm *jmp)
-        ((reg-read* reg *cmp-dst)
-          (lambda (dst-value jmp)
-            (if (cmp dst-value src enum-cmp)
-              (jumpto jmp)
-              (eval memory progtree stdin nextblock reg))))))))
+    (lookup-src-if-imm* reg jmp-is-imm *jmp)
+    (reg-read* reg *cmp-dst)
+    (lambda (dst-value jmp)
+      (if (cmp dst-value src enum-cmp)
+        (jumpto jmp)
+        (eval memory progtree stdin nextblock reg)))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
