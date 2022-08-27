@@ -2,11 +2,6 @@
 (load "./blc-numbers.cl")
 
 
-(defun-lazy gen-int-zero-one (cont)
-  (cont
-    (16 cons-t (8 cons-t nil))
-    (16 cons-t (4 cons-t (2 cons-t (cons-t (cons nil nil)))))))
-
 ;;================================================================
 ;; Memory and program
 ;;================================================================
@@ -370,9 +365,9 @@
     (let* cmp cmp)
     (let* add-reverse* add-reverse*)
     (let* 16 16)
-    (let* cons-t (lambda (x f) (f t x)))
-    ;; (<- (int-zero int-one) (gen-int-zero-one))
-    (let* int-zero (16 cons-t (8 cons-t nil)))
+    (<- (int-zero) ((lambda (cont)
+      (let ((cons-t (lambda (x f) (f t x))))
+        (16 cons-t (8 cons-t nil))))))
     (let* lookup-tree-template lookup-tree-template)
     (let* lookup-memory* lookup-memory*)
     (let* lookup-progtree lookup-progtree)
