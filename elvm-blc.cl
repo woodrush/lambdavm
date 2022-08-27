@@ -200,6 +200,7 @@
 ;;================================================================
 ;; Instructions
 ;;================================================================
+(def-lazy   inst-exit    nil)
 (defun-lazy inst-io-int  (i1 i2 i3 i4 i5 i6 i7 i8) i1)
 (defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8) i2)
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
@@ -313,10 +314,10 @@
     (let* cmp* cmp*)
     (let* add-reverse* add-reverse*)
     (let* 16 16)
+    (let* memory-write* memory-write*)
     (<- (int-zero) ((lambda (cont)
       (let ((cons-t (lambda (x f) (f t x))))
         (cont (16 cons-t (8 cons-t nil)))))))
-    (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     (let* reverse* reverse*)
     (<- (reg-read* reg-write**)
