@@ -2,14 +2,10 @@
 (load "./blc-numbers.cl")
 
 
-(def-lazy int-zero (16 (cons* t) (8 (cons* t) nil)))
-(def-lazy int-one
-  (16 (cons* t)
-    (4 (cons* t)
-      (2 (cons* t)
-        (cons* t
-          (cons* nil nil))))))
-
+(defun-lazy gen-int-zero-one (cont)
+  (cont
+    (16 cons-t (8 cons-t nil))
+    (16 cons-t (4 cons-t (2 cons-t (cons-t (cons nil nil)))))))
 
 ;;================================================================
 ;; Memory and program
@@ -184,7 +180,7 @@
         (invert-bits-rev* cdr-n (cons not-car-n curlist) cont)))))
 
 (defmacro-lazy 8-to-24-bit* (n)
-  `(16 (cons* t) ,n))
+  `(16 (lambda (x f) (f t x)) ,n))
 
 (defmacro-lazy 24-to-8-bit* (n)
   `(16 cdr* ,n))
@@ -356,9 +352,9 @@
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* cmp cmp)
     (let* add-reverse* add-reverse*)
-    (let* cons* cons*)
-    (let* int-zero int-zero)
-    (let* int-one int-one)
+    (let* 16 16)
+    (let* cons-t (lambda (x f) (f t x)))
+    (<- (int-zero int-one) (gen-int-zero-one))
     (let* lookup-tree-template lookup-tree-template)
     (let* lookup-memory* lookup-memory*)
     (let* lookup-progtree lookup-progtree)
