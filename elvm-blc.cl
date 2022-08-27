@@ -175,16 +175,16 @@
   (do
     (let* jumpto
       (lambda (jmp)
-        ((reg-write* reg jmp reg-PC
-          ((lookup-tree* progtree jmp)
-            (eval memory progtree stdin))))))
+        (do
+          (reg-write* reg jmp reg-PC)
+          (lookup-tree* progtree jmp)
+          (eval memory progtree stdin))))
     (cond
         ((isnil curblock)
-          (((do
-              (reg-read* reg reg-PC)
-              (reverse*))
-            (add-reverse* nil nil t int-zero))
-           jumpto))
+          ((reg-read* reg reg-PC)
+           (reverse*)
+           (add-reverse* nil nil t int-zero)
+           (jumpto)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
         (t
