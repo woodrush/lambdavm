@@ -170,14 +170,14 @@
 
 (defun-lazy t (x y) x)
 (defun-lazy nil (x y) y)
-;; (defun-lazy cons (x y f) (f x y))
+(defun-lazy cons* (x y f) (f x y))
 (defun-lazy car* (l) (l t))
 (defun-lazy cdr* (l) (l nil))
 (defmacro-lazy car (l) `(,l t))
 (defmacro-lazy cdr (l) `(,l nil))
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 
-(defmacro-lazy isnil (l) `((lambda (a) (a (lambda (v n x) nil) t)) ,l))
+(defmacro-lazy isnil (l) `(,l (lambda (a b x) nil) t))
 (defmacro-lazy inflist (item)
   `((lambda (x) (x x))
     (lambda (self)
@@ -302,6 +302,30 @@
         (length (cdr l) (succ n))))
     list 0))
 
+
+(defmacro-lazy if-then-return (condition then else)
+  `(if ,condition ,then ,else))
+
+(defmacro-lazy let* (name value body)
+  `(let ((,name ,value)) ,body))
+
+(defmacro-lazy do* (top &rest proc)
+  (cond ((not proc)
+          top)
+        ((eq '<- (car (car proc)))
+          (let* ((topproc (car proc))
+                 (arglist (car (cdr topproc)))
+                 (body (car (cdr (cdr topproc)))))
+            `(do*
+                ,(append body `((lambda ,arglist ,top)))
+                ,@(cdr proc))))
+        (t
+          `(do*
+              ,(append (car proc) `(,top))
+              ,@(cdr proc)))))
+
+(defmacro-lazy do (&rest proc)
+  `(do* ,@(reverse proc)))
 
 
 (defun compile-to-blc (expr)

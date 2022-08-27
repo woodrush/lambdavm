@@ -178,8 +178,9 @@
   (cond
     ((isnil curblock)
       (do
-        (<- (pc) (reg-read* reg reg-PC reverse*))
-        (<- (nextpc) (add-reverse* nil nil t pc int-zero))
+        (<- (nextpc)
+          ((reg-read* reg reg-PC (reverse*))
+            (add-reverse* nil nil t int-zero)))
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
@@ -229,15 +230,11 @@
 (def-lazy addsub-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
   (do
-    (<- (v-src-rev) (reverse* src))
     (<- (*dst is-add) (*dst))
-    (<- (v-dst-rev) (reg-read* reg *dst (reverse*)))
     (<- (x)
-      (add-reverse* nil is-add is-add v-dst-rev v-src-rev))
-          ;; (<- (x)
-    ;;   ((reverse* src) ; src
-    ;;     ((reg-read* reg *dst (reverse*)) ; dst
-    ;;       (add-reverse* nil is-add is-add))))
+      ((reverse* src) ; src
+        ((reg-read* reg *dst (reverse*)) ; dst
+          (add-reverse* nil is-add is-add))))
     (reg-write* reg x *dst eval-reg)))
 
 (def-lazy store-case
