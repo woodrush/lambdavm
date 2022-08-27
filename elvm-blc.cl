@@ -248,10 +248,6 @@
 (defun-lazy io-int-getc (x1 x2 x3) x2)
 (defun-lazy io-int-exit (x1 x2 x3) x1)
 
-(defmacro-lazy car4-1 (f) `(,f (lambda (x1 x2 x3 x4) x1)))
-(defmacro-lazy car4-2 (f) `(,f (lambda (x1 x2 x3 x4) x2)))
-(defmacro-lazy car4-3 (f) `(,f (lambda (x1 x2 x3 x4) x3)))
-(defmacro-lazy car4-4 (f) `(,f (lambda (x1 x2 x3 x4) x4)))
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
 
@@ -346,7 +342,8 @@
         (if (isnil stdin)
           (cont int-zero stdin)
           (do
-            (cont (8-to-24-bit* (car stdin)) (cdr stdin)))))))
+            (<- (car-stdin cdr-stdin) (stdin))
+            (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
       (<- (reg) (reg-write* reg c *src))
       (eval reg memory progtree stdin nextblock))
     ;; putc
@@ -374,7 +371,7 @@
       memtree
       progtree-cont
       stdin
-      (list (cons4 inst-jmp t int-zero nil)))))
+      (list (lambda (f) (f inst-jmp t int-zero f))))))
 
 (def-lazy SYS-STRING-TERM nil)
 
