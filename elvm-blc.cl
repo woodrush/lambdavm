@@ -286,8 +286,6 @@
   ;;   putc: (cons4 inst-io [src-isimm] [src] io-putc)
   ;; Typematch over the inst. type
   (*dst
-    ;; exit
-    SYS-STRING-TERM
     ;; getc
     (do
       (<- (c stdin)

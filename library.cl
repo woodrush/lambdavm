@@ -48,11 +48,10 @@
     cmp-ge
     cmp-ne
 
-    io-int-putc
-    io-int-getc
-    io-int-exit
+    io-putc
+    io-getc
 
-    string-term
+    SYS-STRING-TERM
 ))
 
 
