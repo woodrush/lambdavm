@@ -68,7 +68,7 @@
 (defun-lazy reverse* (l cont)
   (reverse** l nil cont))
 
-(defrec-lazy add-reverse* (n m curlist carry is-add cont)
+(defrec-lazy add-reverse* (curlist carry is-add n m cont)
   (cond
     ((isnil n)
       (cont curlist))
@@ -99,7 +99,7 @@
                 (if carry
                   t nil)
                 nil))))
-        (add-reverse* cdr-n cdr-m (cons curbit curlist) nextcarry is-add cont)))))
+        (add-reverse* (cons curbit curlist) nextcarry is-add cdr-n cdr-m cont)))))
 
 
 
@@ -179,7 +179,7 @@
     ((isnil curblock)
       (do
         (<- (pc) (reg-read* reg reg-PC reverse*))
-        (<- (nextpc) (add-reverse* pc int-zero nil nil t))
+        (<- (nextpc) (add-reverse* nil nil t pc int-zero))
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
@@ -232,7 +232,12 @@
     (<- (v-src-rev) (reverse* src))
     (<- (*dst is-add) (*dst))
     (<- (v-dst-rev) (reg-read* reg *dst (reverse*)))
-    (<- (x) (add-reverse* v-dst-rev v-src-rev nil is-add is-add))
+    (<- (x)
+      (add-reverse* nil is-add is-add v-dst-rev v-src-rev))
+          ;; (<- (x)
+    ;;   ((reverse* src) ; src
+    ;;     ((reg-read* reg *dst (reverse*)) ; dst
+    ;;       (add-reverse* nil is-add is-add))))
     (reg-write* reg x *dst eval-reg)))
 
 (def-lazy store-case
@@ -260,13 +265,16 @@
     (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
     ;; (<- (jmp) )
     ;; (<- (dst-value) )
-    (<- (reg nextblock) ((lookup-src-if-imm reg jmp-is-imm *jmp) ((reg-read* reg *cmp-dst) (lambda (dst-value jmp cont)
-      (if (cmp dst-value src enum-cmp)
-        (do
-          (<- (reg) (reg-write* reg jmp reg-PC))
-          (<- (nextblock) (lookup-progtree progtree jmp))
-          (cont reg nextblock))
-        (cont reg nextblock))))))
+    (<- (reg nextblock)
+      ((lookup-src-if-imm reg jmp-is-imm *jmp)
+        ((reg-read* reg *cmp-dst)
+          (lambda (dst-value jmp cont)
+            (if (cmp dst-value src enum-cmp)
+              (do
+                (<- (reg) (reg-write* reg jmp reg-PC))
+                (<- (nextblock) (lookup-progtree progtree jmp))
+                (cont reg nextblock))
+              (cont reg nextblock))))))
     (eval reg memory progtree stdin nextblock)))
 
 (def-lazy load-case
@@ -280,20 +288,13 @@
   (do
     (<- (enum-cmp dst) (*dst))
     ;; (<- (dst-value) (reg-read* reg dst))
-    (<- (ret) ((reg-read* reg dst) (lambda (dst-value cont)
-      (if (cmp dst-value src enum-cmp)
-        (reverse* (cons nil (cdr int-zero)) cont)
-        (cont int-zero)))))
+    (<- (ret)
+      ((reg-read* reg dst)
+        (lambda (dst-value cont)
+          (if (cmp dst-value src enum-cmp)
+            (reverse* (cons nil (cdr int-zero)) cont)
+            (cont int-zero)))))
     (reg-write* reg ret dst eval-reg)))
-
-;; (def-lazy sub-case
-;;   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
-;;   (do
-;;     (<- (x) ((reverse* src)
-;;       ((reg-read* reg *dst reverse*)
-;;         (lambda (v-dst-rev v-src-rev)
-;;         (add-reverse* v-dst-rev v-src-rev nil nil nil)))))
-;;     (reg-write* reg x *dst eval-reg)))
 
 (def-lazy io-int-case
   ;; Instruction structure:
