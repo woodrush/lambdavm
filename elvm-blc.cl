@@ -251,8 +251,8 @@
 (def-lazy add-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
   (do
-    (<- (v-dst) (reg-read* reg *dst))
-    (<- (v-dst-rev) (reverse* v-dst))
+    ;; (<- (v-dst) )
+    (<- (v-dst-rev) (reg-read* reg *dst (reverse*)))
     (<- (v-src-rev) (reverse* src))
     (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
     (<- (reg) (reg-write* reg x *dst))
