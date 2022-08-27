@@ -119,8 +119,12 @@
 (defun-lazy reg-read* (reg regptr cont)
   (lookup-memory* reg (regcode-to-regptr regptr) cont))
 
-(defun-lazy reg-write* (reg value regptr cont)
+(defun-lazy reg-write** (reg regptr cont value)
   (memory-write* reg (regcode-to-regptr regptr) value cont))
+
+(defmacro-lazy reg-write* (reg value regptr cont)
+  `(reg-write** ,reg ,regptr ,cont ,value))
+
 
 
 ;;================================================================
@@ -183,8 +187,7 @@
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
-        ((reg-write* reg nextpc reg-PC)
-          (eval memory progtree stdin nextblock))))
+        ((reg-write* reg nextpc reg-PC (eval memory progtree stdin nextblock)))))
     (t
       (do
         (<- (curinst nextblock) (curblock))
@@ -230,11 +233,12 @@
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
   (do
     (<- (*dst is-add) (*dst))
-    (<- (x)
+    (
       ((reverse* src) ; src
         ((reg-read* reg *dst (reverse*)) ; dst
-          (add-reverse* nil is-add is-add))))
-    (reg-write* reg x *dst eval-reg)))
+          (add-reverse* nil is-add is-add)))
+      (reg-write** reg *dst eval-reg))
+    ))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -251,8 +255,7 @@
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   (do
     (<- (nextblock) (lookup-progtree progtree src))
-    ((reg-write* reg src reg-PC)
-      (eval memory progtree stdin nextblock))))
+    ((reg-write* reg src reg-PC (eval memory progtree stdin nextblock)))))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -262,10 +265,7 @@
         ((reg-read* reg *cmp-dst)
           (lambda (dst-value jmp cont)
             (if (cmp dst-value src enum-cmp)
-              (do
-                (<- (reg) (reg-write* reg jmp reg-PC))
-                (<- (nextblock) (lookup-progtree progtree jmp))
-                (cont nextblock reg))
+              ((reg-write* reg jmp reg-PC ((lookup-progtree progtree jmp) cont)))
               (cont nextblock reg)))))
         (eval memory progtree stdin))))
 
@@ -305,8 +305,7 @@
             (do
               (<- (car-stdin cdr-stdin) (stdin))
               (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
-      ((reg-write* reg c *src)
-        (eval memory progtree stdin nextblock)))
+      ((reg-write* reg c *src (eval memory progtree stdin nextblock))))
     ;; putc
     (do
       (cons (24-to-8-bit* src) (eval-reg reg)))))
@@ -327,8 +326,10 @@
     (let* lookup-progtree lookup-progtree)
     (let* memory-write* memory-write*)
     (let* reverse* reverse*)
+    (let* regcode-to-regptr regcode-to-regptr)
     (let* reg-read* reg-read*)
-    (let* reg-write* reg-write*)
+    ;; (let* reg-write* reg-write*)
+    (let* reg-write** reg-write**)
     (eval
       memtree
       progtree-cont
