@@ -178,8 +178,7 @@
   (cond
     ((isnil curblock)
       (do
-        (<- (pc) (reg-read* reg reg-PC))
-        (<- (pc) (reverse* pc))
+        (<- (pc) (reg-read* reg reg-PC reverse*))
         (<- (nextpc) (add-reverse* pc int-zero nil nil nil))
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
@@ -234,29 +233,26 @@
     (<- (v-dst-rev) (reg-read* reg *dst (reverse*)))
     (<- (v-src-rev) (reverse* src))
     (<- (x) (add-reverse* v-src-rev v-dst-rev nil t nil))
-    (<- (reg) (reg-write* reg x *dst))
-    (eval-reg reg)))
+    (reg-write* reg x *dst eval-reg)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
   (do
-    (<- (value) (reg-read* reg *dst))
-    (<- (memory) (memory-write* memory src value))
+    ;; (<- (value) (reg-read* reg *dst))
+    (<- (memory) (reg-read* reg *dst (memory-write* memory src)))
     (eval reg memory progtree stdin nextblock)))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-  (do
-    (<- (reg) (reg-write* reg src *dst))
-    (eval-reg reg)))
+  (reg-write* reg src *dst eval-reg))
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   (do
     (<- (reg) (reg-write* reg src reg-PC))
-    (<- (nextblock) (lookup-progtree progtree src))
-    (eval reg memory progtree stdin nextblock)))
+    (lookup-progtree progtree src (eval reg memory progtree stdin))
+    ))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -277,8 +273,7 @@
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
   (do
     (<- (value) (lookup-memory* memory src))
-    (<- (reg) (reg-write* reg value *dst))
-    (eval-reg reg)))
+    (reg-write* reg value *dst eval-reg)))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
@@ -289,18 +284,15 @@
       (if (cmp dst-value src enum-cmp)
         (reverse* (cons nil (cdr int-zero)) cont)
         (cont int-zero)))))
-    (<- (reg) (reg-write* reg ret dst))
-    (eval-reg reg)))
+    (reg-write* reg ret dst eval-reg)))
 
 (def-lazy sub-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
   (do
-    (<- (v-dst) (reg-read* reg *dst))
-    (<- (v-dst-rev) (reverse* v-dst))
+    (<- (v-dst-rev) (reg-read* reg *dst reverse*))
     (<- (v-src-rev) (reverse* src))
     (<- (x) (add-reverse* v-dst-rev v-src-rev nil nil t))
-    (<- (reg) (reg-write* reg x *dst))
-    (eval-reg reg)))
+    (reg-write* reg x *dst eval-reg)))
 
 (def-lazy io-int-case
   ;; Instruction structure:
