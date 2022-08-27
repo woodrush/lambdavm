@@ -66,24 +66,6 @@
 (defun-lazy reverse* (l cont)
   (reverse** l nil cont))
 
-
-(defrec-lazy increment-pc-reverse (pc curlist carry cont)
-  (cond
-    ((isnil pc)
-      (cont curlist))
-    (t
-      (do
-        (<- (car-pc cdr-pc) (pc))
-        (<- (curbit) (eval-bool (not (xor car-pc carry))))
-        (<- (nextcarry) (eval-bool (or car-pc carry)))
-        (increment-pc-reverse cdr-pc (cons curbit curlist) nextcarry cont)))))
-
-(defun-lazy increment-pc* (pc cont)
-  (do
-    (<- (pc) (reverse* pc))
-    (<- (pc-rev) (add-reverse* pc int-zero nil nil))
-    (cont pc-rev)))
-
 (defrec-lazy add-reverse* (n m curlist carry cont)
   (cond
     ((isnil n)
@@ -217,7 +199,8 @@
     ((isnil curblock)
       (do
         (<- (pc) (reg-read* reg reg-PC))
-        (<- (nextpc) (increment-pc* pc))
+        (<- (pc) (reverse* pc))
+        (<- (nextpc) (add-reverse* pc int-zero nil nil))
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
