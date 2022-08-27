@@ -71,15 +71,15 @@
           (cont (cons memory-rewritten memory-orig))
           (cont (cons memory-orig memory-rewritten)))))))
 
-(defrec-lazy reverse-generator* (g curgen cont)
+(defrec-lazy reverse** (g curgen cont)
   (if (isnil g)
     (cont curgen)
     (do
       (<- (car-g cdr-g) (g))
-      (reverse-generator* cdr-g (new-bintree-node** car-g curgen) cont))))
+      (reverse** cdr-g (new-bintree-node** car-g curgen) cont))))
 
 (defun-lazy reverse* (l cont)
-  (reverse-generator* l nil cont))
+  (reverse** l nil cont))
 
 
 (defrec-lazy increment-pc-reverse (pc curlist carry cont)
@@ -261,9 +261,6 @@
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
 
-(defmacro-lazy cons4 (x1 x2 x3 x4)
-  `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
-
 
 (def-lazy add-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -299,11 +296,11 @@
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
-    (let* *jmp (car4-4 *dst))
-    (<- (jmp) (lookup-src-if-imm reg (car4-3 *dst) *jmp))
-    (<- (dst-value) (reg-read* reg (car4-2 *dst)))
+    (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
+    (<- (jmp) (lookup-src-if-imm reg jmp-is-imm *jmp))
+    (<- (dst-value) (reg-read* reg *cmp-dst))
     (<- (reg nextblock) ((lambda (cont)
-      (if (cmp dst-value src (car4-1 *dst))
+      (if (cmp dst-value src enum-cmp)
         (do
           (<- (reg) (reg-write* reg jmp reg-PC))
           (<- (nextblock) (lookup-progtree progtree jmp))
