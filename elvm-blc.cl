@@ -86,7 +86,6 @@
 (defun-lazy increment-pc* (pc cont)
   (do
     (<- (pc) (reverse* pc))
-    ;; (<- (pc-rev) (increment-pc-reverse pc nil nil))
     (<- (pc-rev) (add-reverse* pc int-zero nil nil))
     (cont pc-rev)))
 
@@ -324,7 +323,11 @@
   (do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (reg-read* reg dst))
-    (<- (reg) (reg-write* reg (if (cmp dst-value src enum-cmp) int-one int-zero) dst))
+    (<- (ret) ((lambda (cont)
+      (if (cmp dst-value src enum-cmp)
+        (reverse* (cons nil (cdr int-zero)) cont)
+        (cont int-zero)))))
+    (<- (reg) (reg-write* reg ret dst))
     (eval reg memory progtree stdin nextblock)))
 
 (def-lazy sub-case
@@ -368,7 +371,8 @@
     (let* add-reverse* add-reverse*)
     (let* 16 16)
     (let* cons-t (lambda (x f) (f t x)))
-    (<- (int-zero int-one) (gen-int-zero-one))
+    ;; (<- (int-zero int-one) (gen-int-zero-one))
+    (let* int-zero (16 cons-t (8 cons-t nil)))
     (let* lookup-tree-template lookup-tree-template)
     (let* lookup-memory* lookup-memory*)
     (let* lookup-progtree lookup-progtree)
