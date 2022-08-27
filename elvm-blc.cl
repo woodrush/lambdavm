@@ -5,11 +5,6 @@
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defun-lazy eval-bool (expr cont)
-  (if expr
-    (cont t)
-    (cont nil)))
-
 (defrec-lazy lookup-tree* (memory address cont)
   (cond
     ((isnil memory)
@@ -51,15 +46,20 @@
           (cont (cons memory-rewritten memory-orig))
           (cont (cons memory-orig memory-rewritten)))))))
 
-(defrec-lazy reverse** (g curgen cont)
-  (if (isnil g)
-    (cont curgen)
-    (do
-      (<- (car-g cdr-g) (g))
-      (reverse** cdr-g (cons car-g curgen) cont))))
 
 (defun-lazy reverse* (l cont)
-  (reverse** l nil cont))
+  ((letrec-lazy reverse** (g curgen)
+    (if (isnil g)
+      (cont curgen)
+      (do
+        (<- (car-g cdr-g) (g))
+        (reverse** cdr-g (cons car-g curgen)))))
+   l nil))
+
+(defun-lazy eval-bool (expr cont)
+  (if expr
+    (cont t)
+    (cont nil)))
 
 (defrec-lazy add-reverse* (curlist carry is-add n m cont)
   (cond
@@ -67,6 +67,7 @@
       (cont curlist))
     (t
       (do
+        (let* not-carry (not carry))
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
         (let* car-m (if is-add car-m (not car-m)))
@@ -75,22 +76,18 @@
             (if car-n
               (if car-m
                 carry
-                (if carry
-                  nil t))
+                not-carry)
               (if car-m
-                (if carry
-                  nil t)
+                not-carry
                 carry))))
         (<- (nextcarry)
           (eval-bool
             (if car-n
               (if car-m
                 t
-                (if carry
-                  t nil))
+                carry)
               (if car-m
-                (if carry
-                  t nil)
+                carry
                 nil))))
         (add-reverse* (cons curbit curlist) nextcarry is-add cdr-n cdr-m cont)))))
 
@@ -129,27 +126,21 @@
 (defun-lazy cmpret-gt (r1 r2 r3) r3)
 
 (defrec-lazy cmp* (n m)
-  (cond ((isnil n)
-          cmpret-eq)
-        (t
-          (do
-            (<- (car-n cdr-n) (n))
-            (<- (car-m cdr-m) (m))
-            (let* next (cmp* cdr-n cdr-m))
-            (if car-n
-              (if car-m
-                next
-                cmpret-lt)
-              (if car-m
-                cmpret-gt
-                next))
-            ;; (cond ((and (not car-n) car-m)
-            ;;         cmpret-gt)
-            ;;       ((and car-n (not car-m))
-            ;;         cmpret-lt)
-            ;;       (t
-            ;;         ))
-                    ))))
+  (cond
+    ((isnil n)
+      cmpret-eq)
+    (t
+      (do
+        (<- (car-n cdr-n) (n))
+        (<- (car-m cdr-m) (m))
+        (let* next (cmp* cdr-n cdr-m))
+        (if car-n
+          (if car-m
+            next
+            cmpret-lt)
+          (if car-m
+            cmpret-gt
+            next))))))
 
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
