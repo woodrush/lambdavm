@@ -170,6 +170,7 @@
     (cont *src)
     (reg-read* reg *src cont)))
 
+(defmacro-lazy isnil-4 (item) `(,item (lambda (a b c d x) nil) t))
 (defrec-lazy eval (memory progtree stdin curblock reg)
   (cond
     ((isnil curblock)
@@ -177,12 +178,10 @@
         (<- (nextpc)
           ((reg-read* reg reg-PC (reverse*))
             (add-reverse* nil nil t int-zero)))
-        (<- (nextblock) (lookup-tree* progtree nextpc))
-        (if-then-return (isnil nextblock)
-          SYS-STRING-TERM)
         (reg-write* reg nextpc reg-PC
-          (eval memory progtree stdin nextblock))))
-    (((car curblock) (lambda (a b c d x) nil) t)
+          (lookup-tree* progtree nextpc
+            (eval memory progtree stdin)))))
+    ((isnil-4 (car curblock))
       SYS-STRING-TERM)
     (t
       (do
