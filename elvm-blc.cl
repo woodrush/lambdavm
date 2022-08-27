@@ -164,18 +164,22 @@
                   (t
                     (cmp* cdr-n cdr-m)))))))
 
-(defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x6)
-(defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x5)
-(defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x4)
-(defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x3)
-(defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x2)
-(defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x1)
+;; (defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x6)
+;; (defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x5)
+;; (defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x4)
+;; (defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x3)
+;; (defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x2)
+;; (defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x1)
 
-(defun-lazy cmp (n m enum-cmp)
-  ((cmp* n m)
-    (enum-cmp nil t   t   t   nil nil)
-    (enum-cmp t   nil t   nil t   nil)
-    (enum-cmp t   t   nil nil nil t  )))
+(defun-lazy cmp-gt (f) (f nil nil t))
+(defun-lazy cmp-lt (f) (f nil t   nil))
+(defun-lazy cmp-eq (f) (f t   nil nil))
+(defun-lazy cmp-le (f) (f t   t   nil))
+(defun-lazy cmp-ge (f) (f t   nil t))
+(defun-lazy cmp-ne (f) (f nil t   t))
+
+(defmacro-lazy cmp (n m enum-cmp)
+  `(,enum-cmp (cmp* ,n ,m)))
 
 
 ;;================================================================
@@ -362,7 +366,7 @@
 (defun-lazy main (memtree progtree-cont stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
-    (let* cmp cmp)
+    (let* cmp* cmp*)
     (let* add-reverse* add-reverse*)
     (let* 16 16)
     (<- (int-zero) ((lambda (cont)
