@@ -174,7 +174,7 @@
     (cont *src)
     (reg-read* reg *src cont)))
 
-(defrec-lazy eval (reg memory progtree stdin curblock)
+(defrec-lazy eval (memory progtree stdin curblock reg)
   (cond
     ((isnil curblock)
       (do
@@ -185,11 +185,11 @@
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
         (<- (reg) (reg-write* reg nextpc reg-PC))
-        (eval reg memory progtree stdin nextblock)))
+        (eval memory progtree stdin nextblock reg)))
     (t
       (do
         (<- (curinst nextblock) (curblock))
-        (let* eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock)))
+        (let* eval-reg (lambda (reg) (eval memory progtree stdin nextblock reg)))
         (<- (inst-type src-is-imm *src *dst) (curinst))
         (<- (src) (lookup-src-if-imm reg src-is-imm *src))
         **instruction-typematch**))))
@@ -243,7 +243,7 @@
   (do
     ;; (<- (value) (reg-read* reg *dst))
     (<- (memory) (reg-read* reg *dst (memory-write* memory src)))
-    (eval reg memory progtree stdin nextblock)))
+    (eval memory progtree stdin nextblock reg)))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -253,15 +253,14 @@
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   (do
     (<- (reg) (reg-write* reg src reg-PC))
-    (lookup-progtree progtree src (eval reg memory progtree stdin))
+    (<- (nextblock) (lookup-progtree progtree src))
+    (eval memory progtree stdin nextblock reg)
     ))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
-    ;; (<- (jmp) )
-    ;; (<- (dst-value) )
     (<- (reg nextblock)
       ((lookup-src-if-imm reg jmp-is-imm *jmp)
         ((reg-read* reg *cmp-dst)
@@ -272,7 +271,7 @@
                 (<- (nextblock) (lookup-progtree progtree jmp))
                 (cont reg nextblock))
               (cont reg nextblock))))))
-    (eval reg memory progtree stdin nextblock)))
+    (eval memory progtree stdin nextblock reg)))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
@@ -311,7 +310,7 @@
             (<- (car-stdin cdr-stdin) (stdin))
             (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
       (<- (reg) (reg-write* reg c *src))
-      (eval reg memory progtree stdin nextblock))
+      (eval memory progtree stdin nextblock reg))
     ;; putc
     (do
       (cons (24-to-8-bit* src) (eval-reg reg)))))
@@ -335,11 +334,11 @@
     (let* reg-read* reg-read*)
     (let* reg-write* reg-write*)
     (eval
-      nil
       memtree
       progtree-cont
       stdin
-      (list (lambda (f) (f inst-jmp t int-zero f))))))
+      (list (lambda (f) (f inst-jmp t int-zero f)))
+      nil)))
 
 (def-lazy SYS-STRING-TERM nil)
 
