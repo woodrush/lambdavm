@@ -187,7 +187,8 @@
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
-        ((reg-write* reg nextpc reg-PC (eval memory progtree stdin nextblock)))))
+        (reg-write* reg nextpc reg-PC
+          (eval memory progtree stdin nextblock))))
     (t
       (do
         (<- (curinst nextblock) (curblock))
@@ -233,12 +234,10 @@
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
   (do
     (<- (*dst is-add) (*dst))
-    (
-      ((reverse* src) ; src
+    (((reverse* src) ; src
         ((reg-read* reg *dst (reverse*)) ; dst
           (add-reverse* nil is-add is-add)))
-      (reg-write** reg *dst eval-reg))
-    ))
+     (reg-write** reg *dst eval-reg))))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -253,9 +252,9 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  (do
-    (<- (nextblock) (lookup-progtree progtree src))
-    ((reg-write* reg src reg-PC (eval memory progtree stdin nextblock)))))
+  ((reg-write* reg src reg-PC
+    ((lookup-progtree progtree src)
+      (eval memory progtree stdin)))))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -271,21 +270,19 @@
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-  (do
-    (<- (value) (lookup-memory* memory src))
-    (reg-write* reg value *dst eval-reg)))
+  (lookup-memory* memory src
+    (reg-write** reg *dst eval-reg)))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
     (<- (enum-cmp dst) (*dst))
-    (<- (ret)
-      ((reg-read* reg dst)
-        (lambda (dst-value cont)
-          (if (cmp dst-value src enum-cmp)
-            (reverse* (cons nil (cdr int-zero)) cont)
-            (cont int-zero)))))
-    (reg-write* reg ret dst eval-reg)))
+    (((reg-read* reg dst)
+      (lambda (dst-value cont)
+        (if (cmp dst-value src enum-cmp)
+          (reverse* (cons nil (cdr int-zero)) cont)
+          (cont int-zero))))
+     (reg-write** reg dst eval-reg))))
 
 (def-lazy io-int-case
   ;; Instruction structure:
