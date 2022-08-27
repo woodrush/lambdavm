@@ -226,6 +226,7 @@
     (t
       (do
         (<- (curinst nextblock) (curblock))
+        (let* eval-reg (lambda (reg) (eval reg memory progtree stdin nextblock)))
         (<- (inst-type src-is-imm *src *dst) (curinst))
         (<- (src) (lookup-src-if-imm reg src-is-imm *src))
         **instruction-typematch**))))
@@ -272,7 +273,7 @@
     (<- (v-src-rev) (reverse* src))
     (<- (x) (add-reverse* v-src-rev v-dst-rev nil t))
     (<- (reg) (reg-write* reg x *dst))
-    (eval reg memory progtree stdin nextblock)))
+    (eval-reg reg)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -286,7 +287,7 @@
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
   (do
     (<- (reg) (reg-write* reg src *dst))
-    (eval reg memory progtree stdin nextblock)))
+    (eval-reg reg)))
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -315,7 +316,7 @@
   (do
     (<- (value) (lookup-memory* memory src))
     (<- (reg) (reg-write* reg value *dst))
-    (eval reg memory progtree stdin nextblock)))
+    (eval-reg reg)))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
@@ -327,7 +328,7 @@
         (reverse* (cons nil (cdr int-zero)) cont)
         (cont int-zero)))))
     (<- (reg) (reg-write* reg ret dst))
-    (eval reg memory progtree stdin nextblock)))
+    (eval-reg reg)))
 
 (def-lazy sub-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] [*dst])
@@ -337,7 +338,7 @@
     (<- (v-src-rev) (invert-bits-rev* src nil))
     (<- (x) (add-reverse* v-src-rev v-dst-rev nil nil))
     (<- (reg) (reg-write* reg x *dst))
-    (eval reg memory progtree stdin nextblock)))
+    (eval-reg reg)))
 
 (def-lazy io-int-case
   ;; Instruction structure:
@@ -360,7 +361,7 @@
       (eval reg memory progtree stdin nextblock))
     ;; putc
     (do
-      (cons (24-to-8-bit* src) (eval reg memory progtree stdin nextblock)))))
+      (cons (24-to-8-bit* src) (eval-reg reg)))))
 
 
 (defun-lazy main (memtree progtree-cont stdin)
