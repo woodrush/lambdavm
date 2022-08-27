@@ -47,10 +47,12 @@
               (cont nil nil))
             (t
               (do
-                (<- (car-memory cdr-memory) (memory))
+                
                 (if car-address
-                  (cont cdr-memory car-memory)
-                  (cont car-memory cdr-memory))))))))
+                  (do
+                    (<- (car-memory cdr-memory) (memory))
+                    (cont cdr-memory car-memory))
+                  (memory cont))))))))
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
@@ -116,14 +118,10 @@
   (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
 
 (defun-lazy reg-read* (reg regptr cont)
-  (do
-    (<- (value) (lookup-memory* reg (regcode-to-regptr regptr)))
-    (cont value)))
+  (lookup-memory* reg (regcode-to-regptr regptr) cont))
 
 (defun-lazy reg-write* (reg value regptr cont)
-  (do
-    (<- (reg) (memory-write* reg (regcode-to-regptr regptr) value))
-    (cont reg)))
+  (memory-write* reg (regcode-to-regptr regptr) value cont))
 
 
 ;;================================================================
@@ -147,13 +145,6 @@
                   (t
                     (cmp* cdr-n cdr-m)))))))
 
-;; (defun-lazy cmp-gt (x1 x2 x3 x4 x5 x6) x6)
-;; (defun-lazy cmp-lt (x1 x2 x3 x4 x5 x6) x5)
-;; (defun-lazy cmp-eq (x1 x2 x3 x4 x5 x6) x4)
-;; (defun-lazy cmp-le (x1 x2 x3 x4 x5 x6) x3)
-;; (defun-lazy cmp-ge (x1 x2 x3 x4 x5 x6) x2)
-;; (defun-lazy cmp-ne (x1 x2 x3 x4 x5 x6) x1)
-
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
 (defun-lazy cmp-eq (f) (f t   nil nil))
@@ -168,16 +159,6 @@
 ;;================================================================
 ;; I/O
 ;;================================================================
-(defrec-lazy invert-bits-rev* (n curlist cont)
-  (cond
-    ((isnil n)
-      (cont curlist))
-    (t
-      (do
-        (<- (car-n cdr-n) (n))
-        (<- (not-car-n) (eval-bool (not car-n)))
-        (invert-bits-rev* cdr-n (cons not-car-n curlist) cont)))))
-
 (defmacro-lazy 8-to-24-bit* (n)
   `(16 (lambda (x f) (f t x)) ,n))
 
@@ -191,9 +172,7 @@
 (defun-lazy lookup-src-if-imm (reg src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
-    (do
-      (<- (src) (reg-read* reg *src))
-      (cont src))))
+    (reg-read* reg *src cont)))
 
 (defrec-lazy eval (reg memory progtree stdin curblock)
   (cond
