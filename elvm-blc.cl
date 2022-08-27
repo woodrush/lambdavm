@@ -32,7 +32,7 @@
   ((lookup-tree-template int-zero) memory address cont))
 
 (defun-lazy lookup-progtree (memory address cont)
-  ((lookup-tree-template nil) memory address cont))
+  ((lookup-tree-template int-zero) memory address cont))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -189,6 +189,8 @@
           SYS-STRING-TERM)
         (reg-write* reg nextpc reg-PC
           (eval memory progtree stdin nextblock))))
+    (((car curblock) (lambda (a b c d x) nil) t)
+      SYS-STRING-TERM)
     (t
       (do
         (<- (curinst nextblock) (curblock))
