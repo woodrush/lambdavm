@@ -366,6 +366,7 @@
 (defun-lazy main (memtree progtree-cont stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
+    (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add-reverse* add-reverse*)
     (let* 16 16)
