@@ -97,11 +97,30 @@
       (do
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
-        (<- (curbit) (eval-bool (not (xor (not car-n) (xor (not car-m) (not carry))))))
-        (<- (nextcarry) (eval-bool (or
-                                    (and car-n carry)
-                                    (and car-m carry)
-                                    (and car-n car-m))))
+        (<- (curbit)
+          (eval-bool
+            (if car-n
+              (if car-m
+                carry
+                (if carry
+                  nil t))
+              (if car-m
+                (if carry
+                  nil t)
+                carry))
+          ;; (not (xor (not car-n) (xor (not car-m) (not carry))))
+          ))
+        (<- (nextcarry)
+          (eval-bool
+            (if car-n
+              (if car-m
+                t
+                (if carry
+                  t nil))
+              (if car-m
+                (if carry
+                  t nil)
+                nil))))
         (add-reverse* cdr-n cdr-m (cons curbit curlist) nextcarry cont)))))
 
 
@@ -304,13 +323,9 @@
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
-    (let* *dst-cmp (cdr *dst))
-    (<- (dst-value) (reg-read* reg *dst-cmp))
-    (<- (ret) ((lambda (cont)
-      (if (cmp dst-value src (car *dst))
-        (cont int-one)
-        (cont int-zero)))))
-    (<- (reg) (reg-write* reg ret *dst-cmp))
+    (<- (enum-cmp dst) (*dst))
+    (<- (dst-value) (reg-read* reg dst))
+    (<- (reg) (reg-write* reg (if (cmp dst-value src enum-cmp) int-one int-zero) dst))
     (eval reg memory progtree stdin nextblock)))
 
 (def-lazy sub-case
