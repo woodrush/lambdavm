@@ -86,7 +86,8 @@
 (defun-lazy increment-pc* (pc cont)
   (do
     (<- (pc) (reverse* pc))
-    (<- (pc-rev) (increment-pc-reverse pc nil nil))
+    ;; (<- (pc-rev) (increment-pc-reverse pc nil nil))
+    (<- (pc-rev) (add-reverse* pc int-zero nil nil))
     (cont pc-rev)))
 
 (defrec-lazy add-reverse* (n m curlist carry cont)
@@ -107,9 +108,7 @@
               (if car-m
                 (if carry
                   nil t)
-                carry))
-          ;; (not (xor (not car-n) (xor (not car-m) (not carry))))
-          ))
+                carry))))
         (<- (nextcarry)
           (eval-bool
             (if car-n
