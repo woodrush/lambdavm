@@ -41,18 +41,17 @@
     (t
       (do
         (<- (car-address cdr-address) (address))
-        (<- (memory-orig memory-target) ((lambda (cont)
-          (cond
-            ((isnil memory)
-              (cont nil nil))
-            (t
-              (do
-                
+        (<- (memory-orig memory-target)
+          ((lambda (cont)
+            (cond
+              ((isnil memory)
+                (cont nil nil))
+              (t
                 (if car-address
                   (do
                     (<- (car-memory cdr-memory) (memory))
                     (cont cdr-memory car-memory))
-                  (memory cont))))))))
+                  (memory cont)))))))
         (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
@@ -184,12 +183,12 @@
         (<- (nextblock) (lookup-progtree progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
-        (<- (reg) (reg-write* reg nextpc reg-PC))
-        (eval memory progtree stdin nextblock reg)))
+        ((reg-write* reg nextpc reg-PC)
+          (eval memory progtree stdin nextblock))))
     (t
       (do
         (<- (curinst nextblock) (curblock))
-        (let* eval-reg (lambda (reg) (eval memory progtree stdin nextblock reg)))
+        (let* eval-reg (eval memory progtree stdin nextblock))
         (<- (inst-type src-is-imm *src *dst) (curinst))
         (<- (src) (lookup-src-if-imm reg src-is-imm *src))
         **instruction-typematch**))))
@@ -241,7 +240,6 @@
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
   (do
-    ;; (<- (value) (reg-read* reg *dst))
     (<- (memory) (reg-read* reg *dst (memory-write* memory src)))
     (eval memory progtree stdin nextblock reg)))
 
@@ -252,26 +250,24 @@
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   (do
-    (<- (reg) (reg-write* reg src reg-PC))
     (<- (nextblock) (lookup-progtree progtree src))
-    (eval memory progtree stdin nextblock reg)
-    ))
+    ((reg-write* reg src reg-PC)
+      (eval memory progtree stdin nextblock))))
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
-    (<- (reg nextblock)
-      ((lookup-src-if-imm reg jmp-is-imm *jmp)
+    (((lookup-src-if-imm reg jmp-is-imm *jmp)
         ((reg-read* reg *cmp-dst)
           (lambda (dst-value jmp cont)
             (if (cmp dst-value src enum-cmp)
               (do
                 (<- (reg) (reg-write* reg jmp reg-PC))
                 (<- (nextblock) (lookup-progtree progtree jmp))
-                (cont reg nextblock))
-              (cont reg nextblock))))))
-    (eval memory progtree stdin nextblock reg)))
+                (cont nextblock reg))
+              (cont nextblock reg)))))
+        (eval memory progtree stdin))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
@@ -283,7 +279,6 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
     (<- (enum-cmp dst) (*dst))
-    ;; (<- (dst-value) (reg-read* reg dst))
     (<- (ret)
       ((reg-read* reg dst)
         (lambda (dst-value cont)
@@ -303,14 +298,15 @@
     SYS-STRING-TERM
     ;; getc
     (do
-      (<- (c stdin) ((lambda (cont)
-        (if (isnil stdin)
-          (cont int-zero stdin)
-          (do
-            (<- (car-stdin cdr-stdin) (stdin))
-            (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
-      (<- (reg) (reg-write* reg c *src))
-      (eval memory progtree stdin nextblock reg))
+      (<- (c stdin)
+        ((lambda (cont)
+          (if (isnil stdin)
+            (cont int-zero stdin)
+            (do
+              (<- (car-stdin cdr-stdin) (stdin))
+              (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
+      ((reg-write* reg c *src)
+        (eval memory progtree stdin nextblock)))
     ;; putc
     (do
       (cons (24-to-8-bit* src) (eval-reg reg)))))
