@@ -135,12 +135,21 @@
           (do
             (<- (car-n cdr-n) (n))
             (<- (car-m cdr-m) (m))
-            (cond ((and (not car-n) car-m)
-                    cmpret-gt)
-                  ((and car-n (not car-m))
-                    cmpret-lt)
-                  (t
-                    (cmp* cdr-n cdr-m)))))))
+            (let* next (cmp* cdr-n cdr-m))
+            (if car-n
+              (if car-m
+                next
+                cmpret-lt)
+              (if car-m
+                cmpret-gt
+                next))
+            ;; (cond ((and (not car-n) car-m)
+            ;;         cmpret-gt)
+            ;;       ((and car-n (not car-m))
+            ;;         cmpret-lt)
+            ;;       (t
+            ;;         ))
+                    ))))
 
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
@@ -315,13 +324,10 @@
       (let ((cons-t (lambda (x f) (f t x))))
         (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
-    ;; (let* lookup-tree* lookup-tree*)
-    ;; (let* lookup-tree* lookup-tree*)
     (let* memory-write* memory-write*)
     (let* reverse* reverse*)
     (let* regcode-to-regptr regcode-to-regptr)
     (let* reg-read* reg-read*)
-    ;; (let* reg-write* reg-write*)
     (let* reg-write** reg-write**)
     (eval
       memtree
