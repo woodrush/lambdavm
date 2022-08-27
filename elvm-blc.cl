@@ -10,29 +10,23 @@
     (cont t)
     (cont nil)))
 
-(defun-lazy lookup-tree-template (default)
-  (letrec-lazy lookup-memory* (memory address cont)
-    (cond
-      ((isnil memory)
-        (cont default))
-      ((isnil address)
-        (cont memory))
-      (t
-        (do
-          (<- (car-address cdr-address) (address))
-          (<- (next-memory) ((lambda (cont)
-            (do
-              (<- (car-memory cdr-memory) (memory))
-              (if car-address
-                (cont car-memory)
-                (cont cdr-memory))))))
-          (lookup-memory* next-memory cdr-address cont))))))
+(defrec-lazy lookup-tree* (memory address cont)
+  (cond
+    ((isnil memory)
+      (cont int-zero))
+    ((isnil address)
+      (cont memory))
+    (t
+      (do
+        (<- (car-address cdr-address) (address))
+        (<- (next-memory) ((lambda (cont)
+          (do
+            (<- (car-memory cdr-memory) (memory))
+            (if car-address
+              (cont car-memory)
+              (cont cdr-memory))))))
+        (lookup-tree* next-memory cdr-address cont)))))
 
-(defun-lazy lookup-memory* (memory address cont)
-  ((lookup-tree-template int-zero) memory address cont))
-
-(defun-lazy lookup-progtree (memory address cont)
-  ((lookup-tree-template int-zero) memory address cont))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -117,7 +111,7 @@
   (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
 
 (defun-lazy reg-read* (reg regptr cont)
-  (lookup-memory* reg (regcode-to-regptr regptr) cont))
+  (lookup-tree* reg (regcode-to-regptr regptr) cont))
 
 (defun-lazy reg-write** (reg regptr cont value)
   (memory-write* reg (regcode-to-regptr regptr) value cont))
@@ -184,7 +178,7 @@
         (<- (nextpc)
           ((reg-read* reg reg-PC (reverse*))
             (add-reverse* nil nil t int-zero)))
-        (<- (nextblock) (lookup-progtree progtree nextpc))
+        (<- (nextblock) (lookup-tree* progtree nextpc))
         (if-then-return (isnil nextblock)
           SYS-STRING-TERM)
         (reg-write* reg nextpc reg-PC
@@ -255,7 +249,7 @@
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   ((reg-write* reg src reg-PC
-    ((lookup-progtree progtree src)
+    ((lookup-tree* progtree src)
       (eval memory progtree stdin)))))
 
 (def-lazy jumpcmp-case
@@ -266,13 +260,13 @@
         ((reg-read* reg *cmp-dst)
           (lambda (dst-value jmp cont)
             (if (cmp dst-value src enum-cmp)
-              ((reg-write* reg jmp reg-PC ((lookup-progtree progtree jmp) cont)))
+              ((reg-write* reg jmp reg-PC ((lookup-tree* progtree jmp) cont)))
               (cont nextblock reg)))))
         (eval memory progtree stdin))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
-  (lookup-memory* memory src
+  (lookup-tree* memory src
     (reg-write** reg *dst eval-reg)))
 
 (def-lazy cmp-case
@@ -320,9 +314,9 @@
     (<- (int-zero) ((lambda (cont)
       (let ((cons-t (lambda (x f) (f t x))))
         (cont (16 cons-t (8 cons-t nil)))))))
-    (let* lookup-tree-template lookup-tree-template)
-    (let* lookup-memory* lookup-memory*)
-    (let* lookup-progtree lookup-progtree)
+    (let* lookup-tree* lookup-tree*)
+    ;; (let* lookup-tree* lookup-tree*)
+    ;; (let* lookup-tree* lookup-tree*)
     (let* memory-write* memory-write*)
     (let* reverse* reverse*)
     (let* regcode-to-regptr regcode-to-regptr)
