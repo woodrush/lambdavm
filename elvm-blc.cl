@@ -180,13 +180,11 @@
             (eval memory progtree stdin))))))
     (cond
         ((isnil curblock)
-          (do
-            (<- (nextpc)
-              ((do
-                (reg-read* reg reg-PC)
-                (reverse*))
-              (add-reverse* nil nil t int-zero)))
-            (jumpto nextpc)))
+          (((do
+              (reg-read* reg reg-PC)
+              (reverse*))
+            (add-reverse* nil nil t int-zero))
+           jumpto))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
         (t
