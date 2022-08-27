@@ -303,7 +303,7 @@
       (cons (24-to-8-bit* src) (eval-reg reg)))))
 
 
-(defun-lazy main (memtree progtree-cont stdin)
+(defun-lazy main (memtree progtree stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
@@ -314,15 +314,16 @@
     (<- (int-zero) ((lambda (cont)
       (let ((cons-t (lambda (x f) (f t x))))
         (cont (16 cons-t (8 cons-t nil)))))))
-    (let* lookup-tree* lookup-tree*)
     (let* memory-write* memory-write*)
+    (let* lookup-tree* lookup-tree*)
     (let* reverse* reverse*)
-    (let* regcode-to-regptr regcode-to-regptr)
-    (let* reg-read* reg-read*)
-    (let* reg-write** reg-write**)
+    (<- (reg-read* reg-write**)
+      ((lambda (cont)
+        (let ((regcode-to-regptr regcode-to-regptr))
+          (cont reg-read* reg-write**)))))
     (eval
       memtree
-      progtree-cont
+      progtree
       stdin
       (list (lambda (f) (f inst-jmp t int-zero f)))
       nil)))
