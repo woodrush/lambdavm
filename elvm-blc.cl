@@ -180,8 +180,7 @@
         ((isnil curblock)
           (do
             (<- (sum carry)
-              ((lookup-tree* reg reg-PC)
-               (add-reverse* nil t int-zero)))
+              (add-reverse* nil t int-zero (cdr (cdr reg))))
             (jumpto sum)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
