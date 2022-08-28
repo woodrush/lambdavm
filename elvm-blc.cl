@@ -260,7 +260,7 @@
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
         (jumpto jmp)
-        (eval memory progtree stdin nextblock reg)))))
+        (eval-reg reg)))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
@@ -297,7 +297,8 @@
               (cont int-zero stdin))
             (<- (car-stdin cdr-stdin) (stdin))
             (cont (8-to-24-bit* car-stdin) cdr-stdin)))))
-      ((reg-write* reg c *src (eval memory progtree stdin nextblock))))
+      (reg-write* reg c *src)
+      (eval memory progtree stdin nextblock))
     ;; putc
     (do
       (cons (24-to-8-bit* src) (eval-reg reg)))))
