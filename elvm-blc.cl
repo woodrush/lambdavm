@@ -179,8 +179,7 @@
     (cond
         ((isnil curblock)
           (do
-            (<- (sum carry)
-              (add-reverse* nil t int-zero (cdr (cdr reg))))
+            (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
             (jumpto sum)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
@@ -188,9 +187,15 @@
           (do
             (<- (curinst nextblock) (curblock))
             (let* eval-reg (eval memory progtree stdin nextblock))
-            (<- (inst-type src-is-imm *src *dst) (curinst))
-            (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
-            **instruction-typematch**)))))
+            ;; (<- (inst-type src-is-imm *src *dst) (curinst))
+            (curinst)
+            ((lambda (inst-type src-is-imm *src)
+              ((lookup-src-if-imm* reg src-is-imm *src
+                (lambda (src *dst)
+                  **instruction-typematch**)))))
+            ;; (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
+            ;; **instruction-typematch**
+            )))))
 
 ;;================================================================
 ;; Instructions
