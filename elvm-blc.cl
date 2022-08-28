@@ -151,7 +151,7 @@
     (cont *src)
     (lookup-tree* reg *src cont)))
 
-(defmacro-lazy isnil-4 (item) `(,item (lambda (a b c d x) nil) t))
+
 (defrec-lazy eval (memory progtree stdin curblock reg)
   (do
     (let* jumpto
@@ -165,15 +165,21 @@
         (do
           (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
           (jumpto sum)))
-      ((isnil-4 (car curblock))
+      ;; Checks if (car curblock)  == t == (lambda (x y) x).
+      ;; `jumpto` is a placeholder and can be any term.
+      ;; It is used since it is the first visible variable and encodes to `10`, which is short.
+      (((car curblock) (lambda (a b c d) t) (lambda (b c d) nil) jumpto jumpto jumpto jumpto)
         SYS-STRING-TERM)
       (t
         (do
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock))
+          ;; (<- (inst-type opt) (curinst))
+          ;; (<- (src-is-imm *src) (opt)) ;; Delayed destruction: *dst
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
           (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
           **instruction-typematch**)))))
+
 
 ;;================================================================
 ;; Instructions
