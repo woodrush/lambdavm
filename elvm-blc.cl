@@ -137,10 +137,10 @@
 ;; I/O
 ;;================================================================
 (defmacro-lazy io-bitlength-to-wordsize (n)
-  `(bitlength (lambda (x f) (f t x)) ,n))
+  `(supp-bitlength (lambda (x f) (f t x)) ,n))
 
 (defmacro-lazy wordsize-to-io-bitlength (n)
-  `(bitlength cdr* ,n))
+  `(supp-bitlength cdr* ,n))
 
 
 ;;================================================================
@@ -284,7 +284,7 @@
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
 
 
-(defun-lazy main (bitlength memtree progtree stdin)
+(defun-lazy main (io-bitlength supp-bitlength memtree progtree stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
@@ -293,7 +293,7 @@
     (<- (int-zero)
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
-          (return (bitlength cons-t (SYS-IO-BITLENGTH cons-t nil)))))))
+          (return (supp-bitlength cons-t (io-bitlength cons-t nil)))))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     (eval
