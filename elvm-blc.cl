@@ -46,8 +46,7 @@
             (memory-write* memory-target cdr-address value)))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
-          (cont (cons memory-orig memory-rewritten)))
-          ))))
+          (cont (cons memory-orig memory-rewritten)))))))
 
 (defun-lazy reverse* (l cont)
   ((letrec-lazy reverse** (g curgen)
@@ -92,9 +91,7 @@
               (if car-m
                 carry
                 nil))))
-        (cont (cons curbit curlist) nextcarry)
-        ;; (add-reverse* (cons curbit curlist) nextcarry is-add cdr-n cdr-m cont)
-        ))))
+        (cont (cons curbit curlist) nextcarry)))))
 
 
 
@@ -317,12 +314,14 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
     (<- (enum-cmp dst) (*dst))
-    (((reg-read* reg dst)
-      (lambda (dst-value cont)
-        (if (cmp dst-value src enum-cmp)
-          (reverse* (cons nil (cdr int-zero)) cont)
-          (cont int-zero))))
-     (reg-write** reg dst eval-reg))))
+    (<- (src x)
+      ((reg-read* reg dst)
+       (lambda (dst-value cont)
+         (if (cmp dst-value src enum-cmp)
+           ;; (reverse* (cons nil (cdr int-zero)) cont)
+           (add-reverse* nil t int-zero int-zero cont)
+           (cont int-zero (lambda (x) x))))))
+     (reg-write** reg dst eval-reg src)))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -359,7 +358,7 @@
         (let ((cons-t (lambda (x f) (f t x))))
           (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
-    (let* reverse* reverse*)
+    ;; (let* reverse* reverse*)
     (<- (reg-read* reg-write**)
       ((lambda (cont)
         (let ((regcode-to-regptr regcode-to-regptr))
