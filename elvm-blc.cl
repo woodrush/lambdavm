@@ -98,12 +98,6 @@
 (def-lazy reg-BP (4 (lambda (x f) (f t x)) nil))
 (def-lazy reg-C  (cons t (cons t (cons t (cons nil nil)))))
 
-(defun-lazy reg-write** (reg regptr cont value)
-  (memory-write* reg regptr value cont))
-
-(defmacro-lazy reg-write* (reg value regptr cont)
-  `(reg-write** ,reg ,regptr ,cont ,value))
-
 
 
 ;;================================================================
@@ -163,7 +157,7 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (reg-write* reg jmp reg-PC)
+          (memory-write* reg reg-PC jmp)
           (lookup-tree* progtree jmp)
           (eval memory progtree stdin))))
     (cond
@@ -222,7 +216,7 @@
         (lookup-tree* reg *dst)
         (add* is-add is-add))
        src))
-    (reg-write** reg *dst eval-reg sum)))
+    (memory-write* reg *dst sum eval-reg)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -233,7 +227,7 @@
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-  (reg-write* reg src *dst eval-reg))
+  (memory-write* reg *dst src eval-reg))
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -252,8 +246,9 @@
 
 (def-lazy load-case
   ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
-  (lookup-tree* memory src
-    (reg-write** reg *dst eval-reg)))
+  (do
+    (<- (value) (lookup-tree* memory src))
+    (memory-write* reg *dst value eval-reg)))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
@@ -261,7 +256,7 @@
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
     (<- (sum carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero))
-    (reg-write** reg dst eval-reg sum)))
+    (memory-write* reg dst sum eval-reg)))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -278,7 +273,7 @@
               (return int-zero stdin))
             (<- (car-stdin cdr-stdin) (stdin))
             (return (8-to-24-bit* car-stdin) cdr-stdin)))))
-      (reg-write* reg c *src)
+      (memory-write* reg *src c)
       (eval memory progtree stdin nextblock))
     ;; putc
     (do
@@ -292,19 +287,17 @@
     (let* cmp* cmp*)
     (let* add* add*)
     (let* 16 16)
-    (let* memory-write* memory-write*)
     (<- (int-zero) 
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
           (return (16 cons-t (8 cons-t nil)))))))
+    (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
-    (let* reg-write** reg-write**)
     (eval
       memtree
       progtree
       stdin
       (lookup-tree* progtree int-zero (lambda (x) x))
-      ;; (list (lambda (f) (f inst-jmp t int-zero f)))
       nil)))
 
 (def-lazy SYS-STRING-TERM nil)
