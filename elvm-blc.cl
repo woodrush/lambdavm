@@ -30,21 +30,24 @@
     (t
       (do
         (<- (car-address cdr-address) (address))
-        (<- (memory-orig memory-target)
-          ((lambda (cont)
-            (cond
-              ((isnil memory)
-                (cont nil nil))
-              (t
-                (if car-address
-                  (do
-                    (<- (car-memory cdr-memory) (memory))
-                    (cont cdr-memory car-memory))
-                  (memory cont)))))))
-        (<- (memory-rewritten) (memory-write* memory-target cdr-address value))
+        (<- (memory-rewritten memory-orig)
+          (do
+            (<- (memory-target)
+              ((lambda (cont)
+                (cond
+                  ((isnil memory)
+                    (cont nil nil))
+                  (t
+                    (if car-address
+                      (memory cont)
+                      (do
+                        (<- (car-memory cdr-memory) (memory))
+                        (cont cdr-memory car-memory))))))))
+            (memory-write* memory-target cdr-address value)))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
-          (cont (cons memory-orig memory-rewritten)))))))
+          (cont (cons memory-orig memory-rewritten)))
+          ))))
 
 (defun-lazy reverse* (l cont)
   ((letrec-lazy reverse** (g curgen)
@@ -60,15 +63,16 @@
     (cont t)
     (cont nil)))
 
-(defrec-lazy add-reverse* (curlist carry is-add n m cont)
+(defrec-lazy add-reverse* (initcarry is-add n m cont)
   (cond
     ((isnil n)
-      (cont curlist))
+      (cont nil initcarry))
     (t
       (do
-        (let* not-carry (not carry))
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
+        (<- (curlist carry) (add-reverse* initcarry is-add cdr-n cdr-m))
+        (let* not-carry (not carry))
         (let* car-m (if is-add car-m (not car-m)))
         (<- (curbit)
           (eval-bool
@@ -88,7 +92,9 @@
               (if car-m
                 carry
                 nil))))
-        (add-reverse* (cons curbit curlist) nextcarry is-add cdr-n cdr-m cont)))))
+        (cont (cons curbit curlist) nextcarry)
+        ;; (add-reverse* (cons curbit curlist) nextcarry is-add cdr-n cdr-m cont)
+        ))))
 
 
 
@@ -97,14 +103,51 @@
 ;;================================================================
 (def-lazy reg-A  (lambda (x) (x nil nil nil)))
 (def-lazy reg-B  (lambda (x) (x t   nil nil)))
-(def-lazy reg-C  (lambda (x) (x nil t   nil)))
-(def-lazy reg-D  (lambda (x) (x t   t   nil)))
+(def-lazy reg-D  (lambda (x) (x nil t   nil)))
 (def-lazy reg-SP (lambda (x) (x nil nil t  )))
-(def-lazy reg-BP (lambda (x) (x t   nil t  )))
 (def-lazy reg-PC (lambda (x) (x nil t   t  )))
+(def-lazy reg-BP (lambda (x) (x t   nil t  )))
+(def-lazy reg-C  (lambda (x) (x t   t   nil)))
 
+;; (def-lazy reg-SP (let ((nil nil))(lambda (x) (x nil nil nil))))
+;; (def-lazy reg-C  (let ((t t)) (lambda (x) (x t t t))))
+;; (def-lazy reg-A  (lambda (x) (x t   nil nil)))
+;; (def-lazy reg-D  (lambda (x) (x nil t   nil)))
+;; (def-lazy reg-B (lambda (x) (x nil nil t  )))
+;; (def-lazy reg-BP (lambda (x) (x t   nil t  )))
+;; (def-lazy reg-PC (lambda (x) (x nil t   t  )))
+
+;; (def-lazy reg-A  (lambda (x) (x t t)))
+;; (def-lazy reg-D  (lambda (x) (x t nil)))
+;; (def-lazy reg-SP (lambda (x) (x nil t t)))
+;; (def-lazy reg-B  (lambda (x) (x nil t nil)))
+;; (def-lazy reg-BP (lambda (x) (x nil nil t)))
+;; (def-lazy reg-C  (lambda (x) (x nil nil nil t)))
+;; (def-lazy reg-PC (lambda (x) (x nil nil nil nil)))
+
+;; ;; REG-A: 000101100000110000101100000110000010
+;; ;; REG-A: 0101000001110011101000000101100000110110000010
+;; ;; (def-lazy reg-A  (2 (lambda (x f) (f t x)) nil))
+(def-lazy reg-A  (cons t (cons t nil)))
+(def-lazy reg-D  (cons t (cons nil  nil)))
+(def-lazy reg-SP (cons nil (cons t (cons t nil))))
+(def-lazy reg-B  (cons nil (cons t (cons nil nil))))
+(def-lazy reg-BP (cons nil (cons nil (cons t nil))))
+(def-lazy reg-C  (cons nil (cons nil (cons nil (cons t nil)))))
+(def-lazy reg-PC 
+(cons nil (cons nil (cons nil (cons nil nil))))
+)
+;; ;; REG-PC: 00010110000010000101100000100001011000001000010110000010000010
+;; ;; REG-PC: 010000010110110000101101110000101101111000010110111110111110000010
+;; ;; REG-PC: 010101000110100000011100111010010000000101101110110000010000010
+;; ;; REG-PC: 0101010001101000000111001110100000010111000001010000010
+
+
+;; (defun-lazy regcode-to-regptr (regcode)
+;;   (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
 (defun-lazy regcode-to-regptr (regcode)
-  (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
+  regcode)
+
 
 (defun-lazy reg-read* (reg regptr cont)
   (lookup-tree* reg (regcode-to-regptr regptr) cont))
@@ -181,10 +224,11 @@
           (eval memory progtree stdin))))
     (cond
         ((isnil curblock)
-          ((reg-read* reg reg-PC)
-           (reverse*)
-           (add-reverse* nil nil t int-zero)
-           (jumpto)))
+          (do
+            (<- (sum carry)
+              ((reg-read* reg reg-PC)
+               (add-reverse* nil t int-zero)))
+            (jumpto sum)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
         (t
@@ -231,11 +275,12 @@
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
   (do
     (<- (*dst is-add) (*dst))
-    ((do
-      (reverse* src) ; src
-      (reg-read* reg *dst (reverse*)) ; dst
-      (add-reverse* nil is-add is-add)))
-    (reg-write** reg *dst eval-reg)))
+    (<- (sum carry)
+      ((do
+        ((lambda (cont) (cont src))) ; src
+        (reg-read* reg *dst) ; dst
+        (add-reverse* is-add is-add))))
+    (reg-write** reg *dst eval-reg sum)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -255,7 +300,7 @@
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
-    (<- (enum-cmp *cmp-dst jmp-is-imm *jmp) (*dst))
+    (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* reg jmp-is-imm *jmp)
     (reg-read* reg *cmp-dst)
     (lambda (dst-value jmp)
@@ -289,11 +334,11 @@
     (do
       (<- (c stdin)
         ((lambda (cont)
-          (if (isnil stdin)
-            (cont int-zero stdin)
-            (do
-              (<- (car-stdin cdr-stdin) (stdin))
-              (cont (8-to-24-bit* car-stdin) cdr-stdin))))))
+          (do
+            (if-then-return (isnil stdin)
+              (cont int-zero stdin))
+            (<- (car-stdin cdr-stdin) (stdin))
+            (cont (8-to-24-bit* car-stdin) cdr-stdin)))))
       ((reg-write* reg c *src (eval memory progtree stdin nextblock))))
     ;; putc
     (do
@@ -309,9 +354,10 @@
     (let* add-reverse* add-reverse*)
     (let* 16 16)
     (let* memory-write* memory-write*)
-    (<- (int-zero) ((lambda (cont)
-      (let ((cons-t (lambda (x f) (f t x))))
-        (cont (16 cons-t (8 cons-t nil)))))))
+    (<- (int-zero) 
+      ((lambda (cont)
+        (let ((cons-t (lambda (x f) (f t x))))
+          (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
     (let* reverse* reverse*)
     (<- (reg-read* reg-write**)
