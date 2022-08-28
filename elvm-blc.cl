@@ -136,10 +136,10 @@
 ;;================================================================
 ;; I/O
 ;;================================================================
-(defmacro-lazy 8-to-24-bit* (n)
+(defmacro-lazy io-bitlength-to-wordsize (n)
   `(bitlength (lambda (x f) (f t x)) ,n))
 
-(defmacro-lazy 24-to-8-bit* (n)
+(defmacro-lazy wordsize-to-io-bitlength (n)
   `(bitlength cdr* ,n))
 
 
@@ -276,12 +276,12 @@
             (if-then-return (isnil stdin)
               (return int-zero stdin))
             (<- (car-stdin cdr-stdin) (stdin))
-            (return (8-to-24-bit* car-stdin) cdr-stdin)))))
+            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
       (memory-write* reg *src c)
       (eval memory progtree stdin nextblock))
     ;; putc
     (do
-      (cons (24-to-8-bit* src) (eval-reg reg)))))
+      (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
 
 
 (defun-lazy main (bitlength memtree progtree stdin)
@@ -293,7 +293,7 @@
     (<- (int-zero)
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
-          (return (bitlength cons-t (8 cons-t nil)))))))
+          (return (bitlength cons-t (SYS-IO-BITLENGTH cons-t nil)))))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     (eval
@@ -303,6 +303,7 @@
       (lookup-tree* progtree int-zero (lambda (x) x))
       nil)))
 
+(def-lazy SYS-IO-BITLENGTH 8)
 (def-lazy SYS-STRING-TERM nil)
 
 
