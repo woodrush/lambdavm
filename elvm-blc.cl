@@ -314,13 +314,13 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
     (<- (enum-cmp dst) (*dst))
-    (<- (src x)
+    (<- (src)
       ((reg-read* reg dst)
        (lambda (dst-value cont)
          (if (cmp dst-value src enum-cmp)
            ;; (reverse* (cons nil (cdr int-zero)) cont)
-           (add-reverse* nil t int-zero int-zero cont)
-           (cont int-zero (lambda (x) x))))))
+           (add-reverse* nil t int-zero int-zero (lambda (sum carry) (cont sum)))
+           (cont int-zero)))))
      (reg-write** reg dst eval-reg src)))
 
 (def-lazy io-case
@@ -358,7 +358,6 @@
         (let ((cons-t (lambda (x f) (f t x))))
           (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
-    ;; (let* reverse* reverse*)
     (<- (reg-read* reg-write**)
       ((lambda (cont)
         (let ((regcode-to-regptr regcode-to-regptr))
