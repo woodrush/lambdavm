@@ -195,19 +195,17 @@
 ;; Instructions
 ;;================================================================
 (def-lazy   inst-exit    nil)
-(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7) i1)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7) i2)
-(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7) i3)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7) i4)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7) i5)
-(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6 i7) i6)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7) i7)
+(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6) i1)
+(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6) i2)
+(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6) i3)
+(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6) i4)
+(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6) i5)
+(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6) i6)
 
 (def-lazy **instruction-typematch**
   (inst-type
     io-case
     jumpcmp-case
-    jmp-case
     load-case
     store-case
     addsub-case
@@ -242,12 +240,6 @@
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
   (reg-write* reg src *dst eval-reg))
-
-(def-lazy jmp-case
-  ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  nil
-  ;; (jumpto src)
-  )
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))

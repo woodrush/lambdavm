@@ -20,7 +20,6 @@
     inst-exit
     inst-io
     inst-jumpcmp
-    inst-jmp
     inst-load
     inst-store
     inst-addsub
