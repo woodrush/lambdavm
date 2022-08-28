@@ -245,11 +245,15 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  (jumpto src))
+  nil
+  ;; (jumpto src)
+  )
 
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
+    (if-then-return (isnil-4 *dst)
+      (jumpto src))
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (<- (jmp) (lookup-src-if-imm* reg jmp-is-imm *jmp))
     (let* jmp-isnil (isnil jmp))
@@ -310,7 +314,7 @@
       memtree
       progtree
       stdin
-      (list (lambda (f) (f inst-jmp t int-zero f)))
+      (list (lambda (f) (f inst-jumpcmp t int-zero nil)))
       nil)))
 
 (def-lazy SYS-STRING-TERM nil)
