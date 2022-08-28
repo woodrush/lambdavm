@@ -195,20 +195,18 @@
 ;; Instructions
 ;;================================================================
 (def-lazy   inst-exit    nil)
-(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8) i2)
-(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
-(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8) i4)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8) i5)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8) i6)
-(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6 i7 i8) i7)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8) i8)
+(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7) i1)
+(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7) i2)
+(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7) i3)
+(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7) i4)
+(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7) i5)
+(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6 i7) i6)
+(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7) i7)
 
 (def-lazy **instruction-typematch**
   (inst-type
     io-case
     jumpcmp-case
-    cmp-case
     jmp-case
     load-case
     store-case
@@ -254,14 +252,15 @@
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (<- (jmp) (lookup-src-if-imm* reg jmp-is-imm *jmp))
+    (let* jmp-isnil (isnil jmp))
     (<- (dst-value) (lookup-tree* reg *cmp-dst))
     (if (cmp dst-value src enum-cmp)
-      (if (isnil jmp)
+      (if jmp-isnil
         (do
           (<- (sum carry) (add-reverse* nil t int-zero int-zero))
           (reg-write** reg *cmp-dst eval-reg sum))
         (jumpto jmp))
-      (if (isnil jmp)
+      (if jmp-isnil
         (reg-write** reg *cmp-dst eval-reg int-zero)
         (eval-reg reg)))))
 
@@ -269,23 +268,6 @@
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
   (lookup-tree* memory src
     (reg-write** reg *dst eval-reg)))
-
-(def-lazy cmp-case
-  nil
-  ;; ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-  ;; (do
-  ;;   (<- (enum-cmp dst) (*dst))
-  ;;   (<- (src)
-  ;;     ((do
-  ;;       (<- (dst-value) (lookup-tree* reg dst))
-  ;;       (lambda (cont)
-  ;;         (if (cmp dst-value src enum-cmp)
-  ;;           (do
-  ;;             (<- (sum carry) (add-reverse* nil t int-zero int-zero))
-  ;;             (cont sum))
-  ;;           (cont int-zero))))))
-  ;;    (reg-write** reg dst eval-reg src))
-     )
 
 (def-lazy io-case
   ;; Instruction structure:

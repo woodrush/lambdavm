@@ -17,24 +17,9 @@
     (lambda (f) (f f return-tree))
     (new-bintree-node a b)
 
-    reg-A
-    reg-B
-    reg-C
-    reg-D
-    reg-SP
-    reg-BP
-
-    (list nil nil nil)
-    (list t nil nil)
-    (list nil t nil)
-    (list t t nil)
-    (list nil nil t)
-    (list t nil t)
-
     inst-exit
     inst-io
     inst-jumpcmp
-    inst-cmp
     inst-jmp
     inst-load
     inst-store
@@ -52,6 +37,21 @@
     io-getc
 
     SYS-STRING-TERM
+
+    reg-A
+    reg-B
+    reg-C
+    reg-D
+    reg-SP
+    reg-BP
+    reg-PC
+    (cons t (cons t (cons t (cons t nil))))
+
+    (let ((cons-t   (lambda (x f) (f t x)))
+          (cons-nil (lambda (x f) (f nil x))))
+      a)
+    (f3 (f2 (f1 nil)))
+
 ))
 
 
