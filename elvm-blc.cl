@@ -177,24 +177,19 @@
           (lookup-tree* progtree jmp)
           (eval memory progtree stdin))))
     (cond
-        ((isnil curblock)
-          (do
-            (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
-            (jumpto sum)))
-        ((isnil-4 (car curblock))
-          SYS-STRING-TERM)
-        (t
-          (do
-            (<- (curinst nextblock) (curblock))
-            (let* eval-reg (eval memory progtree stdin nextblock))
-            ;; (<- (inst-type src-is-imm *src *dst) (curinst))
-            (<- (inst-type src-is-imm *src) (curinst))
-            (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
-            **instruction-typematch**
-            ;; ((lambda (inst-type src-is-imm *s
-            ;; (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
-            ;; **instruction-typematch**
-            )))))
+      ((isnil curblock)
+        (do
+          (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
+          (jumpto sum)))
+      ((isnil-4 (car curblock))
+        SYS-STRING-TERM)
+      (t
+        (do
+          (<- (curinst nextblock) (curblock))
+          (let* eval-reg (eval memory progtree stdin nextblock))
+          (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
+          (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
+          **instruction-typematch**)))))
 
 ;;================================================================
 ;; Instructions
@@ -274,16 +269,10 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   (do
     (<- (enum-cmp dst) (*dst))
-    (<- (src)
-      ((do
-        (<- (dst-value) (lookup-tree* reg dst))
-        (lambda (cont)
-          (if (cmp dst-value src enum-cmp)
-            (do
-              (<- (sum carry) (add-reverse* nil t int-zero int-zero))
-              (cont sum))
-            (cont int-zero))))))
-     (reg-write** reg dst eval-reg src)))
+    (<- (dst-value) (lookup-tree* reg dst))
+        (<- (sum carry) (add-reverse* nil (cmp dst-value src enum-cmp) int-zero int-zero))
+        (reg-write** reg dst eval-reg sum)
+     ))
 
 (def-lazy io-case
   ;; Instruction structure:
