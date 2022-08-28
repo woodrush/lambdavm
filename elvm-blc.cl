@@ -98,13 +98,13 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
-(def-lazy reg-A  (cons nil (cons nil nil)))
-(def-lazy reg-D  (cons nil (cons t nil)))
-(def-lazy reg-SP (cons t (cons nil (cons nil nil))))
-(def-lazy reg-B  (cons t (cons nil (cons t nil))))
-(def-lazy reg-BP (cons t (cons t (cons nil nil))))
+(def-lazy reg-PC (cons nil (cons nil nil)))
+(def-lazy reg-A  (cons nil (cons t nil)))
+(def-lazy reg-D  (cons t (cons nil (cons nil nil))))
+(def-lazy reg-SP (cons t (cons nil (cons t nil))))
+(def-lazy reg-B  (cons t (cons t (cons nil nil))))
+(def-lazy reg-BP (4 (lambda (x f) (f t x)) nil))
 (def-lazy reg-C  (cons t (cons t (cons t (cons nil nil)))))
-(def-lazy reg-PC (cons t (cons t (cons t (cons t nil)))))
 
 (defun-lazy reg-write** (reg regptr cont value)
   (memory-write* reg regptr value cont))
