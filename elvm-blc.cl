@@ -14,14 +14,14 @@
     (t
       (do
         (<- (car-address cdr-address) (address))
-        (<- (next-memory) ((lambda (cont)
-          (do
-            (<- (car-memory cdr-memory) (memory))
-            (if car-address
-              (cont car-memory)
-              (cont cdr-memory))))))
+        (<- (next-memory)
+          ((lambda (cont)
+            (do
+              (<- (car-memory cdr-memory) (memory))
+              (if car-address
+                (cont car-memory)
+                (cont cdr-memory))))))
         (lookup-tree* next-memory cdr-address cont)))))
-
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -37,25 +37,16 @@
                 (cond
                   ((isnil memory)
                     (cont nil nil))
+                  (car-address
+                    (memory cont))
                   (t
-                    (if car-address
-                      (memory cont)
-                      (do
-                        (<- (car-memory cdr-memory) (memory))
-                        (cont cdr-memory car-memory))))))))
+                    (do
+                      (<- (car-memory cdr-memory) (memory))
+                      (cont cdr-memory car-memory)))))))
             (memory-write* memory-target cdr-address value)))
         (if car-address
           (cont (cons memory-rewritten memory-orig))
           (cont (cons memory-orig memory-rewritten)))))))
-
-(defun-lazy reverse* (l cont)
-  ((letrec-lazy reverse** (g curgen)
-    (if (isnil g)
-      (cont curgen)
-      (do
-        (<- (car-g cdr-g) (g))
-        (reverse** cdr-g (cons car-g curgen)))))
-   l nil))
 
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
@@ -63,7 +54,7 @@
       (cont t)
       (cont nil))))
 
-(defrec-lazy add-reverse* (initcarry is-add n m cont)
+(defrec-lazy add* (initcarry is-add n m cont)
   (cond
     ((isnil n)
       (cont nil initcarry))
@@ -71,7 +62,7 @@
       (do
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
-        (<- (curlist carry) (add-reverse* initcarry is-add cdr-n cdr-m))
+        (<- (curlist carry) (add* initcarry is-add cdr-n cdr-m))
         (let* not-carry (not carry))
         (let* car-m (if is-add car-m (not car-m)))
         (<- (curbit)
@@ -178,7 +169,7 @@
     (cond
       ((isnil curblock)
         (do
-          (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
+          (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
           (jumpto sum)))
       ((isnil-4 (car curblock))
         SYS-STRING-TERM)
@@ -229,7 +220,7 @@
     (<- (sum carry)
       ((do
         (lookup-tree* reg *dst)
-        (add-reverse* is-add is-add))
+        (add* is-add is-add))
        src))
     (reg-write** reg *dst eval-reg sum)))
 
@@ -260,7 +251,7 @@
         (eval-reg reg)))))
 
 (def-lazy load-case
-  ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
+  ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
   (lookup-tree* memory src
     (reg-write** reg *dst eval-reg)))
 
@@ -269,7 +260,7 @@
   (do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
-    (<- (sum carry) (add-reverse* nil (cmp dst-value src enum-cmp) int-zero int-zero))
+    (<- (sum carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero))
     (reg-write** reg dst eval-reg sum)))
 
 (def-lazy io-case
@@ -299,7 +290,7 @@
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
-    (let* add-reverse* add-reverse*)
+    (let* add* add*)
     (let* 16 16)
     (let* memory-write* memory-write*)
     (<- (int-zero) 
@@ -312,7 +303,8 @@
       memtree
       progtree
       stdin
-      (list (lambda (f) (f inst-jmp t int-zero f)))
+      (lookup-tree* progtree int-zero (lambda (x) x))
+      ;; (list (lambda (f) (f inst-jmp t int-zero f)))
       nil)))
 
 (def-lazy SYS-STRING-TERM nil)
