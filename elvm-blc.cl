@@ -137,10 +137,10 @@
 ;; I/O
 ;;================================================================
 (defmacro-lazy 8-to-24-bit* (n)
-  `(16 (lambda (x f) (f t x)) ,n))
+  `(bitlength (lambda (x f) (f t x)) ,n))
 
 (defmacro-lazy 24-to-8-bit* (n)
-  `(16 cdr* ,n))
+  `(bitlength cdr* ,n))
 
 
 ;;================================================================
@@ -174,8 +174,6 @@
         (do
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock))
-          ;; (<- (inst-type opt) (curinst))
-          ;; (<- (src-is-imm *src) (opt)) ;; Delayed destruction: *dst
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
           (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
           **instruction-typematch**)))))
@@ -286,17 +284,16 @@
       (cons (24-to-8-bit* src) (eval-reg reg)))))
 
 
-(defun-lazy main (memtree progtree stdin)
+(defun-lazy main (bitlength memtree progtree stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    (let* 16 16)
-    (<- (int-zero) 
+    (<- (int-zero)
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
-          (return (16 cons-t (8 cons-t nil)))))))
+          (return (bitlength cons-t (8 cons-t nil)))))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     (eval
