@@ -98,59 +98,19 @@
 ;;================================================================
 ;; Registers
 ;;================================================================
-(def-lazy reg-A  (lambda (x) (x nil nil nil)))
-(def-lazy reg-B  (lambda (x) (x t   nil nil)))
-(def-lazy reg-D  (lambda (x) (x nil t   nil)))
-(def-lazy reg-SP (lambda (x) (x nil nil t  )))
-(def-lazy reg-PC (lambda (x) (x nil t   t  )))
-(def-lazy reg-BP (lambda (x) (x t   nil t  )))
-(def-lazy reg-C  (lambda (x) (x t   t   nil)))
-
-;; (def-lazy reg-SP (let ((nil nil))(lambda (x) (x nil nil nil))))
-;; (def-lazy reg-C  (let ((t t)) (lambda (x) (x t t t))))
-;; (def-lazy reg-A  (lambda (x) (x t   nil nil)))
-;; (def-lazy reg-D  (lambda (x) (x nil t   nil)))
-;; (def-lazy reg-B (lambda (x) (x nil nil t  )))
-;; (def-lazy reg-BP (lambda (x) (x t   nil t  )))
-;; (def-lazy reg-PC (lambda (x) (x nil t   t  )))
-
-;; (def-lazy reg-A  (lambda (x) (x t t)))
-;; (def-lazy reg-D  (lambda (x) (x t nil)))
-;; (def-lazy reg-SP (lambda (x) (x nil t t)))
-;; (def-lazy reg-B  (lambda (x) (x nil t nil)))
-;; (def-lazy reg-BP (lambda (x) (x nil nil t)))
-;; (def-lazy reg-C  (lambda (x) (x nil nil nil t)))
-;; (def-lazy reg-PC (lambda (x) (x nil nil nil nil)))
-
-;; ;; REG-A: 000101100000110000101100000110000010
-;; ;; REG-A: 0101000001110011101000000101100000110110000010
-;; ;; (def-lazy reg-A  (2 (lambda (x f) (f t x)) nil))
-(def-lazy reg-A  (cons t (cons t nil)))
-(def-lazy reg-D  (cons t (cons nil  nil)))
-(def-lazy reg-SP (cons nil (cons t (cons t nil))))
-(def-lazy reg-B  (cons nil (cons t (cons nil nil))))
-(def-lazy reg-BP (cons nil (cons nil (cons t nil))))
-(def-lazy reg-C  (cons nil (cons nil (cons nil (cons t nil)))))
-(def-lazy reg-PC 
-(cons nil (cons nil (cons nil (cons nil nil))))
-)
-;; ;; REG-PC: 00010110000010000101100000100001011000001000010110000010000010
-;; ;; REG-PC: 010000010110110000101101110000101101111000010110111110111110000010
-;; ;; REG-PC: 010101000110100000011100111010010000000101101110110000010000010
-;; ;; REG-PC: 0101010001101000000111001110100000010111000001010000010
-
-
-;; (defun-lazy regcode-to-regptr (regcode)
-;;   (regcode (lambda (x y z) (cons x (cons y (cons z nil))))))
-(defun-lazy regcode-to-regptr (regcode)
-  regcode)
-
+(def-lazy reg-A  (cons nil (cons nil nil)))
+(def-lazy reg-D  (cons nil (cons t nil)))
+(def-lazy reg-SP (cons t (cons nil (cons nil nil))))
+(def-lazy reg-B  (cons t (cons nil (cons t nil))))
+(def-lazy reg-BP (cons t (cons t (cons nil nil))))
+(def-lazy reg-C  (cons t (cons t (cons t (cons nil nil)))))
+(def-lazy reg-PC (cons t (cons t (cons t (cons t nil)))))
 
 (defun-lazy reg-read* (reg regptr cont)
-  (lookup-tree* reg (regcode-to-regptr regptr) cont))
+  (lookup-tree* reg regptr cont))
 
 (defun-lazy reg-write** (reg regptr cont value)
-  (memory-write* reg (regcode-to-regptr regptr) value cont))
+  (memory-write* reg regptr value cont))
 
 (defmacro-lazy reg-write* (reg value regptr cont)
   `(reg-write** ,reg ,regptr ,cont ,value))
@@ -360,10 +320,8 @@
         (let ((cons-t (lambda (x f) (f t x))))
           (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
-    (<- (reg-read* reg-write**)
-      ((lambda (cont)
-        (let ((regcode-to-regptr regcode-to-regptr))
-          (cont reg-read* reg-write**)))))
+    (let* reg-read* reg-read*)
+    (let* reg-write** reg-write**)
     (eval
       memtree
       progtree
