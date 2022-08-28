@@ -1,5 +1,3 @@
-(defparameter profile-index-depth nil)
-
 (defun islambda (expr)
   (eq `lambda (car expr)))
 
@@ -37,11 +35,7 @@
   (labels
     ((lookup (env var)
        (let ((i (position var env :test #'equal)))
-         (if profile-index-depth
-          (if i (format nil "~%~d:~a~%" (+ 1 i) (write-to-string var))
-                (format nil "~%?:~a~%" (write-to-string var)))
-          (if i (+ 1 i) (decorate-varname var)))
-         )))
+         (if i (+ 1 i) (decorate-varname var)))))
     (if (atom body)
         (list (lookup env body))
         (if (not (islambda body))
@@ -183,8 +177,7 @@
 (defmacro-lazy cdr (l) `(,l nil))
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 
-(defun-lazy isnil (l) (l (lambda (a b x) nil) t))
-;; (defmacro-lazy isnil (l) `(,l (lambda (a b x) nil) t))
+(defmacro-lazy isnil (l) `(,l (lambda (a b x) nil) t))
 (defmacro-lazy inflist (item)
   `((lambda (x) (x x))
     (lambda (self)

@@ -179,7 +179,8 @@
     (cond
         ((isnil curblock)
           (do
-            (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
+            (<- (sum carry)
+              (add-reverse* nil t int-zero (cdr (cdr reg))))
             (jumpto sum)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
@@ -195,17 +196,21 @@
 ;; Instructions
 ;;================================================================
 (def-lazy   inst-exit    nil)
-(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6) i1)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6) i2)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6) i3)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6) i4)
-(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6) i5)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6) i6)
+(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
+(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8) i2)
+(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
+(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8) i4)
+(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8) i5)
+(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8) i6)
+(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6 i7 i8) i7)
+(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8) i8)
 
 (def-lazy **instruction-typematch**
   (inst-type
     io-case
     jumpcmp-case
+    cmp-case
+    jmp-case
     load-case
     store-case
     addsub-case
@@ -241,29 +246,40 @@
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
   (reg-write* reg src *dst eval-reg))
 
+(def-lazy jmp-case
+  ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
+  (jumpto src))
+
 (def-lazy jumpcmp-case
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
-    (if-then-return (isnil-4 *dst)
-      (jumpto src))
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
-    (<- (jmp) (lookup-src-if-imm* reg jmp-is-imm *jmp))
-    (let* jmp-isnil (isnil jmp))
-    (<- (dst-value) (lookup-tree* reg *cmp-dst))
-    (if (cmp dst-value src enum-cmp)
-      (if jmp-isnil
-        (do
-          (<- (sum carry) (add-reverse* nil t int-zero int-zero))
-          (reg-write** reg *cmp-dst eval-reg sum))
-        (jumpto jmp))
-      (if jmp-isnil
-        (reg-write** reg *cmp-dst eval-reg int-zero)
+    (lookup-src-if-imm* reg jmp-is-imm *jmp)
+    (lookup-tree* reg *cmp-dst)
+    (lambda (dst-value jmp)
+      (if (cmp dst-value src enum-cmp)
+        (jumpto jmp)
         (eval-reg reg)))))
 
 (def-lazy load-case
   ;; Instruction structure:: (cons4 inst-load [src-isimm] [src] [*dst])
   (lookup-tree* memory src
     (reg-write** reg *dst eval-reg)))
+
+(def-lazy cmp-case
+  ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
+  (do
+    (<- (enum-cmp dst) (*dst))
+    (<- (src)
+      ((do
+        (<- (dst-value) (lookup-tree* reg dst))
+        (lambda (cont)
+          (if (cmp dst-value src enum-cmp)
+            (do
+              (<- (sum carry) (add-reverse* nil t int-zero int-zero))
+              (cont sum))
+            (cont int-zero))))))
+     (reg-write** reg dst eval-reg src)))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -306,7 +322,7 @@
       memtree
       progtree
       stdin
-      (list (lambda (f) (f inst-jumpcmp t int-zero nil)))
+      (list (lambda (f) (f inst-jmp t int-zero f)))
       nil)))
 
 (def-lazy SYS-STRING-TERM nil)
