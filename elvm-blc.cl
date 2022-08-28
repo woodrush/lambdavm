@@ -296,12 +296,7 @@
           (return (supp-bitlength cons-t (io-bitlength cons-t nil)))))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
-    (eval
-      memtree
-      progtree
-      stdin
-      (lookup-tree* progtree int-zero (lambda (x) x))
-      nil)))
+    ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) nil)))
 
 (def-lazy SYS-IO-BITLENGTH 8)
 (def-lazy SYS-STRING-TERM nil)
