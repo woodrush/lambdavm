@@ -179,8 +179,7 @@
     (cond
         ((isnil curblock)
           (do
-            (<- (sum carry)
-              (add-reverse* nil t int-zero (cdr (cdr reg))))
+            (<- (sum carry) (add-reverse* nil t int-zero (cdr (cdr reg))))
             (jumpto sum)))
         ((isnil-4 (car curblock))
           SYS-STRING-TERM)
@@ -254,11 +253,16 @@
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
-    (lookup-src-if-imm* reg jmp-is-imm *jmp)
-    (lookup-tree* reg *cmp-dst)
-    (lambda (dst-value jmp)
-      (if (cmp dst-value src enum-cmp)
-        (jumpto jmp)
+    (<- (jmp) (lookup-src-if-imm* reg jmp-is-imm *jmp))
+    (<- (dst-value) (lookup-tree* reg *cmp-dst))
+    (if (cmp dst-value src enum-cmp)
+      (if (isnil jmp)
+        (do
+          (<- (sum carry) (add-reverse* nil t int-zero int-zero))
+          (reg-write** reg *cmp-dst eval-reg sum))
+        (jumpto jmp))
+      (if (isnil jmp)
+        (reg-write** reg *cmp-dst eval-reg int-zero)
         (eval-reg reg)))))
 
 (def-lazy load-case
@@ -267,19 +271,21 @@
     (reg-write** reg *dst eval-reg)))
 
 (def-lazy cmp-case
-  ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-  (do
-    (<- (enum-cmp dst) (*dst))
-    (<- (src)
-      ((do
-        (<- (dst-value) (lookup-tree* reg dst))
-        (lambda (cont)
-          (if (cmp dst-value src enum-cmp)
-            (do
-              (<- (sum carry) (add-reverse* nil t int-zero int-zero))
-              (cont sum))
-            (cont int-zero))))))
-     (reg-write** reg dst eval-reg src)))
+  nil
+  ;; ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
+  ;; (do
+  ;;   (<- (enum-cmp dst) (*dst))
+  ;;   (<- (src)
+  ;;     ((do
+  ;;       (<- (dst-value) (lookup-tree* reg dst))
+  ;;       (lambda (cont)
+  ;;         (if (cmp dst-value src enum-cmp)
+  ;;           (do
+  ;;             (<- (sum carry) (add-reverse* nil t int-zero int-zero))
+  ;;             (cont sum))
+  ;;           (cont int-zero))))))
+  ;;    (reg-write** reg dst eval-reg src))
+     )
 
 (def-lazy io-case
   ;; Instruction structure:
