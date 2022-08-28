@@ -315,12 +315,14 @@
   (do
     (<- (enum-cmp dst) (*dst))
     (<- (src)
-      ((reg-read* reg dst)
-       (lambda (dst-value cont)
-         (if (cmp dst-value src enum-cmp)
-           ;; (reverse* (cons nil (cdr int-zero)) cont)
-           (add-reverse* nil t int-zero int-zero (lambda (sum carry) (cont sum)))
-           (cont int-zero)))))
+      ((do
+        (<- (dst-value) (reg-read* reg dst))
+        (lambda (cont)
+          (if (cmp dst-value src enum-cmp)
+            (do
+              (<- (sum carry) (add-reverse* nil t int-zero int-zero))
+              (cont sum))
+            (cont int-zero))))))
      (reg-write** reg dst eval-reg src)))
 
 (def-lazy io-case
