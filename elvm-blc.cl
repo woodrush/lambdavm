@@ -188,11 +188,10 @@
             (<- (curinst nextblock) (curblock))
             (let* eval-reg (eval memory progtree stdin nextblock))
             ;; (<- (inst-type src-is-imm *src *dst) (curinst))
-            (curinst)
-            ((lambda (inst-type src-is-imm *src)
-              ((lookup-src-if-imm* reg src-is-imm *src
-                (lambda (src *dst)
-                  **instruction-typematch**)))))
+            (<- (inst-type src-is-imm *src) (curinst))
+            (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
+            **instruction-typematch**
+            ;; ((lambda (inst-type src-is-imm *s
             ;; (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
             ;; **instruction-typematch**
             )))))
