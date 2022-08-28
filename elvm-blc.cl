@@ -57,10 +57,11 @@
         (reverse** cdr-g (cons car-g curgen)))))
    l nil))
 
-(defun-lazy eval-bool (expr cont)
-  (if expr
-    (cont t)
-    (cont nil)))
+(defmacro-lazy eval-bool (expr)
+  `(lambda (cont)
+    (if ,expr
+      (cont t)
+      (cont nil))))
 
 (defrec-lazy add-reverse* (initcarry is-add n m cont)
   (cond
@@ -74,23 +75,23 @@
         (let* not-carry (not carry))
         (let* car-m (if is-add car-m (not car-m)))
         (<- (curbit)
-          (eval-bool
+          ((eval-bool
             (if car-n
               (if car-m
                 carry
                 not-carry)
               (if car-m
                 not-carry
-                carry))))
+                carry)))))
         (<- (nextcarry)
-          (eval-bool
+          ((eval-bool
             (if car-n
               (if car-m
                 t
                 carry)
               (if car-m
                 carry
-                nil))))
+                nil)))))
         (cont (cons curbit curlist) nextcarry)))))
 
 
@@ -122,21 +123,19 @@
 (defun-lazy cmpret-gt (r1 r2 r3) r3)
 
 (defrec-lazy cmp* (n m)
-  (cond
-    ((isnil n)
+  (do
+    (if-then-return (isnil n)
       cmpret-eq)
-    (t
-      (do
-        (<- (car-n cdr-n) (n))
-        (<- (car-m cdr-m) (m))
-        (let* next (cmp* cdr-n cdr-m))
-        (if car-n
-          (if car-m
-            next
-            cmpret-lt)
-          (if car-m
-            cmpret-gt
-            next))))))
+    (<- (car-n cdr-n) (n))
+    (<- (car-m cdr-m) (m))
+    (let* next (cmp* cdr-n cdr-m))
+    (if car-n
+      (if car-m
+        next
+        cmpret-lt)
+      (if car-m
+        cmpret-gt
+        next))))
 
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
@@ -229,16 +228,16 @@
     (<- (*dst is-add) (*dst))
     (<- (sum carry)
       ((do
-        ((lambda (cont) (cont src))) ; src
-        (lookup-tree* reg *dst) ; dst
-        (add-reverse* is-add is-add))))
+        (lookup-tree* reg *dst)
+        (add-reverse* is-add is-add))
+       src))
     (reg-write** reg *dst eval-reg sum)))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
   (do
-    (<- (memory) (lookup-tree* reg *dst (memory-write* memory src)))
+    (<- (memory) ((lookup-tree* reg *dst (memory-write* memory src))))
     (eval memory progtree stdin nextblock reg)))
 
 (def-lazy mov-case
@@ -270,9 +269,8 @@
   (do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
-        (<- (sum carry) (add-reverse* nil (cmp dst-value src enum-cmp) int-zero int-zero))
-        (reg-write** reg dst eval-reg sum)
-     ))
+    (<- (sum carry) (add-reverse* nil (cmp dst-value src enum-cmp) int-zero int-zero))
+    (reg-write** reg dst eval-reg sum)))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -283,12 +281,12 @@
     ;; getc
     (do
       (<- (c stdin)
-        ((lambda (cont)
+        ((lambda (return)
           (do
             (if-then-return (isnil stdin)
-              (cont int-zero stdin))
+              (return int-zero stdin))
             (<- (car-stdin cdr-stdin) (stdin))
-            (cont (8-to-24-bit* car-stdin) cdr-stdin)))))
+            (return (8-to-24-bit* car-stdin) cdr-stdin)))))
       (reg-write* reg c *src)
       (eval memory progtree stdin nextblock))
     ;; putc
@@ -305,9 +303,9 @@
     (let* 16 16)
     (let* memory-write* memory-write*)
     (<- (int-zero) 
-      ((lambda (cont)
+      ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
-          (cont (16 cons-t (8 cons-t nil)))))))
+          (return (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
     (let* reg-write** reg-write**)
     (eval
