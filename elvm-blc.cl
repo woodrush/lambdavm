@@ -106,9 +106,6 @@
 (def-lazy reg-C  (cons t (cons t (cons t (cons nil nil)))))
 (def-lazy reg-PC (cons t (cons t (cons t (cons t nil)))))
 
-(defun-lazy reg-read* (reg regptr cont)
-  (lookup-tree* reg regptr cont))
-
 (defun-lazy reg-write** (reg regptr cont value)
   (memory-write* reg regptr value cont))
 
@@ -168,7 +165,7 @@
 (defun-lazy lookup-src-if-imm* (reg src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
-    (reg-read* reg *src cont)))
+    (lookup-tree* reg *src cont)))
 
 (defmacro-lazy isnil-4 (item) `(,item (lambda (a b c d x) nil) t))
 (defrec-lazy eval (memory progtree stdin curblock reg)
@@ -183,7 +180,7 @@
         ((isnil curblock)
           (do
             (<- (sum carry)
-              ((reg-read* reg reg-PC)
+              ((lookup-tree* reg reg-PC)
                (add-reverse* nil t int-zero)))
             (jumpto sum)))
         ((isnil-4 (car curblock))
@@ -235,7 +232,7 @@
     (<- (sum carry)
       ((do
         ((lambda (cont) (cont src))) ; src
-        (reg-read* reg *dst) ; dst
+        (lookup-tree* reg *dst) ; dst
         (add-reverse* is-add is-add))))
     (reg-write** reg *dst eval-reg sum)))
 
@@ -243,7 +240,7 @@
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
   (do
-    (<- (memory) (reg-read* reg *dst (memory-write* memory src)))
+    (<- (memory) (lookup-tree* reg *dst (memory-write* memory src)))
     (eval memory progtree stdin nextblock reg)))
 
 (def-lazy mov-case
@@ -259,7 +256,7 @@
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* reg jmp-is-imm *jmp)
-    (reg-read* reg *cmp-dst)
+    (lookup-tree* reg *cmp-dst)
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
         (jumpto jmp)
@@ -276,7 +273,7 @@
     (<- (enum-cmp dst) (*dst))
     (<- (src)
       ((do
-        (<- (dst-value) (reg-read* reg dst))
+        (<- (dst-value) (lookup-tree* reg dst))
         (lambda (cont)
           (if (cmp dst-value src enum-cmp)
             (do
@@ -320,7 +317,6 @@
         (let ((cons-t (lambda (x f) (f t x))))
           (cont (16 cons-t (8 cons-t nil)))))))
     (let* lookup-tree* lookup-tree*)
-    (let* reg-read* reg-read*)
     (let* reg-write** reg-write**)
     (eval
       memtree
