@@ -40,7 +40,7 @@
                     (memory cont))
                   (t
                     (do
-                      (<- (car-memory cdr-memory) (memory))
+                      (<- (car-memory cdr-memory) (memory)) ;; Implicit parameter passing: memory-orig
                       (cont cdr-memory car-memory)))))))
             (memory-write* memory-target cdr-address value)))
         (if car-address
