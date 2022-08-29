@@ -183,7 +183,7 @@
 ;;================================================================
 (def-lazy   inst-exit    nil)
 (defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
-(defun-lazy inst-jumpcmp (i1 i2 i3 i4 i5 i6 i7 i8) i2)
+(defun-lazy inst-jmpcmp  (i1 i2 i3 i4 i5 i6 i7 i8) i2)
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
 (defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8) i4)
 (defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8) i5)
@@ -194,7 +194,7 @@
 (def-lazy **instruction-typematch**
   (inst-type
     io-case
-    jumpcmp-case
+    jmpcmp-case
     cmp-case
     jmp-case
     load-case
@@ -236,8 +236,8 @@
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
   (jumpto src))
 
-(def-lazy jumpcmp-case
-  ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
+(def-lazy jmpcmp-case
+  ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
