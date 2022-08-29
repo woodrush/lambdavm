@@ -287,11 +287,10 @@
 (defrec-lazy list2tree (l depth cont)
   (cond
     ((isnil l)
-      (cont nil nil))
+      (cont l l))
     ((isnil depth)
       (do
-        (<- (car-l cdr-l) (l))
-        (cont car-l cdr-l)))
+        (l cont)))
     (t
       (do
         (<- (_ cdr-depth) (depth))
@@ -303,6 +302,7 @@
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
+    (let* list2tree list2tree)
     (let* cmp* cmp*)
     (let* add* add*)
     (<- (int-zero)
