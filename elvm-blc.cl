@@ -284,7 +284,7 @@
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
 
 
-(defrec-lazy list2tree (l depth cont)
+(defrec-lazy list2tree** (l depth cont)
   (cond
     ((isnil l)
       (cont l l))
@@ -294,23 +294,31 @@
     (t
       (do
         (<- (_ cdr-depth) (depth))
-        (<- (right-tree l) (list2tree l cdr-depth))
-        (<- (left-tree l) (list2tree l cdr-depth))
+        (<- (right-tree l) (list2tree** l cdr-depth))
+        (<- (left-tree l) (list2tree** l cdr-depth))
         (cont (cons right-tree left-tree) l)))))
 
-(defun-lazy main (io-bitlength supp-bitlength memtree progtree stdin)
+(defun-lazy main (io-bitlength supp-bitlength memlist proglist stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
-    (let* list2tree list2tree)
     (let* cmp* cmp*)
     (let* add* add*)
     (<- (int-zero)
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
           (return (supp-bitlength cons-t (io-bitlength cons-t nil)))))))
-    (<- (progtree _) (list2tree progtree int-zero))
-    (<- (memtree _) (list2tree memtree int-zero))
+    (<- (progtree memtree)
+      ((lambda (cont)
+        (do
+          (let* list2tree*
+            (lambda (l cont)
+              (do
+                (<- (tree _) (list2tree** l int-zero))
+                (cont tree))))
+          (list2tree* memlist)  ;; Implicit argument passing: memtree
+          (list2tree* proglist) ;; Implicit argument passing: progtree
+          (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) nil)))
