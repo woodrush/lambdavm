@@ -156,15 +156,15 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (memory-write* reg reg-PC jmp)
-          (lookup-tree* progtree jmp)
+          (memory-write* reg reg-PC jmp)  ;; Implicit parameter passing: reg
+          (lookup-tree* progtree jmp)     ;; Implicit parameter passing: nextblock
           (eval memory progtree stdin))))
     (cond
       ((isnil curblock)
         (do
           (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
           (jumpto sum)))
-      ;; Checks if (car curblock)  == t == (lambda (x y) x).
+      ;; Checks if (car curblock) == t == (lambda (x y) x).
       ;; `jumpto` is a placeholder and can be any term.
       ;; It is used since it is the first visible variable and encodes to `10`, which is short.
       (((car curblock) (lambda (a b c d) t) (lambda (b c d) nil) jumpto jumpto jumpto jumpto)
@@ -216,9 +216,9 @@
     (<- (*dst is-add) (*dst))
     (<- (sum carry)
       ((do
-        (lookup-tree* reg *dst)
+        (lookup-tree* reg *dst) ;; Implicit parameter passing: dst
         (add* is-add is-add))
-       src))
+       src))                    ;; Applies src to the preceding add*
     (memory-write* reg *dst sum eval-reg)))
 
 (def-lazy store-case
@@ -240,8 +240,8 @@
   ;; Instruction structure: (cons4 inst-jumpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
-    (lookup-src-if-imm* reg jmp-is-imm *jmp)
-    (lookup-tree* reg *cmp-dst)
+    (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
+    (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
         (jumpto jmp)
@@ -276,7 +276,7 @@
               (return int-zero stdin))
             (<- (car-stdin cdr-stdin) (stdin))
             (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
-      (memory-write* reg *src c)
+      (memory-write* reg *src c)               ;; Implicit parameter passing: reg
       (eval memory progtree stdin nextblock))
     ;; putc
     (do
@@ -296,6 +296,8 @@
         (<- (right-tree l) (list2tree** l cdr-depth))
         (<- (left-tree l) (list2tree** l cdr-depth))
         (cont (cons right-tree left-tree) l)))))
+
+(def-lazy initreg nil)
 
 (defun-lazy main (io-bitlength supp-bitlength memlist proglist stdin)
   (do
@@ -320,7 +322,7 @@
           (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
-    ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) nil)))
+    ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) initreg)))
 
 (def-lazy SYS-IO-BITLENGTH 8)
 (def-lazy SYS-STRING-TERM nil)
