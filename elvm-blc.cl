@@ -316,15 +316,9 @@
 (def-lazy rshift-case
   ;; Instruction structure: (cons4 inst-rshift t _ *dst)
   (do
-    (cons "R")
-    ;; (let* ret int-zero)
     (<- (dst) (lookup-tree* reg *dst))
-    ;; (<- (ret) (nand* dst dst))
-    (<- (ret) (add* t t dst dst))
-    
-    (memory-write* reg *dst ret eval-reg)
-    ))
-
+    (<- (ret _) (add* t t int-zero (cons t dst)))
+    (memory-write* reg *dst ret eval-reg)))
 
 (defrec-lazy list2tree** (l depth cont)
   (cond
