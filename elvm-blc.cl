@@ -1,4 +1,5 @@
 (load "./lazy.cl")
+(load "./blc-numbers.cl")
 
 
 ;;================================================================
@@ -181,7 +182,7 @@
 ;;================================================================
 ;; Instructions
 ;;================================================================
-(def-lazy   inst-exit    nil)
+(def-lazy   inst-exit    t)
 (defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
 (defun-lazy inst-jmpcmp  (i1 i2 i3 i4 i5 i6 i7 i8) i2)
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
