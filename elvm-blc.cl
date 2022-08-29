@@ -1,4 +1,5 @@
 (load "./lazy.cl")
+(load "./blc-numbers.cl")
 
 
 ;;================================================================
@@ -47,43 +48,6 @@
           (cont (cons memory-rewritten memory-orig))
           (cont (cons memory-orig memory-rewritten)))))))
 
-(defmacro-lazy eval-bool (expr)
-  `(lambda (cont)
-    (if ,expr
-      (cont t)
-      (cont nil))))
-
-(defrec-lazy add* (initcarry is-add n m cont)
-  (cond
-    ((isnil n)
-      (cont nil initcarry))
-    (t
-      (do
-        (<- (car-n cdr-n) (n))
-        (<- (car-m cdr-m) (m))
-        (<- (curlist carry) (add* initcarry is-add cdr-n cdr-m))
-        (let* not-carry (not carry))
-        (let* car-m (if is-add car-m (not car-m)))
-        (<- (curbit)
-          ((eval-bool
-            (if car-n
-              (if car-m
-                carry
-                not-carry)
-              (if car-m
-                not-carry
-                carry)))))
-        (<- (nextcarry)
-          ((eval-bool
-            (if car-n
-              (if car-m
-                t
-                carry)
-              (if car-m
-                carry
-                nil)))))
-        (cont (cons curbit curlist) nextcarry)))))
-
 
 
 ;;================================================================
@@ -130,6 +94,62 @@
 
 (defmacro-lazy cmp (n m enum-cmp)
   `(,enum-cmp (cmp* ,n ,m)))
+
+(defmacro-lazy eval-bool (expr)
+  `(lambda (cont)
+    (if ,expr
+      (cont t)
+      (cont nil))))
+
+(defrec-lazy add* (initcarry is-add n m cont)
+  (cond
+    ((isnil n)
+      (cont nil initcarry))
+    (t
+      (do
+        (<- (car-n cdr-n) (n))
+        (<- (car-m cdr-m) (m))
+        (<- (curlist carry) (add* initcarry is-add cdr-n cdr-m))
+        (let* not-carry (not carry))
+        (let* car-m (if is-add car-m (not car-m)))
+        (<- (curbit)
+          ((eval-bool
+            (if car-n
+              (if car-m
+                carry
+                not-carry)
+              (if car-m
+                not-carry
+                carry)))))
+        (<- (nextcarry)
+          ((eval-bool
+            (if car-n
+              (if car-m
+                t
+                carry)
+              (if car-m
+                carry
+                nil)))))
+        (cont (cons curbit curlist) nextcarry)))))
+
+(defrec-lazy nand* (n m cont)
+  (cond
+    ((isnil n)
+      (cont nil))
+    (t
+      (do
+        (<- (car-n cdr-n) (n))
+        (<- (car-m cdr-m) (m))
+        (<- (curbit)
+          ((eval-bool
+            (if car-n
+              nil
+              (if car-m
+                nil
+                t)
+              ))))
+        (<- (nextlist) (nand* cdr-n cdr-m))
+        (cont (cons curbit nextlist))))))
 
 
 ;;================================================================
@@ -181,15 +201,17 @@
 ;;================================================================
 ;; Instructions
 ;;================================================================
-(def-lazy   inst-exit    nil)
-(defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
-(defun-lazy inst-jmpcmp  (i1 i2 i3 i4 i5 i6 i7 i8) i2)
-(defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
-(defun-lazy inst-jmp     (i1 i2 i3 i4 i5 i6 i7 i8) i4)
-(defun-lazy inst-load    (i1 i2 i3 i4 i5 i6 i7 i8) i5)
-(defun-lazy inst-store   (i1 i2 i3 i4 i5 i6 i7 i8) i6)
-(defun-lazy inst-addsub  (i1 i2 i3 i4 i5 i6 i7 i8) i7)
-(defun-lazy inst-mov     (i1 i2 i3 i4 i5 i6 i7 i8) i8)
+(def-lazy   inst-exit   nil)
+(defun-lazy inst-io     (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i1)
+(defun-lazy inst-jmpcmp (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i2)
+(defun-lazy inst-cmp    (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i3)
+(defun-lazy inst-jmp    (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i4)
+(defun-lazy inst-load   (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i5)
+(defun-lazy inst-store  (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i6)
+(defun-lazy inst-addsub (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i7)
+(defun-lazy inst-mov    (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i8)
+(defun-lazy inst-nand   (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i9)
+(defun-lazy inst-rshift (i1 i2 i3 i4 i5 i6 i7 i8 i9 i10) i10)
 
 (def-lazy **instruction-typematch**
   (inst-type
@@ -201,6 +223,8 @@
     store-case
     addsub-case
     mov-case
+    nand-case
+    rshift-case
     ))
 
 (defun-lazy io-putc (x1 x2) x2)
@@ -258,7 +282,7 @@
   (do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
-    (<- (sum carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero))
+    (<- (sum carry) (add* (not (cmp dst-value src enum-cmp)) t int-zero int-zero))
     (memory-write* reg dst sum eval-reg)))
 
 (def-lazy io-case
@@ -281,6 +305,25 @@
     ;; putc
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
+
+(def-lazy nand-case
+  ;; Instruction structure: (cons4 inst-nand [src-isimm] [src] *dst)
+  (do
+    (<- (dst) (lookup-tree* reg *dst))
+    (<- (ret) (nand* src dst))
+    (memory-write* reg *dst ret eval-reg)))
+
+(def-lazy rshift-case
+  ;; Instruction structure: (cons4 inst-rshift t _ *dst)
+  (do
+    (cons "R")
+    ;; (let* ret int-zero)
+    (<- (dst) (lookup-tree* reg *dst))
+    ;; (<- (ret) (nand* dst dst))
+    (<- (ret) (add* t t dst dst))
+    
+    (memory-write* reg *dst ret eval-reg)
+    ))
 
 
 (defrec-lazy list2tree** (l depth cont)
