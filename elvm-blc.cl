@@ -284,6 +284,21 @@
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
 
 
+(defrec-lazy list2tree (l depth cont)
+  (cond
+    ((isnil l)
+      (cont nil nil))
+    ((isnil depth)
+      (do
+        (<- (car-l cdr-l) (l))
+        (cont car-l cdr-l)))
+    (t
+      (do
+        (<- (_ cdr-depth) (depth))
+        (<- (right-tree l) (list2tree l cdr-depth))
+        (<- (left-tree l) (list2tree l cdr-depth))
+        (cont (cons right-tree left-tree) l)))))
+
 (defun-lazy main (io-bitlength supp-bitlength memtree progtree stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
@@ -294,6 +309,8 @@
       ((lambda (return)
         (let ((cons-t (lambda (x f) (f t x))))
           (return (supp-bitlength cons-t (io-bitlength cons-t nil)))))))
+    (<- (progtree _) (list2tree progtree int-zero))
+    (<- (memtree _) (list2tree memtree int-zero))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
     ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) nil)))
