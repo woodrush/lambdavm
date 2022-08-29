@@ -331,9 +331,9 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-ski-lazy main))
-(format t (compile-to-blc-lazy main))
+;; ;; (format t (compile-to-ski-lazy main))
+(format t (compile-to-ski-lazy main))
+;; (format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
