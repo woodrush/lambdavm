@@ -324,7 +324,6 @@
     (let* lookup-tree* lookup-tree*)
     ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) initreg)))
 
-(def-lazy SYS-IO-BITLENGTH 8)
 (def-lazy SYS-STRING-TERM nil)
 
 
