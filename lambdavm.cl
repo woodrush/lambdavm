@@ -236,7 +236,7 @@
   (jumpto src))
 
 (def-lazy jmpcmp-case
-  ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
+  ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [jmp-isimm] [jmp] [*dst]))
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
