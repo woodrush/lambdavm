@@ -175,22 +175,12 @@
           (eval memory progtree stdin nextblock curproglist reg))))
     (cond
       ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
-      (
-        ;; (isnil curblock)
-        (curblock (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil)
+      ((curblock (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil)
         (do
           (if-then-return (isnil curproglist)
             SYS-STRING-TERM)
           (<- (nextblock curproglist) (curproglist))
-          (eval memory progtree stdin nextblock curproglist reg)
-          ;; (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
-          ;; (jumpto sum)
-          ))
-      ;; Checks if (car curblock) == t == (lambda (x y) x).
-      ;; `jumpto` is a placeholder and can be any term.
-      ;; It is used since it is the first visible variable and encodes to `10`, which is short.
-      (((car curblock) (lambda (a b c d) t) (lambda (b c d) nil) jumpto jumpto jumpto jumpto)
-        SYS-STRING-TERM)
+          (eval memory progtree stdin nextblock curproglist reg)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
@@ -203,7 +193,6 @@
 ;;================================================================
 ;; Instructions
 ;;================================================================
-(def-lazy   inst-exit    t)
 (defun-lazy inst-io      (i1 i2 i3 i4 i5 i6 i7 i8) i1)
 (defun-lazy inst-jmpcmp  (i1 i2 i3 i4 i5 i6 i7 i8) i2)
 (defun-lazy inst-cmp     (i1 i2 i3 i4 i5 i6 i7 i8) i3)
@@ -225,8 +214,9 @@
     mov-case
     ))
 
-(defun-lazy io-putc (x1 x2) x2)
-(defun-lazy io-getc (x1 x2) x1)
+(defun-lazy io-getc (x1 x2 x3) x1)
+(defun-lazy io-putc (x1 x2 x3) x2)
+(defun-lazy io-exit (x1 x2 x3) x3)
 
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
@@ -287,6 +277,7 @@
   ;; Instruction structure:
   ;;   getc: (cons4 inst-io nil         [dst] io-getc)
   ;;   putc: (cons4 inst-io [src-isimm] [src] io-putc)
+  ;;   exit: (cons4 inst-io nil         nil   io-exit)
   ;; Typematch over the inst. type
   (*dst
     ;; getc
@@ -302,7 +293,9 @@
       (eval memory progtree stdin nextblock curproglist))
     ;; putc
     (do
-      (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
+      (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
+    ;; exit
+    SYS-STRING-TERM))
 
 
 (defun-lazy list2tree*** (l depth decorator cont)

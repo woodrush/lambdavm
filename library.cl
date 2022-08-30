@@ -50,9 +50,11 @@
     cmp-ge
     cmp-ne
 
-    io-putc
     io-getc
+    io-putc
+    io-exit
 
+    ((lambda (cons-t cons-nil) A) (lambda (x f) (f t x)) (lambda (x f) (f nil x)))
     ;; (lambda (x) (x (lambda (a b c d) t) (lambda (b c d) nil) x x x x))
     ;; (lambda (x) (x (lambda (a b) t) (lambda (a) a) x nil))
 
@@ -66,7 +68,9 @@
 
     ;; (lambda (x) (x (lambda (a b) t) i x nil))
     ;; (x (lambda (a b) t) i z nil)
-    SYS-STRING-TERM
+    ;; SYS-STRING-TERM
+
+    ((letrec-lazy loop (x) (loop nil)) nil)
 ))
 
 
@@ -101,12 +105,12 @@
 
 
 
-(defun print-expression (expr)
-  (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-ski-lazy ,expr))))
-  (terpri))
-
 ;; (defun print-expression (expr)
-;;   (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-blc-lazy ,expr))))
+;;   (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-ski-lazy ,expr))))
 ;;   (terpri))
+
+(defun print-expression (expr)
+  (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-blc-lazy ,expr))))
+  (terpri))
 
 (mapcar #'print-expression formlist)
