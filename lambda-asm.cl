@@ -1,9 +1,5 @@
 (load "./lambdavm.cl")
 
-  ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-add))
-
-  ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-
 (defmacro-lazy mov (dst is-imm src)
   `(cons4 inst-mov ,is-imm ,src ,dst))
 
@@ -13,12 +9,14 @@
 (defmacro-lazy sub (dst is-imm src)
   `(cons4 inst-addsub ,is-imm ,src (cons ,dst nil)))
 
-  ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
 (defmacro-lazy load (dst is-imm src)
   `(cons4 inst-load ,is-imm ,src ,dst))
 
 (defmacro-lazy store (is-imm dst src)
   `(cons4 inst-store ,is-imm ,dst ,src))
+
+(defmacro-lazy jmp (is-imm jmp)
+  `(cons4 inst-jmp ,is-imm ,jmp nil))
 
 (defmacro-lazy getc (reg)
   `(cons4 inst-io nil ,reg io-getc))
@@ -36,18 +34,17 @@
     (getc reg-A)
     (store t (io-bitlength-to-wordsize "A") reg-A)
     (load reg-B t (io-bitlength-to-wordsize "A"))
-
     ;; (mov reg-B t (io-bitlength-to-wordsize "B"))
     ;; (sub reg-B t (io-bitlength-to-wordsize "A"))
     ;; (add reg-A nil reg-B)
     (putc nil reg-B)
-    (exit)
-
-    ;; (putc t (io-bitlength-to-wordsize "B"))
-    ;; (getc reg-A)
-    ;; (getc reg-B)
-    ;; (putc nil reg-A)
-    ;; (putc t (io-bitlength-to-wordsize "I"))
+    (jmp t ((+ 16 8) (cons* t) nil))
+  )
+  (list
+    (putc t (io-bitlength-to-wordsize "H"))  
+  )
+  (list
+    (putc t (io-bitlength-to-wordsize "I"))
   )
   ;; (list
   ;;   (putc t (io-bitlength-to-wordsize "H"))
