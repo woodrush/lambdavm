@@ -298,24 +298,33 @@
     SYS-STRING-TERM))
 
 
-(defun-lazy list2tree*** (l depth decorator cont)
-  ((letrec-lazy list2tree** (l depth cont)
-    (cond
-      ((isnil l)
-        (cont l l))
-      ((isnil depth)
-        (do
-          (<- (l-car l-cdr) (l))
-          (<- (x) (decorator l))
-          (cont x l-cdr)))
-      (t
-        (do
-          (<- (_ cdr-depth) (depth))
-          (<- (right-tree l) (list2tree** l cdr-depth))
-          (<- (left-tree l) (list2tree** l cdr-depth))
-          (cont (cons right-tree left-tree) l)))))
-   l depth cont))
+;; (defun-lazy list2tree*** (l depth decorator cont)
+;;   (
+;;    l depth cont))
 
+(defrec-lazy list2tree** (l depth cont)
+  (cond
+    ((isnil l)
+      (cont l l))
+    ((isnil depth)
+      (do
+        (<- (l-car l-cdr) (l))
+        (cont l-car l-cdr)))
+    (t
+      (do
+        (<- (_ cdr-depth) (depth))
+        (<- (right-tree l) (list2tree** l cdr-depth))
+        (<- (left-tree l) (list2tree** l cdr-depth))
+        (cont (cons right-tree left-tree) l)))))
+
+(defrec-lazy cdr-generator (l)
+  (cond
+    ((isnil l)
+      nil)
+    (t
+      (do
+        (<- (_ cdr-l) (l))
+        (cons l (cdr-generator cdr-l))))))
 
 (def-lazy initreg nil)
 
@@ -333,14 +342,12 @@
       ((lambda (cont)
         (do
           (let* list2tree*
-            (lambda (l decorator cont)
+            (lambda (l cont)
               (do
-                (<- (tree _) (list2tree*** l int-zero decorator))
+                (<- (tree _) (list2tree** l int-zero))
                 (cont tree))))
-          (list2tree* memlist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont car-x))))  ;; Implicit argument passing: memtree
-          (list2tree* proglist (lambda (x cont) (cont x))
-          ;; (lambda (x cont) (cont x))
-          ) ;; Implicit argument passing: progtree
+          (list2tree* memlist)  ;; Implicit argument passing: memtree
+          (list2tree* (cdr-generator proglist)) ;; Implicit argument passing: progtree
           (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
