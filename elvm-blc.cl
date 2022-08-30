@@ -253,8 +253,9 @@
 (def-lazy load-case
   ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
   (do
-    (<- (value) (lookup-tree* memory src))
-    (memory-write* reg *dst value eval-reg)))
+    (((lookup-tree* memory src)
+        (memory-write* reg *dst))
+     eval-reg)))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
