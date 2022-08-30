@@ -168,6 +168,7 @@
           ((curproglist (eval memory progtree stdin)) reg)))
       (t
         (do
+          (cons "E")  
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
@@ -200,9 +201,9 @@
     mov-case
     ))
 
-(defun-lazy io-exit (x1 x2 x3) x1)
-(defun-lazy io-getc (x1 x2 x3) x2)
-(defun-lazy io-putc (x1 x2 x3) x3)
+(defun-lazy io-getc (x1 x2 x3) x1)
+(defun-lazy io-putc (x1 x2 x3) x2)
+(defun-lazy io-exit (x1 x2 x3) x3)
 
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
@@ -343,11 +344,11 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-ski-lazy main))
-(format t (compile-to-blc-lazy main))
-;; (setq *print-pretty* 'nil)
-;; (print (compile-to-simple-lambda-lazy main))
+;; ;; (format t (compile-to-ski-lazy main))
+;; ;; (format t (compile-to-ski-lazy main))
+;; (format t (compile-to-blc-lazy main))
+;; ;; (setq *print-pretty* 'nil)
+;; ;; (print (compile-to-simple-lambda-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
