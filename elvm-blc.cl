@@ -151,6 +151,18 @@
     (cont *src)
     (lookup-tree* reg *src cont)))
 
+;; (lambda (a b) z) a b c
+
+;; z a b c = nil
+;; z = t
+;; a b c = t
+
+;; a c = nil
+;; a b c = t
+
+;; i (lambda (x) t) nil
+
+
 
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
@@ -162,8 +174,13 @@
           (<- (nextblock curproglist) (proglist))
           (eval memory progtree stdin nextblock curproglist reg))))
     (cond
-      ((isnil curblock)
+      ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
+      (
+        ;; (isnil curblock)
+        (curblock (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil)
         (do
+          (if-then-return (isnil curproglist)
+            SYS-STRING-TERM)
           (<- (nextblock curproglist) (curproglist))
           (eval memory progtree stdin nextblock curproglist reg)
           ;; (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
