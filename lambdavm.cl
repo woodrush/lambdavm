@@ -345,9 +345,9 @@
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
 ;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-blc-lazy main))
-(setq *print-pretty* 'nil)
-(print (compile-to-simple-lambda-lazy main))
+(format t (compile-to-blc-lazy main))
+;; (setq *print-pretty* 'nil)
+;; (print (compile-to-simple-lambda-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
