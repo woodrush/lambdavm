@@ -18,9 +18,13 @@
 (defmacro-lazy jmp (is-imm jmp)
   `(cons4 inst-jmp ,is-imm ,jmp nil))
 
-  ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
 (defmacro-lazy jmpcmp (dst enum-cmp src-is-imm src jmp-is-imm jmp)
   `(cons4 inst-jmpcmp ,src-is-imm ,src (cons4 ,enum-cmp ,jmp-is-imm ,jmp ,dst)))
+
+  ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
+(defmacro-lazy comp (dst enum-cmp src-is-imm src)
+  `(cons4 inst-cmp ,src-is-imm ,src (cons ,enum-cmp ,dst)))
+
 
 (defmacro-lazy getc (reg)
   `(cons4 inst-io nil ,reg io-getc))
@@ -36,12 +40,15 @@
     (getc reg-A)
     (store t (io-bitlength-to-wordsize "A") reg-A)
     (load reg-B t (io-bitlength-to-wordsize "A"))
+    (mov reg-C nil reg-B)
+    (comp reg-C cmp-ne t (io-bitlength-to-wordsize "A"))
+    (add reg-B nil reg-C)
     ;; (mov reg-B t (io-bitlength-to-wordsize "B"))
     ;; (sub reg-B t (io-bitlength-to-wordsize "A"))
     ;; (add reg-A nil reg-B)
     (putc nil reg-B)
-    (jmpcmp reg-A cmp-ne t (io-bitlength-to-wordsize "A") t ((+ 16 8) (cons* t) nil))
-    ;; (jmp t ((+ 16 8) (cons* t) nil))
+    ;; (jmpcmp reg-A cmp-ne t (io-bitlength-to-wordsize "A") t ((+ 16 8) (cons* t) nil))
+    (jmp t ((+ 16 8) (cons* t) nil))
   )
   (list
     (putc t (io-bitlength-to-wordsize "H"))  
