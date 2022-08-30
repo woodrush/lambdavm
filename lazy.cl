@@ -55,6 +55,21 @@
    (if (not body) "" (concatenate `string (token2string (car body)) (to-blc-string (cdr body))))))
 
 
+(defparameter simple-lambda-env-vars (concatenate 'list (coerce "ABCDEFGHIJKLMNOPQRSTUVWXYZ" `list) "AA" "AB" "AC" "AD" "AE"))
+
+(defun to-simple-lambda (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (nth i simple-lambda-env-vars)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (list (lookup env body))
+        (if (not (islambda body))
+            `((,@(to-simple-lambda (car body) env) ,@(to-simple-lambda (car (cdr body)) env)))
+            `("λ" ,(lookup (cons (lambdaarg-top body) env) (lambdaarg-top body)) "." ,@(to-simple-lambda (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
 (defun count-occurrences-in (expr var)
   (cond ((atom expr) (if (eq var expr) 1 0))
@@ -328,11 +343,17 @@
   `(do* ,@(reverse proc)))
 
 
+(defun compile-to-simple-lambda (expr)
+  (to-simple-lambda (curry expr)))
+
 (defun compile-to-blc (expr)
   (to-blc-string (to-de-bruijn (curry expr))))
 
 (defun compile-to-ski (expr)
   (flatten-ski (t-rewrite (curry expr))))
+
+(defmacro compile-to-simple-lambda-lazy (expr-lazy)
+  `(compile-to-simple-lambda (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-blc-lazy (expr-lazy)
   `(compile-to-blc (macroexpand-lazy ,expr-lazy)))
