@@ -7,21 +7,19 @@
 ;;================================================================
 (defrec-lazy lookup-tree* (memory address cont)
   (cond
-    ((isnil memory)
-      (cont int-zero))
     ((isnil address)
       (cont memory))
+    ((isnil memory)
+      (cont int-zero))
     (t
-      (do
-        (<- (car-address cdr-address) (address))
-        (<- (next-memory)
-          ((lambda (cont)
-            (do
-              (<- (car-memory cdr-memory) (memory))
-              (if car-address
-                (cont car-memory)
-                (cont cdr-memory))))))
-        (lookup-tree* next-memory cdr-address cont)))))
+      ((do
+        (<- (car-address) (address)) ;; Implicit parameter passing: cdr-address
+        (<- (car-memory cdr-memory) (memory))
+        ((if car-address
+          (lookup-tree* car-memory)
+          (lookup-tree* cdr-memory)) ;; Receive cdr-address
+          ))
+       cont))))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -57,12 +55,12 @@
 (defrec-lazy add* (initcarry is-add n m cont)
   (cond
     ((isnil n)
-      (cont nil initcarry))
+      (cont initcarry nil))
     (t
       (do
         (<- (car-n cdr-n) (n))
         (<- (car-m cdr-m) (m))
-        (<- (curlist carry) (add* initcarry is-add cdr-n cdr-m))
+        (<- (carry curlist) (add* initcarry is-add cdr-n cdr-m))
         (let* not-carry (not carry))
         (let* car-m (if is-add car-m (not car-m)))
         (<- (curbit)
@@ -83,7 +81,7 @@
               (if car-m
                 carry
                 nil)))))
-        (cont (cons curbit curlist) nextcarry)))))
+        (cont nextcarry (cons curbit curlist))))))
 
 
 
@@ -173,8 +171,9 @@
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
-          (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
-          **instruction-typematch**)))))
+          (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
+          (lambda (*dst)
+            **instruction-typematch**))))))
 
 
 ;;================================================================
@@ -211,14 +210,14 @@
 
 (def-lazy addsub-case
   ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
-  (do
+  ((do
     (<- (*dst is-add) (*dst))
-    (<- (sum carry)
+    (<- (carry)  ;; Implicit parameter passing: sum
       ((do
         (lookup-tree* reg *dst) ;; Implicit parameter passing: dst
         (add* is-add is-add))
        src))                    ;; Applies src to the preceding add*
-    (memory-write* reg *dst sum eval-reg)))
+    (memory-write* reg *dst)) eval-reg))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -234,9 +233,7 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  ;; (lookup-tree* progtree src jumpto)
-  (jumpto src)
-  )
+  (jumpto src))
 
 (def-lazy jmpcmp-case
   ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -246,7 +243,6 @@
     (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
-        ;; (lookup-tree* progtree jmp jumpto)
         (jumpto jmp)
         (eval-reg reg)))))
 
@@ -259,11 +255,11 @@
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-  (do
+  ((do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
-    (<- (sum carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero))
-    (memory-write* reg dst sum eval-reg)))
+    (<- (carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (memory-write* reg dst)) eval-reg))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -279,8 +275,9 @@
           (do
             (if-then-return (isnil stdin)
               (return int-zero stdin))
-            (<- (car-stdin cdr-stdin) (stdin))
-            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
+            (<- (car-stdin) (stdin)) ;; Implicit parameter passing: cdr-stdin
+            (return (io-bitlength-to-wordsize car-stdin) ;;cdr-stdin
+            )))))
       (memory-write* reg *src c)               ;; Implicit parameter passing: reg
       (eval memory progtree stdin nextblock curproglist))
     ;; putc
@@ -288,11 +285,6 @@
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
     ;; exit
     SYS-STRING-TERM))
-
-
-;; (defun-lazy list2tree*** (l depth decorator cont)
-;;   (
-;;    l depth cont))
 
 (defrec-lazy list2tree** (l depth cont)
   (cond
@@ -324,24 +316,26 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    (<- (int-zero)
-      ((lambda (return)
-        (let ((cons-t (lambda (x f) (f t x))))
-          (return (supp-bitlength cons-t (io-bitlength cons-t nil)))))))
-    (<- (progtree memtree)
-      ((lambda (cont)
-        (do
+    (let* int-zero
+      (let ((cons-t (lambda (x f) (f t x))))
+        (supp-bitlength cons-t (io-bitlength cons-t nil))))
+    (let* memory-write* memory-write*)
+    (let* lookup-tree* lookup-tree*)
+
+    ;; Implicit parameter passing of memtree and progtree:
+    ;; ((proglist (eval memtree progtree stdin)) initreg)
+    ((proglist
+      (((do
           (let* list2tree*
             (lambda (l cont)
               (do
                 (<- (tree _) (list2tree** l int-zero))
                 (cont tree))))
-          (list2tree* memlist)  ;; Implicit argument passing: memtree
-          (list2tree* (cdr-generator proglist)) ;; Implicit argument passing: progtree
-          (cont)))))
-    (let* memory-write* memory-write*)
-    (let* lookup-tree* lookup-tree*)
-    ((proglist (eval memtree progtree stdin)) initreg)))
+          (list2tree* (cdr-generator proglist));; Implicit argument passing: progtree)
+          (list2tree* memlist) ;; Implicit argument passing: memtree
+          (eval)))
+      stdin))
+     initreg)))
 
 (def-lazy SYS-STRING-TERM nil)
 
