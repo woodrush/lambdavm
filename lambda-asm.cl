@@ -1,5 +1,21 @@
 (load "./lambdavm.cl")
 
+  ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-add))
+
+  ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
+
+(defmacro-lazy mov (dst is-imm src)
+  `(cons4 inst-mov ,is-imm ,src ,dst))
+
+(defmacro-lazy add (dst is-imm src)
+  `(cons4 inst-addsub ,is-imm ,src (cons ,dst t)))
+
+(defmacro-lazy sub (dst is-imm src)
+  `(cons4 inst-addsub ,is-imm ,src (cons ,dst nil)))
+
+(defmacro-lazy getc (reg)
+  `(cons4 inst-io nil ,reg io-getc))
+
 (defmacro-lazy putc (is-imm x)
   `(cons4 inst-io ,is-imm ,x io-putc))
 
@@ -10,25 +26,34 @@
 
 (def-lazy asm (list
   (list
-    ;; (putc t (io-bitlength-to-wordsize "H"))
-    ;; (putc t (io-bitlength-to-wordsize "i"))
-    (putc t (io-bitlength-to-wordsize "."))
-    (cons4 inst-io nil nil io-exit)
+    (getc reg-A)
+    (mov reg-B t (io-bitlength-to-wordsize "B"))
+    (sub reg-B t (io-bitlength-to-wordsize "A"))
+    (add reg-A nil reg-B)
+    (putc nil reg-A)
+    (exit)
+
+    (putc t (io-bitlength-to-wordsize "B"))
+    (getc reg-A)
+    (getc reg-B)
+    (putc nil reg-A)
+    (putc t (io-bitlength-to-wordsize "I"))
   )
-  ;; (list
-  ;;   (putc t (io-bitlength-to-wordsize "H"))
-  ;;   (putc t (io-bitlength-to-wordsize "A"))
-  ;;   (exit)
-  ;; )
+  (list
+    (putc t (io-bitlength-to-wordsize "H"))
+    (putc t (io-bitlength-to-wordsize "A"))
+    (getc reg-A)
+    (getc reg-B)
+    (putc nil reg-A)
+    (putc t (io-bitlength-to-wordsize "A"))
+    (exit)
+  )
 ))
-(def-lazy binary
-  ;; (cons (list t t nil nil t nil t nil) nil)
-  ;; (lambda (stdin) (list (list t t nil nil t nil t nil)))
+
+(def-lazy standalone
+  ;; Remember to make the standalone binary a function that accepts the stdin
   (lambda (stdin)
     (let ((supp-bitlength 16))
-      (cons "B" (main 8 16 nil asm stdin))
-      )
-      )
-  )
+      (main 8 supp-bitlength nil asm stdin))))
 
-(format t (compile-to-blc-lazy binary))
+(format t (compile-to-blc-lazy standalone))

@@ -168,7 +168,6 @@
           ((curproglist (eval memory progtree stdin)) reg)))
       (t
         (do
-          (cons "E")  
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
@@ -210,7 +209,7 @@
 
 
 (def-lazy addsub-case
-  ;; Instruction structure: (cons4 inst-store [src-isimm] [src] (cons [*dst] is-sub))
+  ;; Instruction structure: (cons4 inst-add [src-isimm] [src] (cons [*dst] is-add))
   ((do
     (<- (*dst is-add) (*dst))
     (<- (carry)  ;; Implicit parameter passing: sum
