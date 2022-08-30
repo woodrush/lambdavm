@@ -299,15 +299,13 @@
     ((isnil l)
       (cont l l))
     ((isnil depth)
-      (do
-        (<- (l-car l-cdr) (l))
-        (cont l-car l-cdr)))
+      (l cont))
     (t
       (do
         (<- (_ cdr-depth) (depth))
         (<- (right-tree l) (list2tree** l cdr-depth))
-        (<- (left-tree l) (list2tree** l cdr-depth))
-        (cont (cons right-tree left-tree) l)))))
+        (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
+        (cont (cons right-tree left-tree))))))
 
 (defrec-lazy cdr-generator (l)
   (cond
@@ -343,8 +341,7 @@
           (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
-    (<- (curblock curproglist) (proglist))
-    (eval memtree progtree stdin curblock curproglist initreg)))
+    ((proglist (eval memtree progtree stdin)) initreg)))
 
 (def-lazy SYS-STRING-TERM nil)
 
