@@ -55,7 +55,7 @@
    (if (not body) "" (concatenate `string (token2string (car body)) (to-blc-string (cdr body))))))
 
 
-(defparameter simple-lambda-env-vars (concatenate 'list (coerce "ABCDEFGHIJKLMNOPQRSTUVWXYZ" `list) "AA" "AB" "AC" "AD" "AE"))
+(defparameter simple-lambda-env-vars (concatenate 'list (coerce "abcdefghijklmnopqrstuvwxyz" `list) "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "1" "2"))
 
 (defun to-simple-lambda (body &optional (env ()))
   (labels
@@ -66,10 +66,14 @@
           (decorate-varname var)))
          ))
     (if (atom body)
-        (list (lookup env body))
+        (lookup env body)
         (if (not (islambda body))
-            `((,@(to-simple-lambda (car body) env) ,@(to-simple-lambda (car (cdr body)) env)))
-            `("λ" ,(lookup (cons (lambdaarg-top body) env) (lambdaarg-top body)) "." ,@(to-simple-lambda (lambdabody body) (cons (lambdaarg-top body) env)))))))
+          (format nil "(~a ~a)"
+              (to-simple-lambda (car body) env)
+              (to-simple-lambda (car (cdr body)) env))
+          (format nil "λ~a.~a"
+            (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-simple-lambda (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
 (defun count-occurrences-in (expr var)
   (cond ((atom expr) (if (eq var expr) 1 0))
