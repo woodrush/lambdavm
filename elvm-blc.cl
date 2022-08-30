@@ -284,19 +284,24 @@
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
 
 
-(defrec-lazy list2tree** (l depth cont)
-  (cond
-    ((isnil l)
-      (cont l l))
-    ((isnil depth)
-      (do
-        (l cont)))
-    (t
-      (do
-        (<- (_ cdr-depth) (depth))
-        (<- (right-tree l) (list2tree** l cdr-depth))
-        (<- (left-tree l) (list2tree** l cdr-depth))
-        (cont (cons right-tree left-tree) l)))))
+(defun-lazy list2tree*** (l depth decorator cont)
+  ((letrec-lazy list2tree** (l depth cont)
+    (cond
+      ((isnil l)
+        (cont l l))
+      ((isnil depth)
+        (do
+          (<- (l-car l-cdr) (l))
+          (<- (x) (decorator l-car))
+          (cont x l-cdr)))
+      (t
+        (do
+          (<- (_ cdr-depth) (depth))
+          (<- (right-tree l) (list2tree** l cdr-depth))
+          (<- (left-tree l) (list2tree** l cdr-depth))
+          (cont (cons right-tree left-tree) l)))))
+   l depth cont))
+
 
 (def-lazy initreg nil)
 
@@ -314,12 +319,14 @@
       ((lambda (cont)
         (do
           (let* list2tree*
-            (lambda (l cont)
+            (lambda (l decorator cont)
               (do
-                (<- (tree _) (list2tree** l int-zero))
+                (<- (tree _) (list2tree*** l int-zero decorator))
                 (cont tree))))
-          (list2tree* memlist)  ;; Implicit argument passing: memtree
-          (list2tree* proglist) ;; Implicit argument passing: progtree
+          (list2tree* memlist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont x))))  ;; Implicit argument passing: memtree
+          (list2tree* proglist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont x)))
+          ;; (lambda (x cont) (cont x))
+          ) ;; Implicit argument passing: progtree
           (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
@@ -331,9 +338,9 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-;; ;; (format t (compile-to-ski-lazy main))
-(format t (compile-to-ski-lazy main))
-;; (format t (compile-to-blc-lazy main))
+;; (format t (compile-to-ski-lazy main))
+;; (format t (compile-to-ski-lazy main))
+(format t (compile-to-blc-lazy main))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
