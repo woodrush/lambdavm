@@ -223,9 +223,10 @@
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
-  (do
-    (<- (memory) ((lookup-tree* reg *dst (memory-write* memory src))))
-    (eval memory progtree stdin nextblock curproglist reg)))
+  (((lookup-tree* reg *dst
+      (memory-write* memory src))
+     eval)
+   progtree stdin nextblock curproglist reg))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
