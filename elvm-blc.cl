@@ -214,9 +214,9 @@
     mov-case
     ))
 
-(defun-lazy io-getc (x1 x2 x3) x1)
-(defun-lazy io-putc (x1 x2 x3) x2)
-(defun-lazy io-exit (x1 x2 x3) x3)
+(defun-lazy io-exit (x1 x2 x3) x1)
+(defun-lazy io-getc (x1 x2 x3) x2)
+(defun-lazy io-putc (x1 x2 x3) x3)
 
 (defmacro-lazy cons4 (x1 x2 x3 x4)
   `(lambda (f) (f ,x1 ,x2 ,x3 ,x4)))
