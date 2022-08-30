@@ -158,16 +158,16 @@
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
     (let* jumpto
-      (lambda (proglist)
+      (lambda (jmp)
         (do
-          (<- (nextblock curproglist) (proglist))
-          (eval memory progtree stdin nextblock curproglist reg))))
+          (<- (proglist) (lookup-tree* progtree jmp))
+          ((proglist (eval memory progtree stdin)) reg))))
     (cond
       ((is-t-or-nil curblock)
         (do
           (if-then-return (isnil curproglist)
             SYS-STRING-TERM)
-          (jumpto curproglist)))
+          ((curproglist (eval memory progtree stdin)) reg)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
@@ -233,7 +233,9 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  (lookup-tree* progtree src jumpto))
+  ;; (lookup-tree* progtree src jumpto)
+  (jumpto src)
+  )
 
 (def-lazy jmpcmp-case
   ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -243,7 +245,8 @@
     (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
-        (lookup-tree* progtree jmp jumpto)
+        ;; (lookup-tree* progtree jmp jumpto)
+        (jumpto jmp)
         (eval-reg reg)))))
 
 (def-lazy load-case
