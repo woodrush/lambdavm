@@ -152,14 +152,14 @@
     (lookup-tree* reg *src cont)))
 
 
-(defrec-lazy eval (memory progtree stdin curblock reg)
+(defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
     (let* jumpto
       (lambda (jmp)
         (do
-          (memory-write* reg reg-PC jmp)  ;; Implicit parameter passing: reg
-          (lookup-tree* progtree jmp)     ;; Implicit parameter passing: nextblock
-          (eval memory progtree stdin))))
+          (<- (reg) (memory-write* reg reg-PC jmp))  ;; Implicit parameter passing: reg
+          (<- (nextblock) (lookup-tree* progtree jmp))     ;; Implicit parameter passing: nextblock
+          (eval memory progtree stdin nextblock curproglist reg))))
     (cond
       ((isnil curblock)
         (do
@@ -173,7 +173,7 @@
       (t
         (do
           (<- (curinst nextblock) (curblock))
-          (let* eval-reg (eval memory progtree stdin nextblock))
+          (let* eval-reg (eval memory progtree stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
           (<- (src *dst) (lookup-src-if-imm* reg src-is-imm *src))
           **instruction-typematch**)))))
@@ -227,7 +227,7 @@
   ;; Note that the destination is stored in the variable *src
   (do
     (<- (memory) ((lookup-tree* reg *dst (memory-write* memory src))))
-    (eval memory progtree stdin nextblock reg)))
+    (eval memory progtree stdin nextblock curproglist reg)))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -278,7 +278,7 @@
             (<- (car-stdin cdr-stdin) (stdin))
             (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
       (memory-write* reg *src c)               ;; Implicit parameter passing: reg
-      (eval memory progtree stdin nextblock))
+      (eval memory progtree stdin nextblock curproglist))
     ;; putc
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))))
@@ -330,7 +330,8 @@
           (cont)))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
-    ((lookup-tree* progtree int-zero (eval memtree progtree stdin)) initreg)))
+    (<- (curblock curproglist) (proglist))
+    (eval memtree progtree stdin curblock curproglist initreg)))
 
 (def-lazy SYS-STRING-TERM nil)
 
