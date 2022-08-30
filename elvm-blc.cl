@@ -151,36 +151,23 @@
     (cont *src)
     (lookup-tree* reg *src cont)))
 
-;; (lambda (a b) z) a b c
-
-;; z a b c = nil
-;; z = t
-;; a b c = t
-
-;; a c = nil
-;; a b c = t
-
-;; i (lambda (x) t) nil
-
-
+;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
+(defmacro-lazy is-t-or-nil (expr)
+  `(,expr (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil))
 
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
     (let* jumpto
-      (lambda (jmp)
+      (lambda (proglist)
         (do
-          ;; (<- (reg) (memory-write* reg reg-PC jmp))  ;; Implicit parameter passing: reg
-          (<- (proglist) (lookup-tree* progtree jmp))     ;; Implicit parameter passing: nextblock
           (<- (nextblock curproglist) (proglist))
           (eval memory progtree stdin nextblock curproglist reg))))
     (cond
-      ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
-      ((curblock (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil)
+      ((is-t-or-nil curblock)
         (do
           (if-then-return (isnil curproglist)
             SYS-STRING-TERM)
-          (<- (nextblock curproglist) (curproglist))
-          (eval memory progtree stdin nextblock curproglist reg)))
+          (jumpto curproglist)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
@@ -246,7 +233,7 @@
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
-  (jumpto src))
+  (lookup-tree* progtree src jumpto))
 
 (def-lazy jmpcmp-case
   ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [*dst] [jmp-isimm] [jmp]))
@@ -256,7 +243,7 @@
     (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (cmp dst-value src enum-cmp)
-        (jumpto jmp)
+        (lookup-tree* progtree jmp jumpto)
         (eval-reg reg)))))
 
 (def-lazy load-case
