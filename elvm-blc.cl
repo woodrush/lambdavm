@@ -157,14 +157,18 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (<- (reg) (memory-write* reg reg-PC jmp))  ;; Implicit parameter passing: reg
-          (<- (nextblock) (lookup-tree* progtree jmp))     ;; Implicit parameter passing: nextblock
+          ;; (<- (reg) (memory-write* reg reg-PC jmp))  ;; Implicit parameter passing: reg
+          (<- (proglist) (lookup-tree* progtree jmp))     ;; Implicit parameter passing: nextblock
+          (<- (nextblock curproglist) (proglist))
           (eval memory progtree stdin nextblock curproglist reg))))
     (cond
       ((isnil curblock)
         (do
-          (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
-          (jumpto sum)))
+          (<- (nextblock curproglist) (curproglist))
+          (eval memory progtree stdin nextblock curproglist reg)
+          ;; (<- (sum carry) (add* nil t int-zero (cdr (cdr reg))))
+          ;; (jumpto sum)
+          ))
       ;; Checks if (car curblock) == t == (lambda (x y) x).
       ;; `jumpto` is a placeholder and can be any term.
       ;; It is used since it is the first visible variable and encodes to `10`, which is short.
@@ -292,7 +296,7 @@
       ((isnil depth)
         (do
           (<- (l-car l-cdr) (l))
-          (<- (x) (decorator l-car))
+          (<- (x) (decorator l))
           (cont x l-cdr)))
       (t
         (do
@@ -323,8 +327,8 @@
               (do
                 (<- (tree _) (list2tree*** l int-zero decorator))
                 (cont tree))))
-          (list2tree* memlist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont x))))  ;; Implicit argument passing: memtree
-          (list2tree* proglist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont x)))
+          (list2tree* memlist (lambda (x cont) (do (<- (car-x cdr-x) (x)) (cont car-x))))  ;; Implicit argument passing: memtree
+          (list2tree* proglist (lambda (x cont) (cont x))
           ;; (lambda (x cont) (cont x))
           ) ;; Implicit argument passing: progtree
           (cont)))))
