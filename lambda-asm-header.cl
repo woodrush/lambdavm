@@ -21,7 +21,7 @@
     `(cons4 inst-load ,is-imm ,src ,dst)))
 
 (defmacro-lazy store (dst src)
-  (let ((is-imm (if (position src regnames) nil t)))
+  (let ((is-imm (if (position dst regnames) nil t)))
     `(cons4 inst-store ,is-imm ,dst ,src)))
 
 (defmacro-lazy jmp (jmp)
