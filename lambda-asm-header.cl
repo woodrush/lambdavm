@@ -1,5 +1,6 @@
 (load "./lambdavm.cl")
 
+
 ;; Used to determine if a value is an immediate or a register
 (defparameter regnames ())
 
@@ -29,11 +30,13 @@
 
 (defmacro-lazy jmpcmp (dst enum-cmp src -> jmp)
   (let ((src-is-imm (if (position jmp regnames) nil t))
-        (jmp-is-imm (if (position jmp regnames) nil t)))
+        (jmp-is-imm (if (position jmp regnames) nil t))
+        (enum-cmp (nth (position enum-cmp '(== <= >= != < >)) '(cmp-eq cmp-le cmp-ge cmp-ne cmp-lt cmp-gt))))
   `(cons4 inst-jmpcmp ,src-is-imm ,src (cons4 ,enum-cmp ,jmp-is-imm ,jmp ,dst))))
 
 (defmacro-lazy cmp (dst enum-cmp src)
-  (let ((is-imm (if (position src regnames) nil t)))
+  (let ((is-imm (if (position src regnames) nil t))
+        (enum-cmp (nth (position enum-cmp '(== <= >= != < >)) '(cmp-eq cmp-le cmp-ge cmp-ne cmp-lt cmp-gt))))
     `(cons4 inst-cmp ,is-imm ,src (cons ,enum-cmp ,dst))))
 
 (defmacro-lazy getc (reg)

@@ -18,10 +18,11 @@
 (def-lazy int-5 (list t t t t t nil t nil))
 
 ;; Define tags for jump instructions
-(def-lazy tag-main int-1)
-(def-lazy tag-print-plus13 int-2)
-(def-lazy tag-print-minus13 int-3)
-(def-lazy tag-exit int-4)
+(def-lazy tag-main    int-1)
+(def-lazy tag-print   int-2)
+(def-lazy tag-plus13  int-3)
+(def-lazy tag-minus13 int-4)
+(def-lazy tag-exit    int-5)
 
 
 
@@ -37,55 +38,56 @@
     (getc reg-A)
 
     ;; Exit at EOF
-    (jmpcmp reg-A cmp-eq int-0 -> tag-exit)
+    (jmpcmp reg-A == int-0 -> tag-exit)
 
     ;; "a" <= reg-A < "n" : add 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge "a")
+    (cmp reg-C >= "a")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-lt "n")
+    (cmp reg-D < "n")
     (add reg-C reg-D)
-    (jmpcmp reg-C cmp-eq int-2 -> tag-print-plus13)
+    (jmpcmp reg-C == int-2 -> tag-plus13)
 
     ;; "n" <= reg-A <= "z" : sub 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge "n")
+    (cmp reg-C >= "n")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-le "z")
+    (cmp reg-D <= "z")
     (add reg-C reg-D)
-    (jmpcmp reg-C cmp-eq int-2 -> tag-print-minus13)
+    (jmpcmp reg-C == int-2 -> tag-minus13)
 
     ;; "A" <= reg-A < "N" : add 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge "A")
+    (cmp reg-C >= "A")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-lt "N")
+    (cmp reg-D < "N")
     (add reg-C reg-D)
-    (jmpcmp reg-C cmp-eq int-2 -> tag-print-plus13)
+    (jmpcmp reg-C == int-2 -> tag-plus13)
 
     ;; "N" <= reg-A <= "Z" : sub 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge "N")
+    (cmp reg-C >= "N")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-le "Z")
+    (cmp reg-D <= "Z")
     (add reg-C reg-D)
-    (jmpcmp reg-C cmp-eq int-2 -> tag-print-minus13)
+    (jmpcmp reg-C == int-2 -> tag-minus13)
 
-    ;; If the character is not an alphabet, print it as is
+    ;; If the character is not an alphabet, fall through to tag-print and print it as is
+  )
+  ;; tag-print
+  (list
     (putc reg-A)
     (jmp tag-main)
   )
-  ;; tag-print-plus13
+  ;; tag-plus13
   (list
     (add reg-A reg-B)
-    (putc reg-A)
-    (jmp tag-main)  
+    (jmp tag-print)
   )
-  ;; tag-print-minus13
+  ;; tag-minus13
   (list
     (sub reg-A reg-B)
-    (putc reg-A)
-    (jmp tag-main)  
+    (jmp tag-print)
   )
   ;; tag-exit
   (list
@@ -94,12 +96,15 @@
 
 
 
+;; The number of bits used for I/O
 (def-lazy SYS-IO-BITS 8)
+;; The number of supplementary bits to prepend to the I/O bits, to be used for the machine's word size.
+;; Machine word size = SYS-IO-BITS + SYS-SUPPLEMENTARY-BITS
 (def-lazy SYS-SUPPLEMENTARY-BITS 0)
 (def-lazy initial-memory nil)
 
 (def-lazy standalone
-  ;; `lambdaVM` is a function that accepts a string (stdin) and returns a string.
+  ;; All binary lambda calculus programs are functions that accept a string (stdin) and return a string.
   (lambda (stdin)
     (lambdaVM SYS-IO-BITS SYS-SUPPLEMENTARY-BITS initial-memory asm stdin)))
 
