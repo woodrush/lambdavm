@@ -1,7 +1,11 @@
 (load "./lambdavm.cl")
 
-(defmacro-lazy mov (dst is-imm src)
-  `(cons4 inst-mov ,is-imm ,src ,dst))
+;; Used to determine if a value is an immediate or a register
+(defparameter regnames ())
+
+(defmacro-lazy mov (dst src)
+  (let ((is-imm (if (position src regnames) nil t)))
+    `(cons4 inst-mov ,is-imm ,src ,dst)))
 
 (defmacro-lazy add (dst is-imm src)
   `(cons4 inst-addsub ,is-imm ,src (cons ,dst t)))

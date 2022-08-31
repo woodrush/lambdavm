@@ -5,6 +5,8 @@
 (def-lazy reg-B (list t nil))
 (def-lazy reg-C (list nil t))
 (def-lazy reg-D (list nil nil))
+;; Used for the macros in ./lambda-asm-header.cl, to determine if a value is an immediate or a register
+(defparameter regnames '(reg-A reg-B reg-C reg-D))
 
 ;; Numbers are in big-endian, with t == 0, nil == 1
 (def-lazy int-0 (list t t t t t t t t))
@@ -25,7 +27,7 @@
   ;; Initialization (PC = 0)
   (list
     ;; Store 26/2 = 13 at reg-B
-    (mov reg-B t "N")
+    (mov reg-B "N")
     (sub reg-B t "A")
   )
   ;; tag-main (PC = 1)
@@ -36,33 +38,33 @@
     (jmpcmp reg-A cmp-eq t int-0 -> t tag-exit)
 
     ;; "a" <= reg-A < "n" : add 13
-    (mov reg-C nil reg-A)
+    (mov reg-C reg-A)
     (cmp reg-C cmp-ge t "a")
-    (mov reg-D nil reg-A)
+    (mov reg-D reg-A)
     (cmp reg-D cmp-lt t "n")
     (add reg-C nil reg-D)
     (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
 
     ;; "n" <= reg-A <= "z" : sub 13
-    (mov reg-C nil reg-A)
+    (mov reg-C reg-A)
     (cmp reg-C cmp-ge t "n")
-    (mov reg-D nil reg-A)
+    (mov reg-D reg-A)
     (cmp reg-D cmp-le t "z")
     (add reg-C nil reg-D)
     (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
 
     ;; "A" <= reg-A < "N" : add 13
-    (mov reg-C nil reg-A)
+    (mov reg-C reg-A)
     (cmp reg-C cmp-ge t "A")
-    (mov reg-D nil reg-A)
+    (mov reg-D reg-A)
     (cmp reg-D cmp-lt t "N")
     (add reg-C nil reg-D)
     (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
 
     ;; "N" <= reg-A <= "Z" : sub 13
-    (mov reg-C nil reg-A)
+    (mov reg-C reg-A)
     (cmp reg-C cmp-ge t "N")
-    (mov reg-D nil reg-A)
+    (mov reg-D reg-A)
     (cmp reg-D cmp-le t "Z")
     (add reg-C nil reg-D)
     (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
