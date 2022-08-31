@@ -25,6 +25,9 @@
 (def-lazy int-14 (list t t t t nil nil nil t))
 (def-lazy int-15 (list t t t t nil nil nil nil))
 
+;; The memory is allocated contiguously, starting from address 0 (int-0).
+(def-lazy initial-memory (list "F" "i" "z" "z" int-0 "B" "u" "z" "z" int-0))
+
 ;; Define constants
 (def-lazy *Fizz int-0)
 (def-lazy *Buzz int-5)
@@ -51,7 +54,6 @@
 (def-lazy asm (list
   ;; Initialization (PC == 0)
   (list
-    (putc "*")
     (mov reg-A int-1)
     (store n reg-A) ;; Set n = 1
     (store nmod3 reg-A) ;; Set nmod3 = 1
@@ -61,9 +63,9 @@
   ;; tag-main (PC == 1)
   (list
     ;; Check nmod3 and nmod5
-    (mov reg-A nmod3)
+    (load reg-A nmod3)
     (cmp reg-A == int-0)
-    (mov reg-B nmod5)
+    (load reg-B nmod5)
     (cmp reg-B == int-0)
     (mov reg-C reg-A)
     (add reg-C reg-B)
@@ -92,21 +94,24 @@
   (list
     (mov reg-A *Fizz)
     (store i reg-A)
-    (store return-pc tag-prepare-next-iter)
+    (mov reg-A tag-prepare-next-iter)
+    (store return-pc reg-A)
     (jmp tag-print-string)
   )
   ;; tag-print-buzz
   (list
     (mov reg-A *Buzz)
     (store i reg-A)
-    (store return-pc tag-prepare-next-iter)
+    (mov reg-A tag-prepare-next-iter)
+    (store return-pc reg-A)
     (jmp tag-print-string)
   )
   ;; tag-print-fizzbuzz
   (list
     (mov reg-A *Fizz)
     (store i reg-A)
-    (store return-pc tag-print-buzz)
+    (mov reg-A tag-print-buzz)
+    (store return-pc reg-A)
     (jmp tag-print-string)
   )
   ;; tag-print-string
@@ -114,8 +119,8 @@
     (load reg-A i)
     (load reg-B reg-A) ;; Load the current character at *i
     (load reg-C return-pc)
-    (jmpcmp reg-A == int-0 -> reg-C) ;; If the current character is null, jump to return-pc
-    (putc "*") ;; Otherwise, print "*"
+    (jmpcmp reg-B == int-0 -> reg-C) ;; If the current character is null, jump to return-pc
+    (putc reg-B) ;; Otherwise, print the current character
     (add reg-A int-1)
     (store i reg-A) ;; Increment i
     (jmp tag-print-string)
@@ -123,10 +128,43 @@
   ;; tag-prepare-next-iter
   (list
     (putc "\\n") ;; Print newline
+
+    ;; Update n and i
     (load reg-A n)
     (add reg-A int-1)
     (store n reg-A)
     (store i reg-A) ;; i = ++n
+
+    ;; Update nmod3
+    (load reg-A nmod3)
+    (add reg-A int-1)
+    (mov reg-B reg-A)
+    (cmp reg-B == int-3)
+    (mov reg-C reg-B)
+    (add reg-C reg-B)
+    (add reg-C reg-B)
+    (sub reg-A reg-C) ;; Subtract 3 from reg-A if nmod3 == 3
+
+    ;; (mov reg-A int-0)
+
+    (store nmod3 reg-A)
+
+    ;; Update nmod35
+    (load reg-A nmod5)
+    (add reg-A int-1)
+    (mov reg-B reg-A)
+    (cmp reg-B == int-5)
+    (mov reg-C reg-B)
+    (add reg-C reg-B)
+    (add reg-C reg-B)
+    (add reg-C reg-B)
+    (add reg-C reg-B)
+    (sub reg-A reg-C) ;; Subtract 5 from reg-A if nmod5 == 5
+
+    ;; (mov reg-A int-0)
+
+    (store nmod5 reg-A)
+
     (jmp tag-main)
   )
 ))
@@ -139,8 +177,6 @@
 ;; The number of supplementary bits to prepend to the I/O bits, to be used for the machine's word size.
 ;; Machine word size = SYS-IO-BITS + SYS-SUPPLEMENTARY-BITS
 (def-lazy SYS-SUPPLEMENTARY-BITS 0)
-;; The memory is allocated continuously, starting from address 0 (int-0).
-(def-lazy initial-memory (list "F" "i" "z" "z" int-0 "B" "u" "z" "z" int-0))
 
 (def-lazy standalone
   ;; All binary lambda calculus programs are functions that accept a string (stdin) and return a string.
