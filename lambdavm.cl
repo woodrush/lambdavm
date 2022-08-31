@@ -86,19 +86,6 @@
 
 
 ;;================================================================
-;; Registers
-;;================================================================
-(def-lazy reg-PC (cons nil (cons nil nil)))
-(def-lazy reg-A  (cons nil (cons t nil)))
-(def-lazy reg-D  (cons t (cons nil (cons nil nil))))
-(def-lazy reg-SP (cons t (cons nil (cons t nil))))
-(def-lazy reg-B  (cons t (cons t (cons nil nil))))
-(def-lazy reg-BP (4 (lambda (x f) (f t x)) nil))
-(def-lazy reg-C  (cons t (cons t (cons t (cons nil nil)))))
-
-
-
-;;================================================================
 ;; Arithmetic
 ;;================================================================
 (defun-lazy cmpret-eq (r1 r2 r3) r1)
@@ -127,7 +114,7 @@
 (defun-lazy cmp-ge (f) (f t   nil t))
 (defun-lazy cmp-ne (f) (f nil t   t))
 
-(defmacro-lazy cmp (n m enum-cmp)
+(defmacro-lazy compare (n m enum-cmp)
   `(,enum-cmp (cmp* ,n ,m)))
 
 
@@ -242,7 +229,7 @@
     (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
     (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
-      (if (cmp dst-value src enum-cmp)
+      (if (compare dst-value src enum-cmp)
         (jumpto jmp)
         (eval-reg reg)))))
 
@@ -258,7 +245,7 @@
   ((do
     (<- (enum-cmp dst) (*dst))
     (<- (dst-value) (lookup-tree* reg dst))
-    (<- (carry) (add* nil (cmp dst-value src enum-cmp) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (<- (carry) (add* nil (compare dst-value src enum-cmp) int-zero int-zero)) ;; Implicit parameter passing: sum
     (memory-write* reg dst)) eval-reg))
 
 (def-lazy io-case
