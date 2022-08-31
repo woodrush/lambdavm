@@ -144,9 +144,6 @@
     (add reg-C reg-B)
     (add reg-C reg-B)
     (sub reg-A reg-C) ;; Subtract 3 from reg-A if nmod3 == 3
-
-    ;; (mov reg-A int-0)
-
     (store nmod3 reg-A)
 
     ;; Update nmod35
@@ -156,13 +153,9 @@
     (cmp reg-B == int-5)
     (mov reg-C reg-B)
     (add reg-C reg-B)
-    (add reg-C reg-B)
-    (add reg-C reg-B)
+    (add reg-C reg-C)
     (add reg-C reg-B)
     (sub reg-A reg-C) ;; Subtract 5 from reg-A if nmod5 == 5
-
-    ;; (mov reg-A int-0)
-
     (store nmod5 reg-A)
 
     (jmp tag-main)
