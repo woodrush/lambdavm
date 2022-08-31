@@ -80,6 +80,43 @@
             (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
             (to-simple-lambda (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
+(defun to-js-arrow (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (nth i simple-lambda-env-vars)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (lookup env body)
+        (if (not (islambda body))
+          (format nil "~a(~a)"
+              (to-js-arrow (car body) env)
+              (to-js-arrow (car (cdr body)) env))
+          (format nil "(~a) => (~a)"
+            (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-js-arrow (lambdabody body) (cons (lambdaarg-top body) env)))))))
+
+(defun to-js (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (nth i simple-lambda-env-vars)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (lookup env body)
+        (if (not (islambda body))
+          (format nil "~a(~a)"
+              (to-js (car body) env)
+              (to-js (car (cdr body)) env))
+          (format nil "function (~a) { return ~a; }"
+            (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-js (lambdabody body) (cons (lambdaarg-top body) env)))))))
+
+
 (defun count-occurrences-in (expr var)
   (cond ((atom expr) (if (eq var expr) 1 0))
         ((islambda expr)
@@ -352,6 +389,12 @@
   `(do* ,@(reverse proc)))
 
 
+(defun compile-to-js (expr)
+  (to-js (curry expr)))
+
+(defun compile-to-js-arrow (expr)
+  (to-js-arrow (curry expr)))
+
 (defun compile-to-simple-lambda (expr)
   (to-simple-lambda (curry expr)))
 
@@ -360,6 +403,12 @@
 
 (defun compile-to-ski (expr)
   (flatten-ski (t-rewrite (curry expr))))
+
+(defmacro compile-to-js-lazy (expr-lazy)
+  `(compile-to-js (macroexpand-lazy ,expr-lazy)))
+
+(defmacro compile-to-js-arrow-lazy (expr-lazy)
+  `(compile-to-js-arrow (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-simple-lambda-lazy (expr-lazy)
   `(compile-to-simple-lambda (macroexpand-lazy ,expr-lazy)))
