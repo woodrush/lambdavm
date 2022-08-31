@@ -297,7 +297,7 @@
 
 (def-lazy initreg nil)
 
-(defun-lazy main (io-bitlength supp-bitlength memlist proglist stdin)
+(defun-lazy lambdaVM (io-bitlength supp-bitlength memlist proglist stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
@@ -330,15 +330,15 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-;; ;; (format t (compile-to-ski-lazy main))
-;; ;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-blc-lazy main))
+;; ;; (format t (compile-to-ski-lazy lambdaVM))
+;; ;; (format t (compile-to-ski-lazy lambdaVM))
+;; (format t (compile-to-blc-lazy lambdaVM))
 ;; ;; (setq *print-pretty* 'nil)
-;; ;; (print (compile-to-simple-lambda-lazy main))
+;; ;; (print (compile-to-simple-lambda-lazy lambdaVM))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
-;; (format t (write-to-string (curry (macroexpand-lazy main))))
+;; (format t (write-to-string (curry (macroexpand-lazy lambdaVM))))
 
 ;; ;; Print in curried De Bruijn notation
-;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy main)))))
+;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy lambdaVM)))))

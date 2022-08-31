@@ -1,5 +1,6 @@
 (load "./lambda-asm-header.cl")
 
+
 ;; Define the register addresses (they can be any)
 (def-lazy reg-A (list t t))
 (def-lazy reg-B (list t nil))
@@ -21,6 +22,7 @@
 (def-lazy tag-print-plus13 int-2)
 (def-lazy tag-print-minus13 int-3)
 (def-lazy tag-exit int-4)
+
 
 
 (def-lazy asm (list
@@ -90,13 +92,15 @@
   )
 ))
 
+
+
 (def-lazy SYS-IO-BITS 8)
 (def-lazy SYS-SUPPLEMENTARY-BITS 0)
 (def-lazy initial-memory nil)
 
 (def-lazy standalone
-  ;; `main` is a function that accepts a string (stdin) and returns a string.
+  ;; `lambdaVM` is a function that accepts a string (stdin) and returns a string.
   (lambda (stdin)
-    (main SYS-IO-BITS SYS-SUPPLEMENTARY-BITS initial-memory asm stdin)))
+    (lambdaVM SYS-IO-BITS SYS-SUPPLEMENTARY-BITS initial-memory asm stdin)))
 
 (format t (compile-to-blc-lazy standalone))
