@@ -55,7 +55,12 @@
    (if (not body) "" (concatenate `string (token2string (car body)) (to-blc-string (cdr body))))))
 
 
-(defparameter simple-lambda-env-vars (concatenate 'list (coerce "abcdefghijklmnopqrstuvwxyz" `list) "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "1" "2"))
+(defparameter simple-lambda-env-vars (concatenate 'list (coerce "xyzabcdefghijklmnopqrstuvw" `list) "α" "β" "γ" "δ" "ε" "ζ" "η" "θ"
+;; "ι"
+"κ"
+"μ" "ν" "ξ" "ο" "π" "ρ"
+;; "σ"
+"τ" "υ" "φ" "χ" "ψ" "ω" (coerce "ABCDEFGHIJKLMNOPQRSTUVWXYZ" `list)))
 
 (defun to-simple-lambda (body &optional (env ()))
   (labels
@@ -252,10 +257,10 @@
               ,(car (cdr (car clauses)))
               (cond ,@(cdr clauses))))))
 
-(defmacro-lazy list (item &rest items)
+(defmacro-lazy list (&rest items)
   (if items
-    `(cons ,item (list ,@items))
-    `(cons ,item nil)))
+    `(cons ,(car items) (list ,@(cdr items)))
+    nil))
 
 (defun-lazy nth (n list)
   (-> list (n cdr*) car*))
