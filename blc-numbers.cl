@@ -94,4 +94,5 @@
 (def-lazy " "   (symbol-prefix (p-t-t (p-t-t nil))))
 (def-lazy "."   (symbol-prefix (p-nil-nil (p-nil-t nil))))
 (def-lazy "\\n" (p-t-t (symbol-prefix (p-nil-t nil))))
+(def-lazy "*"   (p-t-t (p-nil-t (p-nil-t (p-nil-t nil)))))
 
