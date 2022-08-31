@@ -19,11 +19,13 @@
 (def-lazy int-5 (list t t t t t nil t nil))
 (def-lazy int-6 (list t t t t t nil nil t))
 (def-lazy int-7 (list t t t t t nil nil nil))
+(def-lazy int-8 (list t t t t nil t t t))
 (def-lazy int-11 (list t t t t nil t nil nil))
 (def-lazy int-12 (list t t t t nil nil t t))
 (def-lazy int-13 (list t t t t nil nil t nil))
 (def-lazy int-14 (list t t t t nil nil nil t))
 (def-lazy int-15 (list t t t t nil nil nil nil))
+(def-lazy int-16 (list t t t nil t t t t))
 
 ;; The memory is allocated contiguously, starting from address 0 (int-0).
 (def-lazy initial-memory (list "F" "i" "z" "z" int-0 "B" "u" "z" "z" int-0))
@@ -35,16 +37,18 @@
 (def-lazy nmod3 int-12)
 (def-lazy nmod5 int-13)
 (def-lazy i int-14)
-(def-lazy return-pc int-15)
+(def-lazy j int-15)
+(def-lazy return-pc int-16)
 
 ;; Define tags for jump instructions
 (def-lazy tag-main              int-1)
 (def-lazy tag-print-n-times     int-2)
-(def-lazy tag-print-fizz        int-3)
-(def-lazy tag-print-buzz        int-4)
-(def-lazy tag-print-fizzbuzz    int-5)
-(def-lazy tag-print-string      int-6)
-(def-lazy tag-prepare-next-iter int-7)
+(def-lazy tag-print-space       int-3)
+(def-lazy tag-print-fizz        int-4)
+(def-lazy tag-print-buzz        int-5)
+(def-lazy tag-print-fizzbuzz    int-6)
+(def-lazy tag-print-string      int-7)
+(def-lazy tag-prepare-next-iter int-8)
 
 
 
@@ -88,6 +92,17 @@
     (putc "*")
     (sub reg-A int-1)
     (store i reg-A)
+    (load reg-A j)
+    (add reg-A int-1)
+    (store j reg-A) ;; Increment j
+    (jmpcmp reg-A == int-5 -> tag-print-space)
+    (jmp tag-print-n-times)
+  )
+  ;; tag-print-space
+  (list
+    (putc " ")
+    (mov reg-A int-0)
+    (store j reg-A)
     (jmp tag-print-n-times)
   )
   ;; tag-print-fizz
@@ -157,6 +172,10 @@
     (add reg-C reg-B)
     (sub reg-A reg-C) ;; Subtract 5 from reg-A if nmod5 == 5
     (store nmod5 reg-A)
+
+    ;; Update j
+    (mov reg-A int-0)
+    (store j reg-A)
 
     (jmp tag-main)
   )
