@@ -18,7 +18,7 @@
 (defmacro-lazy jmp (is-imm jmp)
   `(cons4 inst-jmp ,is-imm ,jmp nil))
 
-(defmacro-lazy jmpcmp (dst enum-cmp src-is-imm src jmp-is-imm jmp)
+(defmacro-lazy jmpcmp (dst enum-cmp src-is-imm src -> jmp-is-imm jmp)
   `(cons4 inst-jmpcmp ,src-is-imm ,src (cons4 ,enum-cmp ,jmp-is-imm ,jmp ,dst)))
 
 (defmacro-lazy cmp (dst enum-cmp src-is-imm src)

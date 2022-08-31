@@ -33,7 +33,7 @@
     (getc reg-A)
 
     ;; Exit at EOF
-    (jmpcmp reg-A cmp-eq t int-0 t tag-exit)
+    (jmpcmp reg-A cmp-eq t int-0 -> t tag-exit)
 
     ;; "a" <= reg-A < "n" : add 13
     (mov reg-C nil reg-A)
@@ -41,7 +41,7 @@
     (mov reg-D nil reg-A)
     (cmp reg-D cmp-lt t "n")
     (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 t tag-print-plus13)
+    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
 
     ;; "n" <= reg-A <= "z" : sub 13
     (mov reg-C nil reg-A)
@@ -49,7 +49,7 @@
     (mov reg-D nil reg-A)
     (cmp reg-D cmp-le t "z")
     (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 t tag-print-minus13)
+    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
 
     ;; "A" <= reg-A < "N" : add 13
     (mov reg-C nil reg-A)
@@ -57,7 +57,7 @@
     (mov reg-D nil reg-A)
     (cmp reg-D cmp-lt t "N")
     (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 t tag-print-plus13)
+    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
 
     ;; "N" <= reg-A <= "Z" : sub 13
     (mov reg-C nil reg-A)
@@ -65,7 +65,7 @@
     (mov reg-D nil reg-A)
     (cmp reg-D cmp-le t "Z")
     (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 t tag-print-minus13)
+    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
 
     ;; If the character is not an alphabet, just print it
     (putc nil reg-A)
