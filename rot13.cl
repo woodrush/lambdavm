@@ -28,62 +28,62 @@
   (list
     ;; Store 26/2 = 13 at reg-B
     (mov reg-B "N")
-    (sub reg-B t "A")
+    (sub reg-B "A")
   )
   ;; tag-main (PC = 1)
   (list
     (getc reg-A)
 
     ;; Exit at EOF
-    (jmpcmp reg-A cmp-eq t int-0 -> t tag-exit)
+    (jmpcmp reg-A cmp-eq int-0 -> tag-exit)
 
     ;; "a" <= reg-A < "n" : add 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge t "a")
+    (cmp reg-C cmp-ge "a")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-lt t "n")
-    (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
+    (cmp reg-D cmp-lt "n")
+    (add reg-C reg-D)
+    (jmpcmp reg-C cmp-eq int-2 -> tag-print-plus13)
 
     ;; "n" <= reg-A <= "z" : sub 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge t "n")
+    (cmp reg-C cmp-ge "n")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-le t "z")
-    (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
+    (cmp reg-D cmp-le "z")
+    (add reg-C reg-D)
+    (jmpcmp reg-C cmp-eq int-2 -> tag-print-minus13)
 
     ;; "A" <= reg-A < "N" : add 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge t "A")
+    (cmp reg-C cmp-ge "A")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-lt t "N")
-    (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-plus13)
+    (cmp reg-D cmp-lt "N")
+    (add reg-C reg-D)
+    (jmpcmp reg-C cmp-eq int-2 -> tag-print-plus13)
 
     ;; "N" <= reg-A <= "Z" : sub 13
     (mov reg-C reg-A)
-    (cmp reg-C cmp-ge t "N")
+    (cmp reg-C cmp-ge "N")
     (mov reg-D reg-A)
-    (cmp reg-D cmp-le t "Z")
-    (add reg-C nil reg-D)
-    (jmpcmp reg-C cmp-eq t int-2 -> t tag-print-minus13)
+    (cmp reg-D cmp-le "Z")
+    (add reg-C reg-D)
+    (jmpcmp reg-C cmp-eq int-2 -> tag-print-minus13)
 
-    ;; If the character is not an alphabet, just print it
-    (putc nil reg-A)
-    (jmp t tag-main)
+    ;; If the character is not an alphabet, print it as is
+    (putc reg-A)
+    (jmp tag-main)
   )
   ;; tag-print-plus13
   (list
-    (add reg-A nil reg-B)
-    (putc nil reg-A)
-    (jmp t tag-main)  
+    (add reg-A reg-B)
+    (putc reg-A)
+    (jmp tag-main)  
   )
   ;; tag-print-minus13
   (list
-    (sub reg-A nil reg-B)
-    (putc nil reg-A)
-    (jmp t tag-main)  
+    (sub reg-A reg-B)
+    (putc reg-A)
+    (jmp tag-main)  
   )
   ;; tag-exit
   (list
