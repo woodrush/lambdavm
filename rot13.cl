@@ -1,7 +1,7 @@
 (load "./lambda-asm-header.cl")
 
 
-;; Define the register addresses (they can be any)
+;; Define your own register addresses
 (def-lazy reg-A (list t t))
 (def-lazy reg-B (list t nil))
 (def-lazy reg-C (list nil t))
@@ -10,12 +10,16 @@
 (defparameter regnames '(reg-A reg-B reg-C reg-D))
 
 ;; Numbers are in big-endian, with t == 0, nil == 1
+;; (Raw integer literals `0`, `1`, etc. are bound to different lambda forms in ./lazy.cl)
 (def-lazy int-0 (list t t t t t t t t))
 (def-lazy int-1 (list t t t t t t t nil))
 (def-lazy int-2 (list t t t t t t nil t))
 (def-lazy int-3 (list t t t t t t nil nil))
 (def-lazy int-4 (list t t t t t nil t t))
 (def-lazy int-5 (list t t t t t nil t nil))
+
+;; Define constants
+(def-lazy EOF int-0)
 
 ;; Define tags for jump instructions
 (def-lazy tag-main    int-1)
@@ -26,19 +30,22 @@
 
 
 
+;; The assembly is a list of lists of instructions.
+;; Each sublist defines a chunk bound with a program counter, starting from PC == 0.
+;; When a jump instruction is executed, the instruction pointer transitions to the first instruction of the given program counter.
 (def-lazy asm (list
-  ;; Initialization (PC = 0)
+  ;; Initialization (PC == 0)
   (list
     ;; Store 26/2 = 13 at reg-B
     (mov reg-B "N")
     (sub reg-B "A")
   )
-  ;; tag-main (PC = 1)
+  ;; tag-main (PC == 1)
   (list
     (getc reg-A)
 
     ;; Exit at EOF
-    (jmpcmp reg-A == int-0 -> tag-exit)
+    (jmpcmp reg-A == EOF -> tag-exit)
 
     ;; "a" <= reg-A < "n" : add 13
     (mov reg-C reg-A)
@@ -96,7 +103,8 @@
 
 
 
-;; The number of bits used for I/O
+;; The number of bits used for I/O.
+;; Binary lambda calculus supplies a list of lists of 8-bit-encoded characters.
 (def-lazy SYS-IO-BITS 8)
 ;; The number of supplementary bits to prepend to the I/O bits, to be used for the machine's word size.
 ;; Machine word size = SYS-IO-BITS + SYS-SUPPLEMENTARY-BITS
