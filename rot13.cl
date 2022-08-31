@@ -90,10 +90,13 @@
   )
 ))
 
+(def-lazy SYS-IO-BITS 8)
+(def-lazy SYS-SUPPLEMENTARY-BITS 0)
+(def-lazy initial-memory nil)
+
 (def-lazy standalone
-  ;; Remember to make the standalone a function that accepts the stdin, (lambda (stdin) ...)
-  ;; Otherwise, the program will not be executed by the interpreter.
+  ;; `main` is a function that accepts a string (stdin) and returns a string.
   (lambda (stdin)
-    (main 8 nil nil asm stdin)))
+    (main SYS-IO-BITS SYS-SUPPLEMENTARY-BITS initial-memory asm stdin)))
 
 (format t (compile-to-blc-lazy standalone))

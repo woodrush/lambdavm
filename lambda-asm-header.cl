@@ -39,8 +39,8 @@
 (defmacro-lazy getc (reg)
   `(cons4 inst-io nil ,reg io-getc))
 
-(defmacro-lazy putc (is-imm x)
-  (let ((is-imm (if (position src regnames) nil t)))
+(defmacro-lazy putc (x)
+  (let ((is-imm (if (position x regnames) nil t)))
     `(cons4 inst-io ,is-imm ,x io-putc)))
 
 (defmacro-lazy exit ()
