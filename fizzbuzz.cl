@@ -117,7 +117,7 @@
   ;; tag-print-string
   (list
     (load reg-A i)
-    (load reg-B reg-A) ;; Load the current character at *i
+    (load reg-B reg-A) ;; Load the current character at &i
     (load reg-C return-pc)
     (jmpcmp reg-B == int-0 -> reg-C) ;; If the current character is null, jump to return-pc
     (putc reg-B) ;; Otherwise, print the current character
@@ -139,18 +139,18 @@
     (load reg-A nmod3)
     (add reg-A int-1)
     (mov reg-B reg-A)
-    (cmp reg-B == int-3)
+    (cmp reg-B == int-3) ;; Evaluates to 1 if true
     (mov reg-C reg-B)
     (add reg-C reg-B)
     (add reg-C reg-B)
     (sub reg-A reg-C) ;; Subtract 3 from reg-A if nmod3 == 3
     (store nmod3 reg-A)
 
-    ;; Update nmod35
+    ;; Update nmod5
     (load reg-A nmod5)
     (add reg-A int-1)
     (mov reg-B reg-A)
-    (cmp reg-B == int-5)
+    (cmp reg-B == int-5) ;; Evaluates to 1 if true
     (mov reg-C reg-B)
     (add reg-C reg-B)
     (add reg-C reg-C)
