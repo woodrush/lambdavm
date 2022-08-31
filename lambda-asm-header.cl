@@ -29,7 +29,7 @@
     `(cons4 inst-jmp ,is-imm ,jmp nil)))
 
 (defmacro-lazy jmpcmp (dst enum-cmp src -> jmp)
-  (let ((src-is-imm (if (position jmp regnames) nil t))
+  (let ((src-is-imm (if (position src regnames) nil t))
         (jmp-is-imm (if (position jmp regnames) nil t))
         (enum-cmp (nth (position enum-cmp '(== <= >= != < >)) '(cmp-eq cmp-le cmp-ge cmp-ne cmp-lt cmp-gt))))
   `(cons4 inst-jmpcmp ,src-is-imm ,src (cons4 ,enum-cmp ,jmp-is-imm ,jmp ,dst))))
@@ -42,9 +42,9 @@
 (defmacro-lazy getc (reg)
   `(cons4 inst-io nil ,reg io-getc))
 
-(defmacro-lazy putc (x)
-  (let ((is-imm (if (position x regnames) nil t)))
-    `(cons4 inst-io ,is-imm ,x io-putc)))
+(defmacro-lazy putc (src)
+  (let ((is-imm (if (position src regnames) nil t)))
+    `(cons4 inst-io ,is-imm ,src io-putc)))
 
 (defmacro-lazy exit ()
   `(cons4 inst-io nil nil io-exit))
