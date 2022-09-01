@@ -98,28 +98,34 @@ Notes:
     (t
       nil)))
 
-(let ((argv (parse-argv)))
-  (cond
-    ((or (not argv)
-         (equal (car argv) "-h")
-         (equal (car argv) "-help"))
-      (show-help))
-    (t
-      (let* ((s (read-line))
-             (s (coerce s 'list))
-             (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s)))
-        (cond
-          ((equal (car argv) "-oski")
-            (format t (compile-to-ski (parse-de-bruijn (lex-blc s)))))
-          ((equal (car argv) "-ojs")
-            (format t (compile-to-js (parse-de-bruijn (lex-blc s)))))
-          ((equal (car argv) "-ojs-arrow")
-            (format t (compile-to-js-arrow (parse-de-bruijn (lex-blc s)))))
-          ((equal (car argv) "-olambda")
-            (format t (compile-to-simple-lambda (parse-de-bruijn (lex-blc s)))))
-          ((equal (car argv) "-olambda-unl")
-            (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s)))))
-          ((equal (car argv) "-db-unl")
-            (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s)))))
-          (t
-            (show-help)))))))
+(defun parse-input (argv)
+  (let* ((s (read-line))
+         (s (coerce s 'list))
+         (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s)))
+   (cond
+     ((equal (car argv) "-oski")
+       (format t (compile-to-ski (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-ojs")
+       (format t (compile-to-js (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-ojs-arrow")
+       (format t (compile-to-js-arrow (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-olambda")
+       (format t (compile-to-simple-lambda (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-olambda-unl")
+       (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-db-unl")
+       (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s)))))
+     (t
+       (show-help)))))
+
+(defun main ()
+  (let ((argv (parse-argv)))
+    (cond
+      ((or (not argv)
+          (equal (car argv) "-h")
+          (equal (car argv) "-help"))
+        (show-help))
+      (t
+        (parse-input argv)))))
+
+(main)
