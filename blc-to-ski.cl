@@ -13,25 +13,24 @@
           (cons (+ 1 (car ret)) (cdr ret)))))))
 
 (defun lex-blc (s)
-  (let ((curexpr nil))
+  (let ((curexpr nil) (ret nil))
     (loop
-      (let ((ret nil))
-        (cond
-          ((not s)
-            (return (reverse curexpr)))
-          ((= (car s) 0)
-            (let ((c2 (car (cdr s))))
-              (cond
-                ((= c2 0)
-                  (setq ret 'ABS))
-                (t
-                  (setq ret 'APP))))
-            (setq curexpr (cons ret curexpr))
-            (setq s (cdr (cdr s))))
-          (t
-            (let ((ret (lex-var s)))
-              (setq curexpr (cons (car ret) curexpr))
-              (setq s (cdr ret)))))))))
+      (cond
+        ((not s)
+          (return (reverse curexpr)))
+        ((= (car s) 0)
+          (let ((c2 (car (cdr s))))
+            (cond
+              ((= c2 0)
+                (setq ret 'ABS))
+              (t
+                (setq ret 'APP))))
+          (setq curexpr (cons ret curexpr))
+          (setq s (cdr (cdr s))))
+        (t
+          (let ((ret (lex-var (cdr s))))
+            (setq curexpr (cons (car ret) curexpr))
+            (setq s (cdr ret))))))))
 
 (defun decorate-var (i)
   (intern (format nil "X~a" i)))
@@ -48,7 +47,7 @@
           (setq stack (cons 'ABS stack))
           (setq envdepth (+ 1 envdepth)))
         (t
-          (setq curexpr (decorate-var (- envdepth token -1)))
+          (setq curexpr (decorate-var (- envdepth token)))
           (loop
             (if (not stack)
               (return))
