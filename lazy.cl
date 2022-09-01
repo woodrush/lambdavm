@@ -44,15 +44,22 @@
 
 (defun to-blc-string (body)
   (labels
-   ((int2varname (n)
-      (if (> n 0) (concatenate `string "1" (int2varname (- n 1))) "0"))
-    (token2string (token)
-      (cond ((not token) "")
-            ((eq token 'abs) "00")
-            ((eq token 'app) "01")
-            ((stringp token) token)
-            (t (int2varname token)))))
-   (if (not body) "" (concatenate `string (token2string (car body)) (to-blc-string (cdr body))))))
+    ((int2varname (n)
+        (if (> n 0) (concatenate 'string "1" (int2varname (- n 1))) "0"))
+     (token2string (token)
+        (cond ((not token) "")
+              ((eq token 'abs) "00")
+              ((eq token 'app) "01")
+              ((stringp token) token)
+              (t (int2varname token)))))
+    (let ((curstring ""))
+      (loop
+        (cond
+          ((not body)
+            (return curstring))
+          (t
+            (setq curstring (concatenate 'string curstring (token2string (car body))))
+            (setq body (cdr body))))))))
 
 
 (defparameter simple-lambda-env-vars (concatenate 'list (coerce "xyzabcdefghijklmnopqrstuvw" `list) "α" "β" "γ" "δ" "ε" "ζ" "η" "θ"
