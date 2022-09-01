@@ -84,7 +84,6 @@ Options:
   -odb-unl        : blc to De Bruijn index notation (Unlambda style)
   -olisp          : blc to Lisp S-expression (no pretty printing)
   -olisp-pp       : blc to Lisp S-expression (with pretty printing)
-  Defualt         : blc to ski
 
 Notes:
   - Runs on SBCL or CLISP (where command line arguments are bound to either *posix-argv* or *args*)
@@ -106,26 +105,27 @@ Notes:
 (defun parse-input (argv)
   (let* ((s (read-line))
          (s (coerce s 'list))
-         (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s)))
+         (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s))
+         (parsed (parse-de-bruijn (lex-blc s))))
    (cond
      ((equal (car argv) "-oski")
-       (format t (compile-to-ski  (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-ski parsed)))
      ((equal (car argv) "-ojs")
-       (format t (compile-to-js (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-js parsed)))
      ((equal (car argv) "-ojs-arrow")
-       (format t (compile-to-js-arrow (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-js-arrow parsed)))
      ((equal (car argv) "-olambda")
-       (format t (compile-to-simple-lambda (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-simple-lambda parsed)))
      ((equal (car argv) "-olambda-unl")
-       (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-simple-lambda-unl parsed)))
      ((equal (car argv) "-db-unl")
-       (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-de-bruijn-unl parsed)))
      ((equal (car argv) "-olisp")
        (setq *print-pretty* 'nil)
-       (format t "~a" (parse-de-bruijn (lex-blc s))))
+       (format t "~a" parsed))
      ((equal (car argv) "-olisp-pp")
        (setf *print-right-margin* 800)
-       (format t "~a" (parse-de-bruijn (lex-blc s))))
+       (format t "~a" parsed))
      (t
        (show-help)))))
 
@@ -133,8 +133,8 @@ Notes:
   (let ((argv (parse-argv)))
     (cond
       ((or (not argv)
-          (equal (car argv) "-h")
-          (equal (car argv) "-help"))
+           (equal (car argv) "-h")
+           (equal (car argv) "-help"))
         (show-help))
       (t
         (parse-input argv)))))
