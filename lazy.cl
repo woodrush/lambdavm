@@ -80,6 +80,44 @@
             (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
             (to-simple-lambda (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
+(defun to-simple-lambda-unl (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (nth i simple-lambda-env-vars)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (lookup env body)
+        (if (not (islambda body))
+          (format nil "`~a~a"
+              (to-simple-lambda-unl (car body) env)
+              (to-simple-lambda-unl (car (cdr body)) env))
+          (format nil "λ~a.~a"
+            (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-simple-lambda-unl (lambdabody body) (cons (lambdaarg-top body) env)))))))
+
+(defun to-de-bruijn-unl (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (if (>= i 10)
+            (format nil "(~a)" i)
+            i)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (lookup env body)
+        (if (not (islambda body))
+          (format nil "`~a~a"
+              (to-de-bruijn-unl (car body) env)
+              (to-de-bruijn-unl (car (cdr body)) env))
+          (format nil "λ~a"
+            ;; (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-de-bruijn-unl (lambdabody body) (cons (lambdaarg-top body) env)))))))
+
 (defun to-js-arrow (body &optional (env ()))
   (labels
     ((lookup (env var)
@@ -91,10 +129,10 @@
     (if (atom body)
         (lookup env body)
         (if (not (islambda body))
-          (format nil "~a(~a)"
+          (format nil (if (atom (car body)) "~a(~a)" "(~a)(~a)")
               (to-js-arrow (car body) env)
               (to-js-arrow (car (cdr body)) env))
-          (format nil "(~a) => (~a)"
+          (format nil "(~a) => ~a"
             (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
             (to-js-arrow (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
@@ -109,7 +147,7 @@
     (if (atom body)
         (lookup env body)
         (if (not (islambda body))
-          (format nil "~a(~a)"
+          (format nil (if (atom (car body)) "~a(~a)" "(~a)(~a)")
               (to-js (car body) env)
               (to-js (car (cdr body)) env))
           (format nil "function (~a) { return ~a; }"
@@ -398,6 +436,12 @@
 (defun compile-to-simple-lambda (expr)
   (to-simple-lambda (curry expr)))
 
+(defun compile-to-simple-lambda-unl (expr)
+  (to-simple-lambda-unl (curry expr)))
+
+(defun compile-to-de-bruijn-unl (expr)
+  (to-de-bruijn-unl (curry expr)))
+
 (defun compile-to-blc (expr)
   (to-blc-string (to-de-bruijn (curry expr))))
 
@@ -412,6 +456,12 @@
 
 (defmacro compile-to-simple-lambda-lazy (expr-lazy)
   `(compile-to-simple-lambda (macroexpand-lazy ,expr-lazy)))
+
+(defmacro compile-to-simple-lambda-unl-lazy (expr-lazy)
+  `(compile-to-simple-lambda-unl (macroexpand-lazy ,expr-lazy)))
+
+(defmacro compile-to-de-bruijn-unl-lazy (expr-lazy)
+  `(compile-to-de-bruijn-unl (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-blc-lazy (expr-lazy)
   `(compile-to-blc (macroexpand-lazy ,expr-lazy)))
