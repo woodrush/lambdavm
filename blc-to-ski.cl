@@ -13,21 +13,25 @@
           (cons (+ 1 (car ret)) (cdr ret)))))))
 
 (defun lex-blc (s)
-  (let ((c (car s)) (ret nil))
-    (cond
-      ((not s)
-        nil)
-      ((= c 0)
-        (let ((c2 (car (cdr s))))
-          (cond
-            ((= c2 0)
-              (setq ret 'ABS))
-            (t
-              (setq ret 'APP))))
-        (cons ret (lex-blc (cdr (cdr s)))))
-      (t
-        (let ((ret (lex-var s)))
-          (cons (car ret) (lex-blc (cdr ret))))))))
+  (let ((curexpr nil))
+    (loop
+      (let ((ret nil))
+        (cond
+          ((not s)
+            (return (reverse curexpr)))
+          ((= (car s) 0)
+            (let ((c2 (car (cdr s))))
+              (cond
+                ((= c2 0)
+                  (setq ret 'ABS))
+                (t
+                  (setq ret 'APP))))
+            (setq curexpr (cons ret curexpr))
+            (setq s (cdr (cdr s))))
+          (t
+            (let ((ret (lex-var s)))
+              (setq curexpr (cons (car ret) curexpr))
+              (setq s (cdr ret)))))))))
 
 (defun parse-de-bruijn (l)
   (let ((stack nil)
