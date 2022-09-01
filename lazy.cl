@@ -161,6 +161,24 @@
             (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
             (to-js (lambdabody body) (cons (lambdaarg-top body) env)))))))
 
+(defun to-python (body &optional (env ()))
+  (labels
+    ((lookup (env var)
+       (let ((i (position var (reverse env) :test #'equal)))
+         (if i
+          (nth i simple-lambda-env-vars)
+          (decorate-varname var)))
+         ))
+    (if (atom body)
+        (lookup env body)
+        (if (not (islambda body))
+          (format nil (if (atom (car body)) "~a(~a)" "(~a)(~a)")
+              (to-python (car body) env)
+              (to-python (car (cdr body)) env))
+          (format nil "lambda ~a: ~a"
+            (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
+            (to-python (lambdabody body) (cons (lambdaarg-top body) env)))))))
+
 
 (defun count-occurrences-in (expr var)
   (cond ((atom expr) (if (eq var expr) 1 0))
@@ -440,6 +458,9 @@
 (defun compile-to-js-arrow (expr)
   (to-js-arrow (curry expr)))
 
+(defun compile-to-python (expr)
+  (to-python (curry expr)))
+
 (defun compile-to-simple-lambda (expr)
   (to-simple-lambda (curry expr)))
 
@@ -460,6 +481,9 @@
 
 (defmacro compile-to-js-arrow-lazy (expr-lazy)
   `(compile-to-js-arrow (macroexpand-lazy ,expr-lazy)))
+
+(defmacro compile-to-python-lazy (expr-lazy)
+  `(compile-to-python (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-simple-lambda-lazy (expr-lazy)
   `(compile-to-simple-lambda (macroexpand-lazy ,expr-lazy)))

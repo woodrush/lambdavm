@@ -1,6 +1,38 @@
 (load "./lazy.cl")
 
 
+(defun show-help ()
+  (format *error-output* "Converts binary lambda calculus terms (0010, etc.) to a target format.
+
+Usage:
+  sbcl --script blc-to-ski.cl [input option] [output option]
+  clisp blc-to-ski.cl [input option] [output option]
+
+Input options:
+  -iblc           : From binary lambda calculus notation
+  -iski           : From SKI combinator calculus notation (Unlambda style)
+
+Output options:
+  -oblc           : To binary lambda calculus notation
+  -oski           : To ski (Unlambda style)
+  -ojs            : To js
+  -ojs-arrow      : To js arrow style
+  -opython        : To Python lambda
+  -olambda        : To simple lambda
+  -olambda-unl    : To simple lambda (Unlambda style)
+  -odb-unl        : To De Bruijn index notation (Unlambda style)
+  -olisp          : To Lisp S-expression (no pretty printing)
+  -olisp-pp       : To Lisp S-expression (with pretty printing)
+
+Other options:
+  -h, -help       : Show this help message
+
+Notes:
+  - Runs on SBCL or CLISP (where command line arguments are bound to either *posix-argv* or *args*)
+  - Running on CLISP prints a trailing newline. Remove it if it affects utilities such as asc2bin:
+    clisp blc-to-ski.cl -oski | tr -d '\n'
+"))
+
 (defun lex-var (s)
   (let ((c (car s)))
     (cond
@@ -66,37 +98,6 @@
           (if (not stack)
             (return curexpr)))))))
 
-(defun show-help ()
-  (format *error-output* "Converts binary lambda calculus terms (0010, etc.) to a target format.
-
-Usage:
-  sbcl --script blc-to-ski.cl [input option] [output option]
-  clisp blc-to-ski.cl [input option] [output option]
-
-Input options:
-  -iblc           : From binary lambda calculus notation
-  -iski           : From SKI combinator calculus notation (Unlambda style)
-
-Output options:
-  -oblc           : To binary lambda calculus notation
-  -oski           : To ski (Unlambda style)
-  -ojs            : To js
-  -ojs-arrow      : To js arrow style
-  -olambda        : To simple lambda
-  -olambda-unl    : To simple lambda (Unlambda style)
-  -odb-unl        : To De Bruijn index notation (Unlambda style)
-  -olisp          : To Lisp S-expression (no pretty printing)
-  -olisp-pp       : To Lisp S-expression (with pretty printing)
-
-Other options:
-  -h, -help       : Show this help message
-
-Notes:
-  - Runs on SBCL or CLISP (where command line arguments are bound to either *posix-argv* or *args*)
-  - Running on CLISP prints a trailing newline. Remove it if it affects utilities such as asc2bin:
-    clisp blc-to-ski.cl -oski | tr -d '\n'
-"))
-
 (defun parse-argv ()
   (cond
      ;; SBCL
@@ -145,6 +146,8 @@ Notes:
       (format t (compile-to-js parsed)))
     ((equal (car argv) "-ojs-arrow")
       (format t (compile-to-js-arrow parsed)))
+    ((equal (car argv) "-opython")
+      (format t (compile-to-python parsed)))
     ((equal (car argv) "-olambda")
       (format t (compile-to-simple-lambda parsed)))
     ((equal (car argv) "-olambda-unl")
