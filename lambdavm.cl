@@ -76,11 +76,11 @@
           ((eval-bool
             (if car-n
               (if car-m
-                t
+                car-m
                 carry)
               (if car-m
                 carry
-                nil)))))
+                car-m)))))
         (cont nextcarry (cons curbit curlist))))))
 
 
