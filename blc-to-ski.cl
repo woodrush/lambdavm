@@ -33,6 +33,9 @@
               (setq curexpr (cons (car ret) curexpr))
               (setq s (cdr ret)))))))))
 
+(defun decorate-var (i)
+  (intern (format nil "X~a" i)))
+
 (defun parse-de-bruijn (l)
   (let ((stack nil)
         (envdepth -1)
@@ -45,7 +48,7 @@
           (setq stack (cons 'ABS stack))
           (setq envdepth (+ 1 envdepth)))
         (t
-          (setq curexpr (- envdepth token -1))
+          (setq curexpr (decorate-var (- envdepth token -1)))
           (loop
             (if (not stack)
               (return))
@@ -55,7 +58,7 @@
                   (setq stack (cons curexpr stack))
                   (return))
                 ((equal 'ABS stacktop)
-                  (setq curexpr `(lambda (,envdepth) ,curexpr))
+                  (setq curexpr `(lambda (,(decorate-var envdepth)) ,curexpr))
                   (setq envdepth (- envdepth 1))
                   (setq stack (cdr stack)))
                 ((equal 'APP (car (cdr stack)))
@@ -79,6 +82,8 @@ Options:
   -olambda        : blc to simple lambda
   -olambda-unl    : blc to simple lambda (Unlambda style)
   -odb-unl        : blc to De Bruijn index notation (Unlambda style)
+  -olisp          : blc to Lisp S-expression (no pretty printing)
+  -olisp-pp       : blc to Lisp S-expression (with pretty printing)
   Defualt         : blc to ski
 
 Notes:
@@ -104,7 +109,7 @@ Notes:
          (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s)))
    (cond
      ((equal (car argv) "-oski")
-       (format t (compile-to-ski (parse-de-bruijn (lex-blc s)))))
+       (format t (compile-to-ski  (parse-de-bruijn (lex-blc s)))))
      ((equal (car argv) "-ojs")
        (format t (compile-to-js (parse-de-bruijn (lex-blc s)))))
      ((equal (car argv) "-ojs-arrow")
@@ -115,6 +120,12 @@ Notes:
        (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s)))))
      ((equal (car argv) "-db-unl")
        (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s)))))
+     ((equal (car argv) "-olisp")
+       (setq *print-pretty* 'nil)
+       (format t "~a" (parse-de-bruijn (lex-blc s))))
+     ((equal (car argv) "-olisp-pp")
+       (setf *print-right-margin* 800)
+       (format t "~a" (parse-de-bruijn (lex-blc s))))
      (t
        (show-help)))))
 
