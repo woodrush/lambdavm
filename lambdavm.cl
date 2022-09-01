@@ -244,8 +244,7 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   ((do
     (<- (enum-cmp dst) (*dst))
-    (<- (dst-value) (lookup-tree* reg dst))
-    (<- (carry) (add* nil (compare dst-value src enum-cmp) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (<- (carry) (add* nil (enum-cmp ((lookup-tree* reg dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
     (memory-write* reg dst)) eval-reg))
 
 (def-lazy io-case
@@ -330,11 +329,12 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-;; ;; (format t (compile-to-ski-lazy lambdaVM))
-;; ;; (format t (compile-to-ski-lazy lambdaVM))
-;; (format t (compile-to-blc-lazy lambdaVM))
+;; (format t (compile-to-ski-lazy lambdaVM))
+(format t (compile-to-blc-lazy lambdaVM))
 ;; ;; (setq *print-pretty* 'nil)
-;; ;; (print (compile-to-simple-lambda-lazy lambdaVM))
+;; (format t (compile-to-simple-lambda-lazy lambdaVM))
+;; (format t (compile-to-js-lazy lambdaVM))
+;; (format t (compile-to-js-arrow-lazy lambdaVM))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)
