@@ -70,19 +70,26 @@
   (format *error-output* "Converts binary lambda calculus terms (0010, etc.) to a target format.
 
 Usage:
-  sbcl --script blc-to-ski.cl [option]
-  clisp blc-to-ski.cl [option]
+  sbcl --script blc-to-ski.cl [input option] [output option]
+  clisp blc-to-ski.cl [input option] [output option]
 
-Options:
+Input options:
+  -iblc           : From binary lambda calculus notation
+  -iski           : From SKI combinator calculus notation (Unlambda style)
+
+Output options:
+  -oblc           : To binary lambda calculus notation
+  -oski           : To ski (Unlambda style)
+  -ojs            : To js
+  -ojs-arrow      : To js arrow style
+  -olambda        : To simple lambda
+  -olambda-unl    : To simple lambda (Unlambda style)
+  -odb-unl        : To De Bruijn index notation (Unlambda style)
+  -olisp          : To Lisp S-expression (no pretty printing)
+  -olisp-pp       : To Lisp S-expression (with pretty printing)
+
+Other options:
   -h, -help       : Show this help message
-  -oski           : blc to ski
-  -ojs            : blc to js
-  -ojs-arrow      : blc to js arrow style
-  -olambda        : blc to simple lambda
-  -olambda-unl    : blc to simple lambda (Unlambda style)
-  -odb-unl        : blc to De Bruijn index notation (Unlambda style)
-  -olisp          : blc to Lisp S-expression (no pretty printing)
-  -olisp-pp       : blc to Lisp S-expression (with pretty printing)
 
 Notes:
   - Runs on SBCL or CLISP (where command line arguments are bound to either *posix-argv* or *args*)
@@ -101,41 +108,67 @@ Notes:
     (t
       nil)))
 
+(defun ski-to-blc (s)
+  (setq s (coerce s 'list))
+  (setq s (subst "01" (car (coerce "`" 'list)) s))
+  (setq s (subst "00000001011110100111010" #\s s))
+  (setq s (subst "0000110" #\k s))
+  (setq s (subst "0010" #\i s))
+  (setq s (apply #'concatenate (cons 'string s)))
+  s)
+
 (defun parse-input (argv)
-  (let* ((s (read-line))
-         (s (coerce s 'list))
-         (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s))
-         (parsed (parse-de-bruijn (lex-blc s))))
-   (cond
-     ((equal (car argv) "-oski")
-       (format t (compile-to-ski parsed)))
-     ((equal (car argv) "-ojs")
-       (format t (compile-to-js parsed)))
-     ((equal (car argv) "-ojs-arrow")
-       (format t (compile-to-js-arrow parsed)))
-     ((equal (car argv) "-olambda")
-       (format t (compile-to-simple-lambda parsed)))
-     ((equal (car argv) "-olambda-unl")
-       (format t (compile-to-simple-lambda-unl parsed)))
-     ((equal (car argv) "-db-unl")
-       (format t (compile-to-de-bruijn-unl parsed)))
-     ((equal (car argv) "-olisp")
-       (setq *print-pretty* 'nil)
-       (format t "~a" parsed))
-     ((equal (car argv) "-olisp-pp")
-       (setf *print-right-margin* 800)
-       (format t "~a" parsed))
-     (t
-       (show-help)))))
+  (cond
+    ((equal (car argv) "-iblc")
+      (let* ((s (read-line))
+             (s (coerce s 'list))
+             (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s))
+             (parsed (parse-de-bruijn (lex-blc s))))
+        parsed))
+    ((equal (car argv) "-iski")
+      (let* ((s (read-line))
+             (s (ski-to-blc s))
+             (s (coerce s 'list))
+             (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s))
+             (parsed (parse-de-bruijn (lex-blc s))))
+        parsed))
+    (t
+      (show-help))))
+
+(defun compile-parsed (argv parsed)
+  (cond
+    ((equal (car argv) "-oblc")
+      (format t (compile-to-blc parsed)))
+    ((equal (car argv) "-oski")
+      (format t (compile-to-ski parsed)))
+    ((equal (car argv) "-ojs")
+      (format t (compile-to-js parsed)))
+    ((equal (car argv) "-ojs-arrow")
+      (format t (compile-to-js-arrow parsed)))
+    ((equal (car argv) "-olambda")
+      (format t (compile-to-simple-lambda parsed)))
+    ((equal (car argv) "-olambda-unl")
+      (format t (compile-to-simple-lambda-unl parsed)))
+    ((equal (car argv) "-db-unl")
+      (format t (compile-to-de-bruijn-unl parsed)))
+    ((equal (car argv) "-olisp")
+      (setq *print-pretty* 'nil)
+      (format t "~a" parsed))
+    ((equal (car argv) "-olisp-pp")
+      (setf *print-right-margin* 800)
+      (format t "~a" parsed))
+    (t
+      (show-help))))
 
 (defun main ()
   (let ((argv (parse-argv)))
     (cond
       ((or (not argv)
+           (not (= 2 (length argv)))
            (equal (car argv) "-h")
            (equal (car argv) "-help"))
         (show-help))
       (t
-        (parse-input argv)))))
+        (compile-parsed (cdr argv) (parse-input argv))))))
 
 (main)
