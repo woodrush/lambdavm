@@ -1,6 +1,5 @@
 (load "./lazy.cl")
 
-(defparameter s (mapcar (lambda (x) (if (equal x #\0) 0 1)) (coerce (read-line) 'list)))
 
 (defun lex-var (s)
   (let ((c (car s)))
@@ -30,14 +29,11 @@
         (let ((ret (lex-var s)))
           (cons (car ret) (lex-blc (cdr ret))))))))
 
-
 (defun parse-de-bruijn (l)
   (let ((stack nil)
         (envdepth -1)
         (curexpr nil))
     (loop :for token :in l :do
-      ;; (format t "token: ~a~%" token)
-      ;; (format t "stack: ~a~%" stack)
       (cond
         ((equal 'APP token)
           (setq stack (cons 'APP stack)))
@@ -47,8 +43,6 @@
         (t
           (setq curexpr (- envdepth token -1))
           (loop
-            ;; (format t "L curexpr: ~a~%" curexpr)
-            ;; (format t "L stack: ~a~%" stack)
             (if (not stack)
               (return))
             (let ((stacktop (car stack)))
@@ -63,11 +57,11 @@
                 ((equal 'APP (car (cdr stack)))
                   (setq curexpr `(,stacktop ,curexpr))
                   (setq stack (cdr (cdr stack)))))))
-          ;; (setq stack (cons curexpr stack))
           (if (not stack)
             (return curexpr)))))))
 
-;; (print (lex-blc s))
-;; (print (parse-de-bruijn (lex-blc s)))
 
-(format t (compile-to-blc (parse-de-bruijn (lex-blc s))))
+(let* ((s (read-line))
+       (s (coerce s 'list))
+       (s (mapcar (lambda (x) (if (equal x #\0) 0 1)) s)))
+  (format t (compile-to-ski (parse-de-bruijn (lex-blc s)))))
