@@ -60,18 +60,6 @@
           (if (not stack)
             (return curexpr)))))))
 
-
-(defun parse-argv ()
-  (cond
-     ;; SBCL
-    ((boundp '*posix-argv*)
-      (cdr (eval '*posix-argv*)))
-    ;; CLISP
-    ((boundp '*args*)
-      (eval '*args*))
-    (t
-      nil)))
-
 (defun show-help ()
   (format *error-output* "Converts binary lambda calculus terms (0010, etc.) to a target format.
 
@@ -86,6 +74,7 @@ Options:
   -ojs-arrow      : blc to js arrow style
   -olambda        : blc to simple lambda
   -olambda-unl    : blc to simple lambda (Unlambda style)
+  -odb-unl        : blc to De Bruijn index notation (Unlambda style)
   Defualt         : blc to ski
 
 Notes:
@@ -93,6 +82,17 @@ Notes:
   - Running on CLISP prints a trailing newline. Remove it if it affects utilities such as asc2bin:
     clisp blc-to-ski.cl -oski | tr -d '\n'
 "))
+
+(defun parse-argv ()
+  (cond
+     ;; SBCL
+    ((boundp '*posix-argv*)
+      (cdr (eval '*posix-argv*)))
+    ;; CLISP
+    ((boundp '*args*)
+      (eval '*args*))
+    (t
+      nil)))
 
 (let ((argv (parse-argv)))
   (cond
@@ -107,15 +107,15 @@ Notes:
         (cond
           ((equal (car argv) "-oski")
             (format t (compile-to-ski (parse-de-bruijn (lex-blc s)))))
+          ((equal (car argv) "-ojs")
+            (format t (compile-to-js (parse-de-bruijn (lex-blc s)))))
+          ((equal (car argv) "-ojs-arrow")
+            (format t (compile-to-js-arrow (parse-de-bruijn (lex-blc s)))))
+          ((equal (car argv) "-olambda")
+            (format t (compile-to-simple-lambda (parse-de-bruijn (lex-blc s)))))
+          ((equal (car argv) "-olambda-unl")
+            (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s)))))
+          ((equal (car argv) "-db-unl")
+            (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s)))))
           (t
-            (show-help))))))
-  ;; (format t (compile-to-simple-lambda (parse-de-bruijn (lex-blc s))))
-  ;; (format t (compile-to-simple-lambda-unl (parse-de-bruijn (lex-blc s))))
-  ;; (format t (compile-to-de-bruijn-unl (parse-de-bruijn (lex-blc s))))
-  ;; (format t (compile-to-js-arrow (parse-de-bruijn (lex-blc s))))
-  ;; (format t (compile-to-js (parse-de-bruijn (lex-blc s))))
-
-  )
-
-;; (print *posix-argv*)
-;; (print *args*)
+            (show-help)))))))
