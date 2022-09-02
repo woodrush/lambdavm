@@ -63,24 +63,17 @@
         (<- (carry curlist) (add* initcarry is-add cdr-n cdr-m))
         (let* not-carry (not carry))
         (let* car-m (if is-add car-m (not car-m)))
-        (<- (curbit)
-          ((eval-bool
-            (if car-n
-              (if car-m
-                carry
-                not-carry)
-              (if car-m
-                not-carry
-                carry)))))
-        (<- (nextcarry)
-          ((eval-bool
-            (if car-n
-              (if car-m
-                car-m
-                carry)
-              (if car-m
-                carry
-                car-m)))))
+        (let* f (lambda (a b)
+          (if car-n
+            (if car-m a b)
+            (if car-m b a))))
+        (<- (curbit nextcarry)
+          ((lambda (cont)
+            (do
+              ((eval-bool (f car-m carry)))
+              (if (f carry not-carry)
+                (cont t)
+                (cont nil))))))
         (cont nextcarry (cons curbit curlist))))))
 
 
