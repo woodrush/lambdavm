@@ -55,7 +55,7 @@
 (defrec-lazy add* (initcarry is-add n m cont)
   (cond
     ((isnil n)
-      (cont initcarry nil))
+      (cont initcarry n))
     (t
       (do
         (<- (car-n cdr-n) (n))
@@ -281,7 +281,7 @@
 (defrec-lazy cdr-generator (l)
   (cond
     ((isnil l)
-      nil)
+      l)
     (t
       (do
         (<- (_ cdr-l) (l))
