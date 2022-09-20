@@ -47,15 +47,15 @@
         (do
           (<- (memory-target)
             ((lambda (cont)
-              (cond
-                ((isnil memory)
-                  (cont nil nil))
-                (car-address
-                  (memory cont))
-                (t
-                  (do
-                    (<- (car-memory cdr-memory) (memory)) ;; Implicit parameter passing: memory-orig
-                    (cont cdr-memory car-memory)))))))
+              (typematch-nil-cons memory (car-memory cdr-memory)
+                ;; nil case
+                (cont nil nil)
+                ;; cons case
+                (cond
+                  (car-address
+                    (memory cont))
+                  (t
+                    (cont cdr-memory car-memory))))))) ;; Implicit parameter passing: memory-orig ?
           (memory-write* memory-target cdr-address value)))
       (if car-address
         (cont (cons memory-rewritten memory-orig))
@@ -312,10 +312,9 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    ;; (let* int-zero
-    ;;   (let ((cons-t (lambda (x f) (f t x))))
-    ;;     (supp-bitlength cons-t (io-bitlength cons-t nil))))
-    (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
+    (let* int-zero
+      (let ((cons-t (lambda (x f) (f t x))))
+        (supp-bitlength cons-t (io-bitlength cons-t nil))))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
 
@@ -343,9 +342,7 @@
 
 
 (defun-lazy main (memlist proglist stdin)
-  (blcstr-to-lazykstr (lambdaVM
-  8 16
-  memlist proglist (lazykstr-to-blcstr stdin))))
+  (blcstr-to-lazykstr (lambdaVM 8 16 memlist proglist (lazykstr-to-blcstr stdin))))
 
 ;;================================================================
 ;; Code output
