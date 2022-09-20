@@ -35,25 +35,7 @@
         (lookup-tree* car-memory)
         (lookup-tree* cdr-memory))
        cdr-address
-       cont)
-        
-      )
-    )
-  ;; (cond
-  ;;   ((isnil address)
-  ;;     (cont memory))
-  ;;   ((isnil memory)
-  ;;     (cont int-zero))
-  ;;   (t
-  ;;     ((do
-  ;;       (<- (car-address) (address)) ;; Implicit parameter passing: cdr-address
-  ;;       (<- (car-memory cdr-memory) (memory))
-  ;;       ((if car-address
-  ;;         (lookup-tree* car-memory)
-  ;;         (lookup-tree* cdr-memory)) ;; Receive cdr-address
-  ;;         ))
-  ;;      cont)))
-       )
+       cont))))
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -87,28 +69,27 @@
       (cont nil))))
 
 (defrec-lazy add* (initcarry is-add n m cont)
-  (cond
-    ((isnil n)
-      (cont initcarry n))
-    (t
-      (do
-        (<- (car-n cdr-n) (n))
-        (<- (car-m cdr-m) (m))
-        (<- (carry curlist) (add* initcarry is-add cdr-n cdr-m))
-        (let* not-carry (not carry))
-        (let* car-m (if is-add car-m (not car-m)))
-        (let* f (lambda (a b)
-          (if car-n
-            (if car-m a b)
-            (if car-m b a))))
-        (<- (curbit nextcarry)
-          ((lambda (cont)
-            (do
-              ((eval-bool (f car-m carry)))
-              (if (f carry not-carry)
-                (cont t)
-                (cont nil))))))
-        (cont nextcarry (cons curbit curlist))))))
+  (typematch-nil-cons n (car-n cdr-n)
+    ;; nil case
+    (cont initcarry n)
+    ;; cons case
+    (do
+      (<- (car-m cdr-m) (m))
+      (<- (carry curlist) (add* initcarry is-add cdr-n cdr-m))
+      (let* not-carry (not carry))
+      (let* car-m (if is-add car-m (not car-m)))
+      (let* f (lambda (a b)
+        (if car-n
+          (if car-m a b)
+          (if car-m b a))))
+      (<- (curbit nextcarry)
+        ((lambda (cont)
+          (do
+            ((eval-bool (f car-m carry)))
+            (if (f carry not-carry)
+              (cont t)
+              (cont nil))))))
+      (cont nextcarry (cons curbit curlist)))))
 
 
 
