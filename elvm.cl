@@ -267,12 +267,11 @@
     (do
       (<- (c stdin)
         ((lambda (return)
-          (do
-            (if-then-return (isnil stdin)
-              (return int-zero stdin))
-            (<- (car-stdin) (stdin)) ;; Implicit parameter passing: cdr-stdin
-            (return (io-bitlength-to-wordsize car-stdin) ;;cdr-stdin
-            )))))
+          (typematch-nil-cons stdin (car-stdin cdr-stdin)
+            ;; nil case
+            (return int-zero stdin)
+            ;; cons case
+            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
       (memory-write* reg *src c)               ;; Implicit parameter passing: reg
       (eval memory progtree stdin nextblock curproglist))
     ;; putc
