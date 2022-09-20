@@ -1,25 +1,59 @@
 (load "./lazy.cl")
 (load "./blc-numbers.cl")
+(load "./blc-clamb-wrapper.cl")
+
+
+(defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)
+  `(,expr
+     (lambda ,cons-args
+       (lambda (_) ,cons-case))
+     ,nil-case))
+
+
+
+(def-lazy reg-A  (list t))
+(def-lazy reg-B  (list nil t t))
+(def-lazy reg-SP (list nil t nil))
+(def-lazy reg-D  (list nil nil t))
+(def-lazy reg-BP (list nil nil nil t))
+(def-lazy reg-C  (list nil nil nil nil))
 
 
 ;;================================================================
 ;; Memory and program
 ;;================================================================
 (defrec-lazy lookup-tree* (memory address cont)
-  (cond
-    ((isnil address)
-      (cont memory))
-    ((isnil memory)
-      (cont int-zero))
-    (t
-      ((do
-        (<- (car-address) (address)) ;; Implicit parameter passing: cdr-address
-        (<- (car-memory cdr-memory) (memory))
-        ((if car-address
-          (lookup-tree* car-memory)
-          (lookup-tree* cdr-memory)) ;; Receive cdr-address
-          ))
-       cont))))
+  (typematch-nil-cons address (car-address cdr-address)
+    ;; nil case
+    (cont memory)
+    ;; cons case
+    (typematch-nil-cons memory (car-memory cdr-memory)
+      ;; nil case
+      (cont int-zero)
+      ;; cons case
+      ((if car-address
+        (lookup-tree* car-memory)
+        (lookup-tree* cdr-memory))
+       cdr-address
+       cont)
+        
+      )
+    )
+  ;; (cond
+  ;;   ((isnil address)
+  ;;     (cont memory))
+  ;;   ((isnil memory)
+  ;;     (cont int-zero))
+  ;;   (t
+  ;;     ((do
+  ;;       (<- (car-address) (address)) ;; Implicit parameter passing: cdr-address
+  ;;       (<- (car-memory cdr-memory) (memory))
+  ;;       ((if car-address
+  ;;         (lookup-tree* car-memory)
+  ;;         (lookup-tree* cdr-memory)) ;; Receive cdr-address
+  ;;         ))
+  ;;      cont)))
+       )
 
 (defrec-lazy memory-write* (memory address value cont)
   (cond
@@ -289,15 +323,18 @@
 
 (def-lazy initreg nil)
 
-(defun-lazy lambdaVM (io-bitlength supp-bitlength memlist proglist stdin)
+(defun-lazy lambdaVM (
+  io-bitlength supp-bitlength
+  memlist proglist stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    (let* int-zero
-      (let ((cons-t (lambda (x f) (f t x))))
-        (supp-bitlength cons-t (io-bitlength cons-t nil))))
+    ;; (let* int-zero
+    ;;   (let ((cons-t (lambda (x f) (f t x))))
+    ;;     (supp-bitlength cons-t (io-bitlength cons-t nil))))
+    (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
 
@@ -319,11 +356,25 @@
 (def-lazy SYS-STRING-TERM nil)
 
 
+
+;; (def-lazy SYS-N-BITS (+ 16 8))
+;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
+
+
+(defun-lazy main (memlist proglist stdin)
+  (blcstr-to-lazykstr (lambdaVM
+  8 16
+  memlist proglist (lazykstr-to-blcstr stdin))))
+
 ;;================================================================
 ;; Code output
 ;;================================================================
+(format t (compile-to-ski-lazy main))
+
 ;; (format t (compile-to-ski-lazy lambdaVM))
-(format t (compile-to-blc-lazy lambdaVM))
+
+;; (format t (compile-to-blc-lazy lambdaVM))
+
 ;; ;; (setq *print-pretty* 'nil)
 ;; (format t (compile-to-simple-lambda-lazy lambdaVM))
 ;; (format t (compile-to-js-lazy lambdaVM))
