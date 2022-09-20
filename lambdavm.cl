@@ -101,19 +101,20 @@
 (defun-lazy cmpret-gt (r1 r2 r3) r3)
 
 (defrec-lazy cmp* (n m)
-  (do
-    (if-then-return (isnil n)
-      cmpret-eq)
-    (<- (car-n cdr-n) (n))
-    (<- (car-m cdr-m) (m))
-    (let* next (cmp* cdr-n cdr-m))
-    (if car-n
-      (if car-m
-        next
-        cmpret-lt)
-      (if car-m
-        cmpret-gt
-        next))))
+  (typematch-nil-cons n (car-n cdr-n)
+    ;; nil case
+    cmpret-eq
+    ;; cons case
+    (do
+      (<- (car-m cdr-m) (m))
+      (let* next (cmp* cdr-n cdr-m))
+      (if car-n
+        (if car-m
+          next
+          cmpret-lt)
+        (if car-m
+          cmpret-gt
+          next)))))
 
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
