@@ -1,4 +1,4 @@
-(load "./elvm.cl")
+;; (load "./elvm.cl")
 
 (def-lazy powerlist
   (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil)))))))))
@@ -87,7 +87,7 @@
 ;; (format t (compile-to-ski-lazy main))
 ;; (format t (compile-to-ski-lazy main-clamb))
 
-(format t (compile-to-ski-lazy lazyk-to-blc-wrapper))
+;; (format t (compile-to-ski-lazy lazyk-to-blc-wrapper))
 ;; (format t (compile-to-blc-lazy clamb-to-blc-wrapper))
 
 ;; ;; Print lambda term
