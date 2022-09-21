@@ -1,6 +1,14 @@
 (load "./lazy.cl")
 
 
+
+(defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)
+  `(,expr
+     (lambda ,cons-args
+       (lambda (_) ,cons-case))
+     ,nil-case))
+
+
 (def-lazy SYS-N-BITS (+ 16 8))
 (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 
@@ -8,27 +16,31 @@
 ;; Memory and program
 ;;================================================================
 (defrec-lazy lookup-tree (progtree address)
-  (cond
-    ((isnil progtree)
-      int-zero)
-    ((isnil address)
-      progtree)
-    (t
-      (lookup-tree (progtree (car address)) (cdr address)))))
+  (typematch-nil-cons progtree (_ _)
+    ;; nil case
+    int-zero
+    ;; cons case
+    (typematch-nil-cons address (car-address cdr-address)
+      ;; nil case
+      progtree
+      ;; cons case
+      (lookup-tree (progtree car-address) cdr-address))))
 
 (defrec-lazy memory-write (memory address value)
   (let ((next (lambda (x) (memory-write x (cdr address) value))))
-    (cond
-      ((isnil address)
-        value)
-      ((isnil memory)
-        ((car address)
+    (typematch-nil-cons address (car-address cdr-address)
+      ;; nil case
+      value
+      ;; cons case
+      (typematch-nil-cons memory (car-memory cdr-memory)
+        ;; nil case
+        (car-address
           (cons (next nil) nil)
-          (cons nil (next nil))))
-      (t
+          (cons nil (next nil)))
+        ;; cons case
         ((car address)
-          (cons (next (car memory)) (cdr memory))
-          (cons (car memory) (next (cdr memory))))))))
+          (cons (next car-memory) cdr-memory)
+          (cons car-memory (next cdr-memory)))))))
 
 (defrec-lazy list2tree (memlist depth decorator)
   (cond
