@@ -149,6 +149,7 @@
 (defmacro-lazy is-t-or-nil (expr)
   `(,expr (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil))
 
+
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
     (let* regread (lookup-tree* reg))
@@ -160,11 +161,11 @@
           ((proglist (eval memory progtree stdin)) reg))))
     (cond
       ((is-t-or-nil curblock)
-        (typematch-nil-cons curproglist (_ _)
+        (typematch-nil-cons curproglist (car-curproglist cdr-curproglist)
           ;; nil case
-          SYS-STRING-TERM
+          curproglist
           ;; cons case
-          ((curproglist (eval memory progtree stdin)) reg)))
+          ((eval memory progtree stdin car-curproglist cdr-curproglist) reg)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
@@ -264,7 +265,8 @@
   ;; Instruction structure:
   ;;   getc: (cons4 inst-io nil         [dst] io-getc)
   ;;   putc: (cons4 inst-io [src-isimm] [src] io-putc)
-  ;;   exit: (cons4 inst-io nil         nil   io-exit)
+  ;;   exit: (cons4 inst-io nil         any   io-exit)
+  ;; For `exit`, the control flow depends on the second term, so it must be set to `nil`.
   ;; Typematch over the inst. type
   (*dst
     ;; getc
@@ -282,7 +284,7 @@
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
     ;; exit
-    SYS-STRING-TERM))
+    src-is-imm)) ;; always evaluates to nil
 
 (defrec-lazy list2tree** (l depth cont)
   (typematch-nil-cons l (_ _)
@@ -336,9 +338,6 @@
           (eval)))
       stdin))
      initreg)))
-
-(def-lazy SYS-STRING-TERM nil)
-
 
 
 ;; (def-lazy SYS-N-BITS (+ 16 8))
