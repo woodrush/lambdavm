@@ -226,10 +226,10 @@
               ,(car (cdr (car clauses)))
               (cond ,@(cdr clauses))))))
 
-(defmacro-lazy list (item &rest items)
+(defmacro-lazy list (&rest items)
   (if items
-    `(cons ,item (list ,@items))
-    `(cons ,item nil)))
+    `(cons ,(car items) (list ,@(cdr items)))
+    `nil))
 
 (defmacro-lazy list-tail (item &rest items)
   (if items
