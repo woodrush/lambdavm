@@ -140,10 +140,10 @@
 ;;================================================================
 ;; Evaluation
 ;;================================================================
-(defun-lazy lookup-src-if-imm* (reg src-is-imm *src cont)
+(defun-lazy lookup-src-if-imm* (src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
-    (regread *src cont)))
+    (regread *src cont))) ;; regread is defined in eval
 
 ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
 (defmacro-lazy is-t-or-nil (expr)
@@ -170,7 +170,7 @@
           (<- (curinst nextblock) (curblock))
           (let* eval-reg (eval memory progtree stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
-          (<- (src) (lookup-src-if-imm* reg src-is-imm *src))
+          (<- (src) (lookup-src-if-imm* src-is-imm *src))
           (lambda (*dst)
             **instruction-typematch**))))))
 
@@ -238,7 +238,7 @@
   ;; Instruction structure: (cons4 inst-jmpcmp [src-isimm] [src] (cons4 [enum-cmp] [jmp-isimm] [jmp] [*dst]))
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
-    (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
+    (lookup-src-if-imm* jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
     (regread *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (compare dst-value src enum-cmp)
@@ -312,12 +312,12 @@
   memlist proglist stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
-    (let* Y-comb Y-comb)
-    (let* cmp* cmp*)
-    (let* add* add*)
     (let* int-zero
       (let ((cons-t (lambda (x f) (f t x))))
         (supp-bitlength cons-t (io-bitlength cons-t nil))))
+    (let* Y-comb Y-comb)
+    (let* cmp* cmp*)
+    (let* add* add*)
     ;; (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
