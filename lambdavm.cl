@@ -38,29 +38,28 @@
        cont))))
 
 (defrec-lazy memory-write* (memory address value cont)
-  (cond
-    ((isnil address)
-      (cont value))
-    (t
-      (do
-        (<- (car-address cdr-address) (address))
-        (<- (memory-rewritten memory-orig)
-          (do
-            (<- (memory-target)
-              ((lambda (cont)
-                (cond
-                  ((isnil memory)
-                    (cont nil nil))
-                  (car-address
-                    (memory cont))
-                  (t
-                    (do
-                      (<- (car-memory cdr-memory) (memory)) ;; Implicit parameter passing: memory-orig
-                      (cont cdr-memory car-memory)))))))
-            (memory-write* memory-target cdr-address value)))
-        (if car-address
-          (cont (cons memory-rewritten memory-orig))
-          (cont (cons memory-orig memory-rewritten)))))))
+  (typematch-nil-cons address (car-address cdr-address)
+    ;; nil case
+    (cont value)
+    ;; cons case
+    (do
+      (<- (memory-rewritten memory-orig)
+        (do
+          (<- (memory-target)
+            ((lambda (cont)
+              (cond
+                ((isnil memory)
+                  (cont nil nil))
+                (car-address
+                  (memory cont))
+                (t
+                  (do
+                    (<- (car-memory cdr-memory) (memory)) ;; Implicit parameter passing: memory-orig
+                    (cont cdr-memory car-memory)))))))
+          (memory-write* memory-target cdr-address value)))
+      (if car-address
+        (cont (cons memory-rewritten memory-orig))
+        (cont (cons memory-orig memory-rewritten))))))
 
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
@@ -158,9 +157,10 @@
           ((proglist (eval memory progtree stdin)) reg))))
     (cond
       ((is-t-or-nil curblock)
-        (do
-          (if-then-return (isnil curproglist)
-            SYS-STRING-TERM)
+        (typematch-nil-cons curproglist (_ _)
+          ;; nil case
+          SYS-STRING-TERM
+          ;; cons case
           ((curproglist (eval memory progtree stdin)) reg)))
       (t
         (do
@@ -282,33 +282,21 @@
     SYS-STRING-TERM))
 
 (defrec-lazy list2tree** (l depth cont)
-  (typematch-nil-cons l (car-l cdr-l)
+  (typematch-nil-cons l (_ _)
     ;; nil case
     (cont l l)
     ;; cons case
-    (typematch-nil-cons depth (car-depth cdr-depth)
+    (typematch-nil-cons depth (_ cdr-depth)
       ;; nil case
       (l cont)
       ;; cons case
       (do
         (<- (right-tree l) (list2tree** l cdr-depth))
         (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
-        (cont (cons right-tree left-tree)))))
-  ;; (cond
-  ;;   ((isnil l)
-  ;;     (cont l l))
-  ;;   ((isnil depth)
-  ;;     (l cont))
-  ;;   (t
-  ;;     (do
-  ;;       (<- (_ cdr-depth) (depth))
-  ;;       (<- (right-tree l) (list2tree** l cdr-depth))
-  ;;       (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
-  ;;       (cont (cons right-tree left-tree)))))
-        )
+        (cont (cons right-tree left-tree))))))
 
 (defrec-lazy cdr-generator (l)
-  (typematch-nil-cons l (car-l cdr-l)
+  (typematch-nil-cons l (_ cdr-l)
     ;; nil case
     l
     ;; cons case
@@ -363,7 +351,6 @@
 ;; Code output
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-blc-lazy main))
 
 ;; (format t (compile-to-ski-lazy lambdaVM))
 
