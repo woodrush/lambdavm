@@ -1,4 +1,4 @@
-(load "./lazy.cl")
+(load "./lambdacraft.cl")
 
 
 (defun show-help ()

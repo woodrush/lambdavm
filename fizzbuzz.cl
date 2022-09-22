@@ -10,7 +10,7 @@
 (defparameter regnames '(reg-A reg-B reg-C reg-D))
 
 ;; Numbers are in big-endian, with t == 0, nil == 1
-;; (Raw integer literals `0`, `1`, etc. are bound to different lambda forms in ./lazy.cl)
+;; (Raw integer literals `0`, `1`, etc. are bound to different lambda forms in ./lambdacraft.cl)
 (def-lazy int-0 (list t t t t t t t t))
 (def-lazy int-1 (list t t t t t t t nil))
 (def-lazy int-2 (list t t t t t t nil t))

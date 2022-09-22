@@ -1,4 +1,4 @@
-(load "./lazy.cl")
+(load "./lambdacraft.cl")
 (load "./blc-numbers.cl")
 (load "./blc-clamb-wrapper.cl")
 

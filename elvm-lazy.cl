@@ -1,6 +1,4 @@
-(load "./lazy.cl")
-(load "./blc-numbers.cl")
-(load "./blc-clamb-wrapper.cl")
+(load "./lambdacraft.cl")
 
 
 (defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)

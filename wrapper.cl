@@ -1,4 +1,4 @@
-(load "./lazy.cl")
+(load "./lambdacraft.cl")
 
 (defun-lazy checkbit (m target)
   ((lambda (mdash)
