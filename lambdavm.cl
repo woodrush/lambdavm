@@ -282,26 +282,37 @@
     SYS-STRING-TERM))
 
 (defrec-lazy list2tree** (l depth cont)
-  (cond
-    ((isnil l)
-      (cont l l))
-    ((isnil depth)
-      (l cont))
-    (t
+  (typematch-nil-cons l (car-l cdr-l)
+    ;; nil case
+    (cont l l)
+    ;; cons case
+    (typematch-nil-cons depth (car-depth cdr-depth)
+      ;; nil case
+      (l cont)
+      ;; cons case
       (do
-        (<- (_ cdr-depth) (depth))
         (<- (right-tree l) (list2tree** l cdr-depth))
         (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
-        (cont (cons right-tree left-tree))))))
+        (cont (cons right-tree left-tree)))))
+  ;; (cond
+  ;;   ((isnil l)
+  ;;     (cont l l))
+  ;;   ((isnil depth)
+  ;;     (l cont))
+  ;;   (t
+  ;;     (do
+  ;;       (<- (_ cdr-depth) (depth))
+  ;;       (<- (right-tree l) (list2tree** l cdr-depth))
+  ;;       (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
+  ;;       (cont (cons right-tree left-tree)))))
+        )
 
 (defrec-lazy cdr-generator (l)
-  (cond
-    ((isnil l)
-      l)
-    (t
-      (do
-        (<- (_ cdr-l) (l))
-        (cons l (cdr-generator cdr-l))))))
+  (typematch-nil-cons l (car-l cdr-l)
+    ;; nil case
+    l
+    ;; cons case
+    (cons l (cdr-generator cdr-l))))
 
 (def-lazy initreg nil)
 
@@ -313,10 +324,10 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    ;; (let* int-zero
-    ;;   (let ((cons-t (lambda (x f) (f t x))))
-    ;;     (supp-bitlength cons-t (io-bitlength cons-t nil))))
-    (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
+    (let* int-zero
+      (let ((cons-t (lambda (x f) (f t x))))
+        (supp-bitlength cons-t (io-bitlength cons-t nil))))
+    ;; (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
 
@@ -351,7 +362,8 @@
 ;;================================================================
 ;; Code output
 ;;================================================================
-(format t (compile-to-ski-lazy main))
+;; (format t (compile-to-ski-lazy main))
+;; (format t (compile-to-blc-lazy main))
 
 ;; (format t (compile-to-ski-lazy lambdaVM))
 
