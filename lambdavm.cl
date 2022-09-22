@@ -152,6 +152,7 @@
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
     (let* regread (lookup-tree* reg))
+    (let* regwrite (memory-write* reg))
     (let* jumpto
       (lambda (jmp)
         (do
@@ -215,7 +216,7 @@
         (regread *dst) ;; Implicit parameter passing: dst
         (add* is-add is-add))
        src))                    ;; Applies src to the preceding add*
-    (memory-write* reg *dst)) eval-reg))
+    (regwrite *dst)) eval-reg))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
@@ -227,7 +228,7 @@
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-  (memory-write* reg *dst src eval-reg))
+  (regwrite *dst src eval-reg))
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -248,7 +249,7 @@
   ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
   (do
     (((lookup-tree* memory src)
-        (memory-write* reg *dst))
+        (regwrite *dst))
      eval-reg)))
 
 (def-lazy cmp-case
@@ -257,7 +258,7 @@
     (<- (enum-cmp dst) (*dst))
     (let* int-zero int-zero)  ;; Share references to save space
     (<- (carry) (add* nil (enum-cmp ((regread dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
-    (memory-write* reg dst)) eval-reg))
+    (regwrite dst)) eval-reg))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -275,7 +276,7 @@
             (return int-zero stdin)
             ;; cons case
             (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
-      (memory-write* reg *src c)               ;; Implicit parameter passing: reg
+      (regwrite *src c)               ;; Implicit parameter passing: reg
       (eval memory progtree stdin nextblock curproglist))
     ;; putc
     (do
