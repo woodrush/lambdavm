@@ -143,7 +143,7 @@
 (defun-lazy lookup-src-if-imm* (reg src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
-    (lookup-tree* reg *src cont)))
+    (regread *src cont)))
 
 ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
 (defmacro-lazy is-t-or-nil (expr)
@@ -151,6 +151,7 @@
 
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
+    (let* regread (lookup-tree* reg))
     (let* jumpto
       (lambda (jmp)
         (do
@@ -211,7 +212,7 @@
     (<- (*dst is-add) (*dst))
     (<- (carry)  ;; Implicit parameter passing: sum
       ((do
-        (lookup-tree* reg *dst) ;; Implicit parameter passing: dst
+        (regread *dst) ;; Implicit parameter passing: dst
         (add* is-add is-add))
        src))                    ;; Applies src to the preceding add*
     (memory-write* reg *dst)) eval-reg))
@@ -219,7 +220,7 @@
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
-  (((lookup-tree* reg *dst
+  (((regread *dst
       (memory-write* memory src))
      eval)
    progtree stdin nextblock curproglist reg))
@@ -237,7 +238,7 @@
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* reg jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
-    (lookup-tree* reg *cmp-dst)               ;; Implicit parameter passing: dst-value
+    (regread *cmp-dst)               ;; Implicit parameter passing: dst-value
     (lambda (dst-value jmp)
       (if (compare dst-value src enum-cmp)
         (jumpto jmp)
@@ -254,7 +255,8 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   ((do
     (<- (enum-cmp dst) (*dst))
-    (<- (carry) (add* nil (enum-cmp ((lookup-tree* reg dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (let* int-zero int-zero)  ;; Share references to save space
+    (<- (carry) (add* nil (enum-cmp ((regread dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
     (memory-write* reg dst)) eval-reg))
 
 (def-lazy io-case
@@ -356,6 +358,7 @@
 
 ;; (format t (compile-to-blc-lazy lambdaVM))
 ;; (format t (compile-to-plaintext-lambda-lazy lambdaVM))
+;; (format t (compile-to-lisp-pretty-lazy lambdaVM))
 
 ;; ;; (setq *print-pretty* 'nil)
 ;; (format t (compile-to-simple-lambda-lazy lambdaVM))
