@@ -47,15 +47,16 @@
         (do
           (<- (memory-target)
             ((lambda (cont)
-              (cond
-                ((isnil memory)
-                  (cont nil nil))
-                (car-address
-                  (memory cont))
-                (t
-                  (do
-                    (<- (car-memory cdr-memory) (memory)) ;; Implicit parameter passing: memory-orig
-                    (cont cdr-memory car-memory)))))))
+              (typematch-nil-cons memory (car-memory cdr-memory)
+                ;; nil case
+                (cont nil nil)
+                ;; cons case
+                (cond
+                  (car-address
+                    (memory cont))
+                  (t
+                    (cont cdr-memory car-memory) ;; Implicit parameter passing: memory-orig ?
+                    ))))))
           (memory-write* memory-target cdr-address value)))
       (if car-address
         (cont (cons memory-rewritten memory-orig))
@@ -267,12 +268,11 @@
     (do
       (<- (c stdin)
         ((lambda (return)
-          (do
-            (if-then-return (isnil stdin)
-              (return int-zero stdin))
-            (<- (car-stdin) (stdin)) ;; Implicit parameter passing: cdr-stdin
-            (return (io-bitlength-to-wordsize car-stdin) ;;cdr-stdin
-            )))))
+          (typematch-nil-cons stdin (car-stdin cdr-stdin)
+            ;; nil case
+            (return int-zero stdin)
+            ;; cons case
+            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
       (memory-write* reg *src c)               ;; Implicit parameter passing: reg
       (eval memory progtree stdin nextblock curproglist))
     ;; putc
@@ -355,6 +355,7 @@
 ;; (format t (compile-to-ski-lazy lambdaVM))
 
 ;; (format t (compile-to-blc-lazy lambdaVM))
+;; (format t (compile-to-plaintext-lambda-lazy lambdaVM))
 
 ;; ;; (setq *print-pretty* 'nil)
 ;; (format t (compile-to-simple-lambda-lazy lambdaVM))
