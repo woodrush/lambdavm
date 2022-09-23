@@ -25,7 +25,7 @@
 (defparameter lambdacraft-loaded t)
 
 (defun islambda (expr)
-  (and (atom (car expr)) (eq 'lambda (car expr))))
+  (and (not (atom expr)) (atom (car expr)) (eq 'lambda (car expr))))
 
 (defun lambdaargs (expr)
   (car (cdr expr)))
@@ -372,8 +372,8 @@
 (defparameter plaintext-lambda-env-vars
   (list
     "x" "y" "z" "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w"
-    "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "κ" "μ" "ν" "ξ" "π" "ρ" "σ" "τ" "υ" "φ" "χ" "ψ" "ω"
-    "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"))
+    "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+    "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "κ" "μ" "ν" "ξ" "π" "ρ" "σ" "τ" "υ" "φ" "χ" "ψ" "ω"))
 
 (defun int-to-alphabet (i)
   (if (< i (length plaintext-lambda-env-vars))
@@ -397,19 +397,17 @@
               (lookup env body))
             ((not (islambda body))
               (format nil
-                (cond
-                  ((atom (car body))
-                    app-format-var)
-                  ((islambda (car body))
-                    app-format-app)
-                  (t
-                    app-format-var))
+                "(~a ~a)"
                 (funcall compiler (car body) env)
                 (funcall compiler (car (cdr body)) env)))
             (t
               (format nil abs-format
                 (lookup (cons (lambdaarg-top body) env) (lambdaarg-top body))
-                (funcall compiler (lambdabody body) (cons (lambdaarg-top body) env))))))))))
+                (let ((s (funcall compiler (lambdabody body) (cons (lambdaarg-top body) env))))
+                  (if (islambda (lambdabody body))
+                    (subseq s 1 (- (length s) 1))
+                    s))
+                ))))))))
 
 (defparameter to-plaintext-lambda* (lambda-compiler-builder "(~a ~a)" "((~a) ~a)" "\\~a.~a"))
 (defun to-plaintext-lambda (&rest args)
