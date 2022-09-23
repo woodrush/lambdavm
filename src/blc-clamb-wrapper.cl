@@ -15,15 +15,15 @@
       (<- (nextlist) (int2bitlist n cdr-pow))
       (cont (cons t nextlist)))))
 
-(defrec-lazy clambstr-to-blcstr (s)
+(defrec-lazy ulambstr-to-blcstr (s)
   (cond
     ((isnil s)
       nil)
     (t
       (do
-        (<- (c-clamb s-cdr) (s))
-        (<- (c-blc) (int2bitlist c-clamb powerlist))
-        (cons c-blc (clambstr-to-blcstr s-cdr))))))
+        (<- (c-ulamb s-cdr) (s))
+        (<- (c-blc) (int2bitlist c-ulamb powerlist))
+        (cons c-blc (ulambstr-to-blcstr s-cdr))))))
 
 (defrec-lazy bitlist2int (n powerlist cont)
   (if (isnil powerlist)
@@ -36,22 +36,22 @@
         (cont n-ret)
         (cont (+ car-pow n-ret))))))
 
-(defun-lazy blcchar-to-clambchar (c cont)
+(defun-lazy blcchar-to-ulambchar (c cont)
   (cond
     ((isnil c)
       (cont nil))
     (t
       (bitlist2int c powerlist cont))))
 
-(defrec-lazy blcstr-to-clambstr (s)
+(defrec-lazy blcstr-to-ulambstr (s)
   (cond
     ((isnil s)
       nil)
     (t
       (do
         (<- (c-blc s-cdr) (s))
-        (<- (c-clamb) (blcchar-to-clambchar c-blc))
-        (cons c-clamb (blcstr-to-clambstr s-cdr))))))
+        (<- (c-ulamb) (blcchar-to-ulambchar c-blc))
+        (cons c-ulamb (blcstr-to-ulambstr s-cdr))))))
 
 
 ;; Lazy K
@@ -62,20 +62,20 @@
     (t
       (do
         (<- (c-blc s-cdr) (s))
-        (<- (c-clamb) (blcchar-to-clambchar c-blc))
-        (cons c-clamb (blcstr-to-lazykstr s-cdr))))))
+        (<- (c-ulamb) (blcchar-to-ulambchar c-blc))
+        (cons c-ulamb (blcstr-to-lazykstr s-cdr))))))
 
 (defrec-lazy lazykstr-to-blcstr (s)
   (do
-    (<- (c-clamb s-cdr) (s))
-    (if-then-return (= 256 c-clamb)
+    (<- (c-ulamb s-cdr) (s))
+    (if-then-return (= 256 c-ulamb)
       nil)
-    (<- (c-blc) (int2bitlist c-clamb powerlist))
+    (<- (c-blc) (int2bitlist c-ulamb powerlist))
     (cons c-blc (lazykstr-to-blcstr s-cdr))))
 
 
-(defun-lazy clamb-to-blc-wrapper (program io-bitlength supp-bitlength memlist proglist stdin)
-  (blcstr-to-clambstr (program io-bitlength supp-bitlength memlist proglist (clambstr-to-blcstr stdin))))
+(defun-lazy ulamb-to-blc-wrapper (program io-bitlength supp-bitlength memlist proglist stdin)
+  (blcstr-to-ulambstr (program io-bitlength supp-bitlength memlist proglist (ulambstr-to-blcstr stdin))))
 
 (defun-lazy lazyk-to-blc-wrapper (program io-bitlength supp-bitlength memlist proglist stdin)
   (blcstr-to-lazykstr (program io-bitlength supp-bitlength memlist proglist (lazykstr-to-blcstr stdin))))
@@ -85,10 +85,10 @@
 ;; Code output
 ;;================================================================
 ;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-ski-lazy main-clamb))
+;; (format t (compile-to-ski-lazy main-ulamb))
 
 ;; (format t (compile-to-ski-lazy lazyk-to-blc-wrapper))
-;; (format t (compile-to-blc-lazy clamb-to-blc-wrapper))
+;; (format t (compile-to-blc-lazy ulamb-to-blc-wrapper))
 
 ;; ;; Print lambda term
 ;; (setf *print-right-margin* 800)

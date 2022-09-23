@@ -31,9 +31,10 @@
       ;; nil case
       (cont int-zero)
       ;; cons case
-      ((if car-address
-        (lookup-tree* car-memory)
-        (lookup-tree* cdr-memory))
+      (lookup-tree*
+        (if car-address
+          car-memory
+          cdr-memory)
        cdr-address
        cont))))
 

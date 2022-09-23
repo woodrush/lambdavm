@@ -265,7 +265,7 @@
   ;; Instruction structure:
   ;;   getc: (cons4 inst-io nil         [dst] io-getc)
   ;;   putc: (cons4 inst-io [src-isimm] [src] io-putc)
-  ;;   exit: (cons4 inst-io nil         any   io-exit)
+  ;;   exit: (cons4 inst-io nil         nil   io-exit)
   ;; For `exit`, the control flow depends on the second term, so it must be set to `nil`.
   ;; Typematch over the inst. type
   (*dst
@@ -344,10 +344,10 @@
 ;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
 
 
-(defun-lazy main (memlist proglist stdin)
-  (blcstr-to-lazykstr (lambdaVM
-  8 16
-  memlist proglist (lazykstr-to-blcstr stdin))))
+(defun-lazy main (a b memlist proglist stdin)
+  (blcstr-to-ulambstr (lambdaVM
+  a b
+  memlist proglist (ulambstr-to-blcstr stdin))))
 
 ;;================================================================
 ;; Code output
@@ -356,8 +356,10 @@
 
 ;; (format t (compile-to-ski-lazy lambdaVM))
 
+;; (format t (compile-to-blc-lazy main))
 ;; (format t (compile-to-blc-lazy lambdaVM))
-;; (format t (compile-to-plaintext-lambda-lazy lambdaVM))
+
+(format t (compile-to-lam-lazy lambdaVM))
 ;; (format t (compile-to-lisp-pretty-lazy lambdaVM))
 
 ;; ;; (setq *print-pretty* 'nil)
