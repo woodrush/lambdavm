@@ -398,7 +398,10 @@
             ((not (islambda body))
               (format nil
                 "(~a ~a)"
-                (funcall compiler (car body) env)
+                (let ((s (funcall compiler (car body) env)))
+                  (if (and (not (atom (car body))) (not (islambda (car body))))
+                    (subseq s 1 (- (length s) 1))
+                    s))
                 (funcall compiler (car (cdr body)) env)))
             (t
               (format nil abs-format
@@ -406,8 +409,7 @@
                 (let ((s (funcall compiler (lambdabody body) (cons (lambdaarg-top body) env))))
                   (if (islambda (lambdabody body))
                     (subseq s 1 (- (length s) 1))
-                    s))
-                ))))))))
+                    s))))))))))
 
 (defparameter to-plaintext-lambda* (lambda-compiler-builder "(~a ~a)" "((~a) ~a)" "\\~a.~a"))
 (defun to-plaintext-lambda (&rest args)
