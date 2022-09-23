@@ -1,4 +1,4 @@
-(load "./elvm-blc.cl")
+(load "./lambdavm.cl")
 
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 
@@ -6,6 +6,46 @@
   (if x
     (cont a)
     (cont b)))
+
+;; (defrec-lazy string-concatenator (curstr x)
+;;   (cond
+;;     ((isnil x)
+;;       curstr)
+;;     (t
+;;       (string-concatenator (cons x curstr)))))
+
+(defrec-lazy string-concatenator (curstr x)
+  (x
+    (lambda (a b _)
+      (string-concatenator (cons x curstr)))
+    curstr))
+
+(defrec-lazy inst-concatenator (curstr x)
+  (x
+    (lambda (a b c d _)
+      (inst-concatenator (cons x curstr)))
+    curstr))
+
+;; (defrec-lazy num-concatenator (curstr x)
+;;   (x
+;;     (lambda (bit _)
+;;       (num-concatenator (cons bit curstr)))
+;;     curstr))
+
+(defun-lazy list24 (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24)
+  (list b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24))
+
+(def-lazy text-header
+  (do
+    (let* string-concatenator string-concatenator)
+    (let* reverse reverse)
+    expr))
+
+(def-lazy data-header
+  (do
+    (let* cons-nil (lambda (x f) (f nil x)))
+    (let* cons-t (lambda (x f) (f t x)))
+    expr))
 
 (defparameter formlist `(
     (cons x y)
@@ -16,6 +56,12 @@
     ;; (cons (lambda (x) x) return-tree)
     ;; (lambda (f) (f f return-tree))
     ;; (new-bintree-node a b)
+
+    string-concatenator
+    inst-concatenator
+    reverse
+    data-header
+    text-header
 
     reg-A
     reg-B
@@ -109,8 +155,12 @@
 ;;   (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-ski-lazy ,expr))))
 ;;   (terpri))
 
+;; (defun print-expression (expr)
+;;   (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-blc-lazy ,expr))))
+;;   (terpri))
+
 (defun print-expression (expr)
-  (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-blc-lazy ,expr))))
+  (format t (concatenate 'string (write-to-string expr)": " (eval `(compile-to-lam-lazy ,expr))))
   (terpri))
 
 (mapcar #'print-expression formlist)
