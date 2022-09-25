@@ -1,4 +1,4 @@
-(load "./lambdavm.cl")
+(load "./src/lambdavm.cl")
 
 
 ;; Used to determine if a value is an immediate or a register

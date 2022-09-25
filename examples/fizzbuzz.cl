@@ -1,4 +1,4 @@
-(load "./lambda-asm-header.cl")
+(load "./src/lambda-asm-header.cl")
 
 
 ;; Define your own register addresses

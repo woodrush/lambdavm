@@ -1,4 +1,4 @@
-(load "./lambdavm.cl")
+(load "./src/lambdavm.cl")
 
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 

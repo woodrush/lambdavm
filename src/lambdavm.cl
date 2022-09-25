@@ -1,6 +1,6 @@
-(load "./lambdacraft.cl")
-(load "./blc-numbers.cl")
-(load "./blc-clamb-wrapper.cl")
+(load "./src/lambdacraft.cl")
+(load "./src/blc-numbers.cl")
+(load "./src/blc-clamb-wrapper.cl")
 
 
 (defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)
@@ -152,13 +152,13 @@
 
 (defrec-lazy eval (memory progtree stdin curblock curproglist reg)
   (do
-    (let* regread (lookup-tree* reg))
-    (let* regwrite (memory-write* reg))
     (let* jumpto
       (lambda (jmp)
         (do
           (<- (proglist) (lookup-tree* progtree jmp))
           ((proglist (eval memory progtree stdin)) reg))))
+    (let* regwrite (memory-write* reg))
+    (let* regread (lookup-tree* reg))
     (cond
       ((is-t-or-nil curblock)
         (typematch-nil-cons curproglist (car-curproglist cdr-curproglist)
@@ -197,8 +197,7 @@
     load-case
     store-case
     addsub-case
-    mov-case
-    ))
+    mov-case))
 
 (defun-lazy io-getc (x1 x2 x3) x1)
 (defun-lazy io-putc (x1 x2 x3) x2)
@@ -320,7 +319,6 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    ;; (let* int-zero (list t t t t t t t t t t t t t t t t t t t t t t t t ))
     (let* memory-write* memory-write*)
     (let* lookup-tree* lookup-tree*)
 

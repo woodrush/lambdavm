@@ -1,5 +1,3 @@
-;; (load "./elvm.cl")
-
 (def-lazy powerlist
   (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil)))))))))
 
@@ -72,27 +70,3 @@
       nil)
     (<- (c-blc) (int2bitlist c-ulamb powerlist))
     (cons c-blc (lazykstr-to-blcstr s-cdr))))
-
-
-(defun-lazy ulamb-to-blc-wrapper (program io-bitlength supp-bitlength memlist proglist stdin)
-  (blcstr-to-ulambstr (program io-bitlength supp-bitlength memlist proglist (ulambstr-to-blcstr stdin))))
-
-(defun-lazy lazyk-to-blc-wrapper (program io-bitlength supp-bitlength memlist proglist stdin)
-  (blcstr-to-lazykstr (program io-bitlength supp-bitlength memlist proglist (lazykstr-to-blcstr stdin))))
-
-
-;;================================================================
-;; Code output
-;;================================================================
-;; (format t (compile-to-ski-lazy main))
-;; (format t (compile-to-ski-lazy main-ulamb))
-
-;; (format t (compile-to-ski-lazy lazyk-to-blc-wrapper))
-;; (format t (compile-to-blc-lazy ulamb-to-blc-wrapper))
-
-;; ;; Print lambda term
-;; (setf *print-right-margin* 800)
-;; (format t (write-to-string (curry (macroexpand-lazy main))))
-
-;; ;; Print in curried De Bruijn notation
-;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy main)))))
