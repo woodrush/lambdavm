@@ -336,38 +336,3 @@
           (eval)))
       stdin))
      initreg)))
-
-
-;; (def-lazy SYS-N-BITS (+ 16 8))
-;; (def-lazy int-zero (take SYS-N-BITS (inflist nil)))
-
-
-(defun-lazy main (a b memlist proglist stdin)
-  (blcstr-to-ulambstr (lambdaVM
-  a b
-  memlist proglist (ulambstr-to-blcstr stdin))))
-
-;;================================================================
-;; Code output
-;;================================================================
-;; (format t (compile-to-ski-lazy main))
-
-;; (format t (compile-to-ski-lazy lambdaVM))
-
-;; (format t (compile-to-blc-lazy main))
-;; (format t (compile-to-blc-lazy lambdaVM))
-
-(format t (compile-to-lam-lazy lambdaVM))
-;; (format t (compile-to-lisp-pretty-lazy lambdaVM))
-
-;; ;; (setq *print-pretty* 'nil)
-;; (format t (compile-to-simple-lambda-lazy lambdaVM))
-;; (format t (compile-to-js-lazy lambdaVM))
-;; (format t (compile-to-js-arrow-lazy lambdaVM))
-
-;; ;; Print lambda term
-;; (setf *print-right-margin* 800)
-;; (format t (write-to-string (curry (macroexpand-lazy lambdaVM))))
-
-;; ;; Print in curried De Bruijn notation
-;; (format t (write-to-string (to-de-bruijn (curry (macroexpand-lazy lambdaVM)))))
