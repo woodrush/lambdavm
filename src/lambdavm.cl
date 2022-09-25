@@ -23,13 +23,13 @@
 ;; Memory and program
 ;;================================================================
 (defrec-lazy lookup-tree* (memory address cont)
-  (typematch-nil-cons address (car-address cdr-address)
+  (typematch-nil-cons memory (car-memory cdr-memory)
     ;; nil case
-    (cont memory)
+    (cont int-zero)
     ;; cons case
-    (typematch-nil-cons memory (car-memory cdr-memory)
+    (typematch-nil-cons address (car-address cdr-address)
       ;; nil case
-      (cont int-zero)
+      (cont memory)
       ;; cons case
       ((if car-address
         (lookup-tree* car-memory)
