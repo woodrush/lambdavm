@@ -1,4 +1,4 @@
-(load "./lambdacraft.cl")
+(load "./src/lambdacraft.cl")
 
 
 (defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)
