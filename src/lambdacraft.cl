@@ -416,37 +416,37 @@
                     (subseq s 1 (- (length s) 1))
                     s))))))))))
 
-(defparameter to-plaintext-lambda* (lambda-compiler-builder "(~a ~a)" "((~a) ~a)" "\\~a.~a"))
-(defun to-plaintext-lambda (&rest args)
-  (apply to-plaintext-lambda* args))
+;; (defparameter to-plaintext-lambda* (lambda-compiler-builder "(~a ~a)" "((~a) ~a)" "\\~a.~a"))
+;; (defun to-plaintext-lambda (&rest args)
+;;   (apply to-plaintext-lambda* args))
 
 (defparameter to-lam* (lambda-compiler-builder "(~a ~a)" "(~a ~a)" "(\\~a.~a)"))
 (defun to-lam (&rest args)
   (apply to-lam* args))
 
-(defparameter to-js-arrow* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "(~a) => ~a"))
-(defun to-js-arrow (&rest args)
-  (apply to-js-arrow* args))
+;; (defparameter to-js-arrow* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "(~a) => ~a"))
+;; (defun to-js-arrow (&rest args)
+;;   (apply to-js-arrow* args))
 
-(defparameter to-js* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "function (~a) { return ~a; }"))
-(defun to-js (&rest args)
-  (apply to-js* args))
+;; (defparameter to-js* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "function (~a) { return ~a; }"))
+;; (defun to-js (&rest args)
+;;   (apply to-js* args))
 
-(defparameter to-python* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "lambda ~a: ~a"))
-(defun to-python (&rest args)
-  (apply to-python* args))
+;; (defparameter to-python* (lambda-compiler-builder "~a(~a)" "(~a)(~a)" "lambda ~a: ~a"))
+;; (defun to-python (&rest args)
+;;   (apply to-python* args))
 
-(defun compile-to-js (expr)
-  (to-js (curry expr)))
+;; (defun compile-to-js (expr)
+;;   (to-js (curry expr)))
 
-(defun compile-to-js-arrow (expr)
-  (to-js-arrow (curry expr)))
+;; (defun compile-to-js-arrow (expr)
+;;   (to-js-arrow (curry expr)))
 
-(defun compile-to-python (expr)
-  (to-python (curry expr)))
+;; (defun compile-to-python (expr)
+;;   (to-python (curry expr)))
 
-(defun compile-to-plaintext-lambda (expr)
-  (to-plaintext-lambda (curry expr)))
+;; (defun compile-to-plaintext-lambda (expr)
+;;   (to-plaintext-lambda (curry expr)))
 
 (defun compile-to-lam (expr)
   (to-lam (curry expr)))
@@ -455,8 +455,8 @@
 ;;================================================================
 ;; Utilities
 ;;================================================================
-(defmacro compile-to-plaintext-lambda-lazy (expr-lazy)
-  `(compile-to-plaintext-lambda (macroexpand-lazy ,expr-lazy)))
+;; (defmacro compile-to-plaintext-lambda-lazy (expr-lazy)
+;;   `(compile-to-plaintext-lambda (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-lam-lazy (expr-lazy)
   `(compile-to-lam (macroexpand-lazy ,expr-lazy)))
@@ -470,14 +470,14 @@
 (defmacro compile-to-ski-parens-lazy (expr-lazy)
   `(compile-to-ski-parens (macroexpand-lazy ,expr-lazy)))
 
-(defmacro compile-to-js-lazy (expr-lazy)
-  `(compile-to-js (macroexpand-lazy ,expr-lazy)))
+;; (defmacro compile-to-js-lazy (expr-lazy)
+;;   `(compile-to-js (macroexpand-lazy ,expr-lazy)))
 
-(defmacro compile-to-js-arrow-lazy (expr-lazy)
-  `(compile-to-js-arrow (macroexpand-lazy ,expr-lazy)))
+;; (defmacro compile-to-js-arrow-lazy (expr-lazy)
+;;   `(compile-to-js-arrow (macroexpand-lazy ,expr-lazy)))
 
-(defmacro compile-to-python-lazy (expr-lazy)
-  `(compile-to-python (macroexpand-lazy ,expr-lazy)))
+;; (defmacro compile-to-python-lazy (expr-lazy)
+;;   `(compile-to-python (macroexpand-lazy ,expr-lazy)))
 
 (defmacro compile-to-lisp-lazy (expr-lazy)
   `(progn
