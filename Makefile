@@ -37,6 +37,18 @@ out/%.blc: examples/%
 	mkdir -p out
 	$(SBCL) --script $< > $@
 
+.PRECIOUS: out/%.ulamb
+out/%.ulamb: examples/%
+	mkdir -p out
+	( printf '(defparameter **compile-ulamb** t)'; cat $< ) > $@.cl
+	$(SBCL) --script $@.cl > $@
+
+.PRECIOUS: out/%.lazy
+out/%.lazy: examples/%
+	mkdir -p out
+	( printf '(defparameter **compile-lazy** t)'; cat $< ) > $@.cl
+	$(SBCL) --script $@.cl > $@
+
 .PRECIOUS: out/%.blc-out
 out/%.blc-out: out/%.blc $(BLC) $(ASC2BIN)
 	mkdir -p ./out
@@ -54,19 +66,19 @@ out/%.blc-uni-out: out/%.blc $(UNI) $(ASC2BIN)
 	mv $@.tmp $@
 
 .PRECIOUS: out/%.ulamb-out
-out/%.ulamb-out: examples/% $(ULAMB) $(ASC2BIN)
+out/%.ulamb-out: out/%.ulamb $(CLAMB) $(ASC2BIN)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
-		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(ULAMB) -u | head -n 20 > $@.tmp; else \
-		cat $< | $(ASC2BIN) | $(ULAMB) -u | head -n 20 > $@.tmp; fi
+		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(CLAMB) -u | head -n 20 > $@.tmp; else \
+		cat $< | $(ASC2BIN) | $(CLAMB) -u | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
 .PRECIOUS: out/%.lazyk-out
-out/%.lazyk-out: examples/% $(LAZYK)
+out/%.lazyk-out: out/%.lazy $(LAZYK)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
-		cat $< $*.in | $(LAZYK) $(target_lazyk) -u | head -n 20 > $@.tmp; else \
-		cat $< | $(LAZYK) $(target_lazyk) -u | head -n 20 > $@.tmp; fi
+		cat test/$*.in | $(LAZYK) $< -u | head -n 20 > $@.tmp; else \
+		$(LAZYK) $< -u | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
 out/%.blc-out.expected-diff: ./out/%.blc-out ./test/%.out
@@ -112,6 +124,13 @@ clamb: $(CLAMB)
 $(CLAMB): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make clamb && mv bin/clamb ../../bin
+
+.PHONY: lazyk
+lazyk: $(LAZYK)
+$(LAZYK): $(LAMBDATOOLS)
+	mkdir -p bin
+	cd $(LAMBDATOOLS) && make lazyk && mv bin/lazyk ../../bin
+
 
 .PHONY: asc2bin
 asc2bin: $(ASC2BIN)
