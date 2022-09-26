@@ -3,21 +3,6 @@
 (load "./src/blc-clamb-wrapper.cl")
 
 
-(defmacro-lazy typematch-nil-cons (expr cons-args nil-case cons-case)
-  `(,expr
-     (lambda ,cons-args
-       (lambda (_) ,cons-case))
-     ,nil-case))
-
-
-
-(def-lazy reg-A  (list t))
-(def-lazy reg-B  (list nil t t))
-(def-lazy reg-SP (list nil t nil))
-(def-lazy reg-D  (list nil nil t))
-(def-lazy reg-BP (list nil nil nil t))
-(def-lazy reg-C  (list nil nil nil nil))
-
 
 ;;================================================================
 ;; Memory and program

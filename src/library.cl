@@ -1,5 +1,13 @@
 (load "./src/lambdavm.cl")
 
+
+(def-lazy reg-A  (list t))
+(def-lazy reg-B  (list nil t t))
+(def-lazy reg-SP (list nil t nil))
+(def-lazy reg-D  (list nil nil t))
+(def-lazy reg-BP (list nil nil nil t))
+(def-lazy reg-C  (list nil nil nil nil))
+
 (defmacro-lazy cons (x y) `(lambda (f) (f ,x ,y)))
 
 (defun-lazy return-tree (x cont)
