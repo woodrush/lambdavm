@@ -18,6 +18,10 @@ LAMBDATOOLS=./build/lambda-calculus-devkit
 
 # Other
 SBCL=sbcl
+LATEX=latex
+DVIPDFMX=dvipdfmx
+target_latex=out/lambdavm.tex
+target_pdf=lambdavm.pdf
 
 
 
@@ -27,6 +31,26 @@ all: $(addsuffix .blc, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
 
 test: test-blc test-ulamb test-lazyk
 
+pdf: $(target_pdf)
+
+
+#================================================================
+# Build the PDF
+#================================================================
+LAMBDAVM_SRCS=./src/lambdavm.cl ./src/lambdacraft.cl ./src/blc-numbers.cl ./src/blc-clamb-wrapper.cl
+
+.PRECIOUS: $(target_latex)
+$(target_latex): $(LAMBDAVM_SRCS) ./src/main.cl ./tools/main.tex ./tools/make-latex.sh
+	mkdir -p ./out
+	./tools/make-latex.sh
+	mv lambdavm.tex out
+
+.PHONY: pdf
+$(target_pdf): $(target_latex)
+	cp ./tools/main.tex out
+	cd out; $(LATEX) main.tex
+	cd out; $(DVIPDFMX) main.dvi -o lambdavm.pdf
+	mv out/lambdavm.pdf .
 
 #================================================================
 # Tests
