@@ -107,7 +107,7 @@ out/%.lazyk-out.expected-diff: ./out/%.lazyk-out ./test/%.out
 #================================================================
 $(LAMBDATOOLS):
 	mkdir -p build
-	cd build; git clone https://github.com/woodrush/lambda-lang-toolkit
+	cd build; git clone https://github.com/woodrush/lambda-calculus-devkit
 
 .PHONY: blc
 blc: $(BLC)
