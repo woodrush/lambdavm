@@ -20,14 +20,22 @@ LAMBDATOOLS=./build/lambda-calculus-devkit
 SBCL=sbcl
 
 
+
+all: $(addsuffix .blc, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
+     $(addsuffix .ulamb, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
+	 $(addsuffix .lazy, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
+
+test: test-blc test-ulamb test-lazyk
+
+
 #================================================================
 # Tests
 #================================================================
 .PHONY: test-%
 test-%: $(addsuffix .%-out.expected-diff, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 	@echo "\n    All tests have passed for $(interpreter-name-$*).\n"
-interpreter-name-blc="BLC with the interpreter 'Blc'"
-interpreter-name-blc-uni="BLC with the interpreter 'uni'"
+interpreter-name-blc="BLC with the interpreter 'uni'"
+interpreter-name-blc-blc="BLC with the interpreter 'Blc'"
 interpreter-name-ulamb="Universal Lambda"
 interpreter-name-lazyk="Lazy K"
 
@@ -49,16 +57,16 @@ out/%.lazy: examples/%
 	( printf '(defparameter **compile-lazy** t)'; cat $< ) > $@.cl
 	$(SBCL) --script $@.cl > $@
 
-.PRECIOUS: out/%.blc-out
-out/%.blc-out: out/%.blc $(BLC) $(ASC2BIN)
+.PRECIOUS: out/%.blc-blc-out
+out/%.blc-blc-out: out/%.blc $(BLC) $(ASC2BIN)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(BLC) | head -n 20 > $@.tmp; else \
 		cat $< | $(ASC2BIN) | $(BLC) | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
-.PRECIOUS: out/%.blc-uni-out
-out/%.blc-uni-out: out/%.blc $(UNI) $(ASC2BIN)
+.PRECIOUS: out/%.blc-out
+out/%.blc-out: out/%.blc $(UNI) $(ASC2BIN)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(UNI) | head -n 20 > $@.tmp; else \
@@ -84,7 +92,7 @@ out/%.lazyk-out: out/%.lazy $(LAZYK)
 out/%.blc-out.expected-diff: ./out/%.blc-out ./test/%.out
 	diff $^ || exit 1
 
-out/%.blc-uni-out.expected-diff: ./out/%.blc-uni-out ./test/%.out
+out/%.blc-blc-out.expected-diff: ./out/%.blc-blc-out ./test/%.out
 	diff $^ || exit 1
 
 out/%.ulamb-out.expected-diff: ./out/%.ulamb-out ./test/%.out
@@ -130,7 +138,6 @@ lazyk: $(LAZYK)
 $(LAZYK): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make lazyk && mv bin/lazyk ../../bin
-
 
 .PHONY: asc2bin
 asc2bin: $(ASC2BIN)
