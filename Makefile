@@ -65,18 +65,18 @@ interpreter-name-lazyk="Lazy K"
 
 
 .PRECIOUS: out/%.blc
-out/%.blc: examples/%
+out/%.blc: examples/% $(LAMBDAVM_SRCS)
 	mkdir -p out
 	$(SBCL) --script $< > $@
 
 .PRECIOUS: out/%.ulamb
-out/%.ulamb: examples/%
+out/%.ulamb: examples/% $(LAMBDAVM_SRCS)
 	mkdir -p out
 	( printf '(defparameter **compile-ulamb** t)'; cat $< ) > $@.cl
 	$(SBCL) --script $@.cl > $@
 
 .PRECIOUS: out/%.lazy
-out/%.lazy: examples/%
+out/%.lazy: examples/% $(LAMBDAVM_SRCS)
 	mkdir -p out
 	( printf '(defparameter **compile-lazy** t)'; cat $< ) > $@.cl
 	$(SBCL) --script $@.cl > $@
