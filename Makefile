@@ -46,28 +46,27 @@ out/%.blc-out: out/%.blc $(BLC) $(ASC2BIN)
 	mv $@.tmp $@
 
 .PRECIOUS: out/%.blc-uni-out
-out/%.blc-uni-out: examples/% $(UNI) $(ASC2BIN)
+out/%.blc-uni-out: out/%.blc $(UNI) $(ASC2BIN)
 	mkdir -p ./out
-	$(SBCL) --script $< > out/$*.blc
 	if [ -f "test/$*.in" ]; then \
-		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(UNI) > $@.tmp; else \
-		cat $< | $(ASC2BIN) | $(UNI) > $@.tmp; fi
+		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(UNI) | head -n 20 > $@.tmp; else \
+		cat $< | $(ASC2BIN) | $(UNI) | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
 .PRECIOUS: out/%.ulamb-out
 out/%.ulamb-out: examples/% $(ULAMB) $(ASC2BIN)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
-		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(ULAMB) -u > $@.tmp; else \
-		cat $< | $(ASC2BIN) | $(ULAMB) -u > $@.tmp; fi
+		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(ULAMB) -u | head -n 20 > $@.tmp; else \
+		cat $< | $(ASC2BIN) | $(ULAMB) -u | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
 .PRECIOUS: out/%.lazyk-out
 out/%.lazyk-out: examples/% $(LAZYK)
 	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
-		cat $< $*.in | $(LAZYK) $(target_lazyk) -u > $@.tmp; else \
-		cat $< | $(LAZYK) $(target_lazyk) -u > $@.tmp; fi
+		cat $< $*.in | $(LAZYK) $(target_lazyk) -u | head -n 20 > $@.tmp; else \
+		cat $< | $(LAZYK) $(target_lazyk) -u | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
 out/%.blc-out.expected-diff: ./out/%.blc-out ./test/%.out
