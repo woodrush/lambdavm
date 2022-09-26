@@ -33,4 +33,19 @@
   (lambda (stdin)
     (lambdaVM SYS-IO-BITS SYS-SUPPLEMENTARY-BITS initial-memory asm stdin)))
 
-(format t (compile-to-blc-lazy standalone))
+
+;; The code is compilable to 3 languages, Binary Lambda Calculus, Universal Lambda, and Lazy K.
+;; To compile to Lazy K, write:
+;;    (defparameter **compile-lazy** t)
+;; To compile to Universal Lambda, write:
+;;    (defparameter **compile-ulamb** t)
+;; By default, the code gets compiled to Binary Lambda Calculus.
+(cond
+  ((boundp '**compile-lazy**)
+    (load "./src/blc-clamb-wrapper.cl")
+    (format t (compile-to-ski-lazy (blc-to-lazyk standalone))))
+  ((boundp '**compile-ulamb**)
+    (load "./src/blc-clamb-wrapper.cl")
+    (format t (compile-to-blc-lazy (blc-to-ulamb standalone))))
+  (t
+    (format t (compile-to-blc-lazy standalone))))

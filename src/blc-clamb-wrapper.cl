@@ -70,3 +70,9 @@
       nil)
     (<- (c-blc) (int2bitlist c-ulamb powerlist))
     (cons c-blc (lazykstr-to-blcstr s-cdr))))
+
+(defun-lazy blc-to-lazyk (program stdin)
+  (blcstr-to-lazykstr (program (lazykstr-to-blcstr stdin))))
+
+(defun-lazy blc-to-ulamb (program stdin)
+  (blcstr-to-ulambstr (program (ulambstr-to-blcstr stdin))))
