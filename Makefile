@@ -24,7 +24,7 @@ SBCL=sbcl
 # Tests
 #================================================================
 .PHONY: test-%
-test-%: $(addsuffix .%-out.expected-diff, $(addprefix out/, $(notdir $(wildcard test/*.cl.out))))
+test-%: $(addsuffix .%-out.expected-diff, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 	@echo "\n    All tests have passed for $(interpreter-name-$*).\n"
 interpreter-name-blc="BLC with the interpreter 'Blc'"
 interpreter-name-blc-uni="BLC with the interpreter 'uni'"
@@ -35,7 +35,7 @@ interpreter-name-lazyk="Lazy K"
 .PRECIOUS: out/%.blc
 out/%.blc: examples/%
 	mkdir -p out
-	$(SBCL) --script $< > out/$*.blc
+	$(SBCL) --script $< > $@
 
 .PRECIOUS: out/%.blc-out
 out/%.blc-out: out/%.blc $(BLC) $(ASC2BIN)
