@@ -23,11 +23,13 @@ DVIPDFMX=dvipdfmx
 target_latex=out/lambdavm.tex
 target_pdf=lambdavm.pdf
 
+LAMBDAVM_SRCS=./src/lambdavm.cl ./src/lambdacraft.cl ./src/blc-numbers.cl ./src/blc-clamb-wrapper.cl
+
 
 
 all: $(addsuffix .blc, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
-     $(addsuffix .ulamb, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
-	 $(addsuffix .lazy, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
+	 $(addsuffix .lazy, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
+	 $(addsuffix .ulamb, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 
 test: test-blc test-ulamb test-lazyk
 
@@ -37,8 +39,6 @@ pdf: $(target_pdf)
 #================================================================
 # Build the PDF
 #================================================================
-LAMBDAVM_SRCS=./src/lambdavm.cl ./src/lambdacraft.cl ./src/blc-numbers.cl ./src/blc-clamb-wrapper.cl
-
 .PRECIOUS: $(target_latex)
 $(target_latex): $(LAMBDAVM_SRCS) ./src/main.cl ./tools/main.tex ./tools/make-latex.sh
 	mkdir -p ./out
@@ -83,7 +83,6 @@ out/%.lazy: examples/% $(LAMBDAVM_SRCS)
 
 .PRECIOUS: out/%.blc-blc-out
 out/%.blc-blc-out: out/%.blc $(BLC) $(ASC2BIN)
-	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(BLC) | head -n 20 > $@.tmp; else \
 		cat $< | $(ASC2BIN) | $(BLC) | head -n 20 > $@.tmp; fi
@@ -91,7 +90,6 @@ out/%.blc-blc-out: out/%.blc $(BLC) $(ASC2BIN)
 
 .PRECIOUS: out/%.blc-out
 out/%.blc-out: out/%.blc $(UNI) $(ASC2BIN)
-	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(UNI) | head -n 20 > $@.tmp; else \
 		cat $< | $(ASC2BIN) | $(UNI) | head -n 20 > $@.tmp; fi
@@ -99,7 +97,6 @@ out/%.blc-out: out/%.blc $(UNI) $(ASC2BIN)
 
 .PRECIOUS: out/%.ulamb-out
 out/%.ulamb-out: out/%.ulamb $(CLAMB) $(ASC2BIN)
-	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(CLAMB) -u | head -n 20 > $@.tmp; else \
 		cat $< | $(ASC2BIN) | $(CLAMB) -u | head -n 20 > $@.tmp; fi
@@ -107,7 +104,6 @@ out/%.ulamb-out: out/%.ulamb $(CLAMB) $(ASC2BIN)
 
 .PRECIOUS: out/%.lazyk-out
 out/%.lazyk-out: out/%.lazy $(LAZYK)
-	mkdir -p ./out
 	if [ -f "test/$*.in" ]; then \
 		cat test/$*.in | $(LAZYK) $< -u | head -n 20 > $@.tmp; else \
 		$(LAZYK) $< -u | head -n 20 > $@.tmp; fi
