@@ -89,32 +89,38 @@ $(LAMBDATOOLS):
 	mkdir -p build
 	cd build; git clone https://github.com/woodrush/lambda-lang-toolkit
 
-.PHONY blc: $(BLC)
+.PHONY: blc
+blc: $(BLC)
 $(BLC): $(LAMBDATOOLS)
 	mkdir -p bin
-	cd $(LAMBDATOOLS) && make blc && mv bin/Blc ../../bin
+	cd $(LAMBDATOOLS) && $(MAKE) blc && mv bin/Blc ../../bin
 
-.PHONY uni: $(UNI)
+.PHONY: uni
+uni: $(UNI)
 $(UNI): $(LAMBDATOOLS)
 	mkdir -p bin
-	cd $(LAMBDATOOLS) && make uni && mv bin/uni ../../bin
+	cd $(LAMBDATOOLS) && $(MAKE) uni && cp bin/uni ../../bin
 
-.PHONY uni++: $(UNIPP)
+.PHONY: uni++
+uni++: $(UNIPP)
 $(UNIPP): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make uni++ && mv bin/uni++ ../../bin
 
-.PHONY clamb: $(CLAMB)
+.PHONY: clamb
+clamb: $(CLAMB)
 $(CLAMB): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make clamb && mv bin/clamb ../../bin
 
-.PHONY asc2bin: $(ASC2BIN)
+.PHONY: asc2bin
+asc2bin: $(ASC2BIN)
 $(ASC2BIN): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make asc2bin && mv bin/asc2bin ../../bin
 
-.PHONY lam2bin: $(LAM2BIN)
+.PHONY: lam2bin
+lam2bin: $(LAM2BIN)
 $(LAM2BIN): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make lam2bin && mv bin/lam2bin ../../bin
