@@ -354,8 +354,8 @@
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
   ((do
     (<- (enum-cmp dst) (*dst))
-    (let* int-zero int-zero)  ;; Share references to save space
-    (<- (carry) (add* nil (enum-cmp ((regread dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (let* int-tuple-zero int-tuple-zero)  ;; Share references to save space
+    (<- (carry) (add* nil (enum-cmp ((regread dst cmp*) src)) int-tuple-zero int-tuple-zero)) ;; Implicit parameter passing: sum
     (regwrite dst)) eval-reg))
 
 (def-lazy io-case
