@@ -238,13 +238,14 @@
 (def-lazy **instruction-typematch**
   (inst-type
     io-case
-    jmpcmp-case
-    cmp-case
-    jmp-case
-    load-case
-    store-case
-    addsub-case
-    mov-case))
+    (cons (lambda (cont) (cont jmpcmp-case)) nil)
+    (cons (lambda (cont) (cont cmp-case)) nil)
+    (cons (lambda (cont) (cont jmp-case)) nil)
+    (cons (lambda (cont) (cont load-case)) nil)
+    (cons (lambda (cont) (cont store-case)) nil)
+    (cons (lambda (cont) (cont addsub-case)) nil)
+    (cons (lambda (cont) (cont mov-case)) nil)
+    ))
 
 (defun-lazy io-getc (x1 x2 x3) x1)
 (defun-lazy io-putc (x1 x2 x3) x2)
@@ -316,19 +317,27 @@
   ;; Typematch over the inst. type
   (*dst
     ;; getc
-    (do
-      (<- (c stdin)
-        ((lambda (return)
-          (typematch-nil-cons stdin (car-stdin cdr-stdin)
-            ;; nil case
-            (return int-zero stdin)
-            ;; cons case
-            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
-      (regwrite *src c)               ;; Implicit parameter passing: reg
-      (eval memory stdin nextblock curproglist))
+    (cons
+      (lambda (cont)
+        (do
+          (<- (c stdin)
+            ((lambda (return)
+              (typematch-nil-cons stdin (car-stdin cdr-stdin)
+                ;; nil case
+                (return int-zero stdin)
+                ;; cons case
+                (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
+          (<- (reg) (regwrite *src c))
+          (cont (eval memory stdin nextblock curproglist reg))))
+      nil)
     ;; putc
     (do
-      (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
+      (cons
+        (lambda (cont)
+          (do
+            (cons (wordsize-to-io-bitlength src))
+            (cont (eval-reg reg))))
+        nil))
     ;; exit
     src-is-imm)) ;; always evaluates to nil
 
@@ -355,6 +364,15 @@
 
 (def-lazy initreg nil)
 
+(defrec-lazy trampoline (expr)
+  (typematch-nil-cons expr (car-expr cdr-expr)
+    ;; nil case
+    expr
+    ;; cons case
+    (do
+      (<- (expr) (car-expr))
+      (trampoline expr))))
+
 (defun-lazy lambdaVM (
   io-bitlength supp-bitlength
   memlist proglist stdin)
@@ -371,15 +389,16 @@
 
     ;; Implicit parameter passing of memtree and progtree:
     ;; ((proglist (eval memtree progtree stdin)) initreg)
-    ((proglist
-      (((do
-          (let* list2tree*
-            (lambda (l cont)
-              (do
-                (<- (tree _) (list2tree** l int-zero))
-                (cont tree))))
-          (<- (progtree) (list2tree* (cdr-generator proglist)))
-          (list2tree* memlist) ;; Implicit argument passing: memtree
-          (eval)))
-      stdin))
-     initreg)))
+    (trampoline
+      ((proglist
+        (((do
+            (let* list2tree*
+              (lambda (l cont)
+                (do
+                  (<- (tree _) (list2tree** l int-zero))
+                  (cont tree))))
+            (<- (progtree) (list2tree* (cdr-generator proglist)))
+            (list2tree* memlist) ;; Implicit argument passing: memtree
+            (eval)))
+        stdin))
+      initreg))))
