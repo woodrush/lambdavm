@@ -23,29 +23,36 @@
        cont))))
 
 (defrec-lazy lookup-memory** (memory address cont)
-  (typematch-nil-cons memory (car-memory cdr-memory)
-    ;; nil case
-    ;; (cont int-zero)
-    (cont (lambda (f) (f t t t t t t t t t t t t t t t t t t t t t t t t)))
-    ;; cons case
-    (typematch-nil-cons address (car-address cdr-address)
+  ;; (typematch-nil-cons memory (car-memory cdr-memory)
+  ;;   ;; nil case
+  ;;   ;; (cont int-zero)
+  ;;   (cont (lambda (f) (f t t t t t t t t t t t t t t t t t t t t t t t t)))
+  ;;   ;; cons case
+  ;;   )
+  (typematch-nil-cons address (car-address cdr-address)
       ;; nil case
       (do
         (<- (ret _) (memory))
         (cont ret))
       ;; cons case
-      ((if car-address
+      (do
+        (<- (car-memory cdr-memory) (memory))
+        ((if car-address
         (lookup-memory** car-memory)
         (lookup-memory** cdr-memory))
        cdr-address
-       cont))))
+       cont)))
+    )
 
 (defun-lazy lookup-tree* (memory address cont)
   (do
-    (<- (ret) (lookup-memory** memory address))
+    ;; (<- (ret) (lookup-memory** memory address))
+    ;; (tuple2list ret cont)
     ;; (cont (list t nil t nil t nil t nil t     nil t nil t nil t nil t     nil t nil t nil t nil))
-    (tuple2list ret cont)
-    ))
+    (<- (addr-tuple) (list2tuple address))
+    (tuple2list (addr-tuple memory) cont)
+    )
+    )
 
 (defrec-lazy memory-write** (memory address value cont)
   (typematch-nil-cons address (car-address cdr-address)
@@ -75,7 +82,7 @@
 (defun-lazy memory-write* (memory address value cont)
   (do
     (<- (value) (list2tuple value))
-    (memory-write** memory address (cons value (lambda (x) x)) cont)))
+    (memory-write** memory address value cont)))
 
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
@@ -356,9 +363,9 @@
     (typematch-nil-cons depth (_ cdr-depth)
       ;; nil case
       (cont
-        (cons
+        ;; (cons
           (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t))
-          (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t)))
+          ;; (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t)))
         nil)
       ;; cons case
       (do
