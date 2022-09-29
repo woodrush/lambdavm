@@ -7,45 +7,39 @@
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defrec-lazy lookup-tree* (memory address cont)
+(defrec-lazy lookup-tree* (memory address)
   (typematch-nil-cons memory (car-memory cdr-memory)
     ;; nil case
-    (cont int-zero)
+    int-zero
     ;; cons case
     (typematch-nil-cons address (car-address cdr-address)
       ;; nil case
-      (cont memory)
+      memory
       ;; cons case
-      ((if car-address
-        (lookup-tree* car-memory)
-        (lookup-tree* cdr-memory))
-       cdr-address
-       cont))))
+      (lookup-tree*
+        (if car-address
+          car-memory
+          cdr-memory)
+       cdr-address))))
 
-(defrec-lazy memory-write* (memory address value cont)
+(defrec-lazy memory-write* (memory address value)
   (typematch-nil-cons address (car-address cdr-address)
     ;; nil case
-    (cont value)
+    value
     ;; cons case
-    (do
-      (<- (memory-rewritten memory-orig)
-        (do
-          (<- (memory-target)
-            ((lambda (cont)
-              (typematch-nil-cons memory (car-memory cdr-memory)
-                ;; nil case
-                (cont nil nil)
-                ;; cons case
-                (cond
-                  (car-address
-                    (memory cont))
-                  (t
-                    (cont cdr-memory car-memory) ;; Implicit parameter passing: memory-orig ?
-                    ))))))
-          (memory-write* memory-target cdr-address value)))
-      (if car-address
-        (cont (cons memory-rewritten memory-orig))
-        (cont (cons memory-orig memory-rewritten))))))
+    (typematch-nil-cons memory (car-memory cdr-memory)
+      ;; nil case
+      (cond
+        (car-address
+          (cons (memory-write* nil cdr-address value) nil))
+        (t
+          (cons nil (memory-write* nil cdr-address value))))
+      ;; cons case
+      (cond
+        (car-address
+          (cons (memory-write* car-memory cdr-address value) cdr-memory))
+        (t
+          (cons car-memory (memory-write* cdr-memory cdr-address value)))))))
 
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
@@ -128,7 +122,7 @@
 (defun-lazy lookup-src-if-imm* (src-is-imm *src cont)
   (if src-is-imm
     (cont *src)
-    (regread *src cont))) ;; regread is defined in eval
+    (cont (regread *src)))) ;; regread is defined in eval
 
 ;; Checks if curblock is { t, nil } (returns t) or a cons cell (returns nil).
 (defmacro-lazy is-t-or-nil (expr)
@@ -140,7 +134,7 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (<- (proglist) (lookup-tree* progtree jmp))
+          (let* proglist (lookup-tree* progtree jmp))
           ((proglist (eval memory progtree stdin)) reg))))
     (let* regwrite (memory-write* reg))
     (let* regread (lookup-tree* reg))
@@ -194,26 +188,20 @@
 
 (def-lazy addsub-case
   ;; Instruction structure: (cons4 inst-add [src-isimm] [src] (cons [*dst] is-add))
-  ((do
+  (eval-reg (do
     (<- (*dst is-add) (*dst))
     (<- (carry)  ;; Implicit parameter passing: sum
-      ((do
-        (regread *dst) ;; Implicit parameter passing: dst
-        (add* is-add is-add))
-       src))                    ;; Applies src to the preceding add*
-    (regwrite *dst)) eval-reg))
+      (add* is-add is-add (regread *dst) src))
+    (regwrite *dst))))
 
 (def-lazy store-case
   ;; Instruction structure: (cons4 inst-store [dst-isimm] [dst-memory] [source])
   ;; Note that the destination is stored in the variable *src
-  (((regread *dst
-      (memory-write* memory src))
-     eval)
-   progtree stdin nextblock curproglist reg))
+  (eval (memory-write* memory src (regread *dst)) progtree stdin nextblock curproglist reg))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
-  (regwrite *dst src eval-reg))
+  (eval-reg (regwrite *dst src)))
 
 (def-lazy jmp-case
   ;; Instruction structure:: (cons4 inst-jmp [jmp-isimm] [jmp] _)
@@ -224,26 +212,23 @@
   (do
     (<- (enum-cmp jmp-is-imm *jmp *cmp-dst) (*dst))
     (lookup-src-if-imm* jmp-is-imm *jmp)  ;; Implicit parameter passing: jmp
-    (regread *cmp-dst)               ;; Implicit parameter passing: dst-value
-    (lambda (dst-value jmp)
-      (if (compare dst-value src enum-cmp)
+    (lambda (jmp)
+      (if (compare (regread *cmp-dst) src enum-cmp)
         (jumpto jmp)
         (eval-reg reg)))))
 
 (def-lazy load-case
   ;; Instruction structure: (cons4 inst-load [src-isimm] [src] [*dst])
   (do
-    (((lookup-tree* memory src)
-        (regwrite *dst))
-     eval-reg)))
+    (eval-reg (regwrite *dst (lookup-tree* memory src)))))
 
 (def-lazy cmp-case
   ;; Instruction structure: (cons4 inst-cmp [src-isimm] [src] (cons [emum-cmp] [dst]))
-  ((do
+  (eval-reg (do
     (<- (enum-cmp dst) (*dst))
     (let* int-zero int-zero)  ;; Share references to save space
-    (<- (carry) (add* nil (enum-cmp ((regread dst cmp*) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
-    (regwrite dst)) eval-reg))
+    (<- (carry) (add* nil (enum-cmp (cmp* (regread dst) src)) int-zero int-zero)) ;; Implicit parameter passing: sum
+    (regwrite dst))))
 
 (def-lazy io-case
   ;; Instruction structure:
@@ -254,16 +239,17 @@
   ;; Typematch over the inst. type
   (*dst
     ;; getc
-    (do
-      (<- (c stdin)
-        ((lambda (return)
-          (typematch-nil-cons stdin (car-stdin cdr-stdin)
-            ;; nil case
-            (return int-zero stdin)
-            ;; cons case
-            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
-      (regwrite *src c)               ;; Implicit parameter passing: reg
-      (eval memory progtree stdin nextblock curproglist))
+    ((eval memory progtree stdin nextblock curproglist)
+      (do
+        (<- (c stdin)
+          ((lambda (return)
+            (typematch-nil-cons stdin (car-stdin cdr-stdin)
+              ;; nil case
+              (return int-zero stdin)
+              ;; cons case
+              (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
+        (regwrite *src c)               ;; Implicit parameter passing: reg
+        ))
     ;; putc
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
