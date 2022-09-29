@@ -49,8 +49,8 @@
     ;; (<- (ret) (lookup-memory** memory address))
     ;; (tuple2list ret cont)
     ;; (cont (list t nil t nil t nil t nil t     nil t nil t nil t nil t     nil t nil t nil t nil))
-    (<- (addr-tuple) (list2tuple address))
-    (tuple2list (addr-tuple memory) cont)
+    ;; (<- (addr-tuple) (list2tuple address))
+    (tuple2list (address memory) cont)
     )
     )
 
@@ -81,7 +81,8 @@
 
 (defun-lazy memory-write* (memory address value cont)
   (do
-    (<- (value) (list2tuple value))
+    ;; (<- (value) (list2tuple value))
+    (<- (address) (tuple2list address))
     (memory-write** memory address value cont)))
 
 (defmacro-lazy eval-bool (expr)
@@ -90,14 +91,14 @@
       (cont t)
       (cont nil))))
 
-(defrec-lazy add* (initcarry is-add n m cont)
+(defrec-lazy add** (initcarry is-add n m cont)
   (typematch-nil-cons n (car-n cdr-n)
     ;; nil case
     (cont initcarry n)
     ;; cons case
     (do
       (<- (car-m cdr-m) (m))
-      (<- (carry curlist) (add* initcarry is-add cdr-n cdr-m))
+      (<- (carry curlist) (add** initcarry is-add cdr-n cdr-m))
       (let* not-carry (not carry))
       (let* car-m (if is-add car-m (not car-m)))
       (let* f (lambda (a b)
@@ -112,6 +113,13 @@
               (cont t)
               (cont nil))))))
       (cont nextcarry (cons curbit curlist)))))
+
+(defun-lazy add* (initcarry is-add n m cont)
+  (do
+    (<- (n) (tuple2list n))
+    (<- (m) (tuple2list m))
+    (<- (sum carry) (add** initcarry is-add n m))
+    (list2tuple sum cont)))
 
 (defun-lazy tuple2list (n cont)
   (do
@@ -154,14 +162,14 @@
 (defun-lazy cmpret-lt (r1 r2 r3) r2)
 (defun-lazy cmpret-gt (r1 r2 r3) r3)
 
-(defrec-lazy cmp* (n m)
+(defrec-lazy cmp** (n m)
   (typematch-nil-cons n (car-n cdr-n)
     ;; nil case
     cmpret-eq
     ;; cons case
     (do
       (<- (car-m cdr-m) (m))
-      (let* next (cmp* cdr-n cdr-m))
+      (let* next (cmp** cdr-n cdr-m))
       (if car-n
         (if car-m
           next
@@ -169,6 +177,12 @@
         (if car-m
           cmpret-gt
           next)))))
+
+(defun-lazy cmp* (n m)
+  (do
+    (<- (n) (tuple2list n))
+    (<- (m) (tuple2list m))
+    (cmp** n m)))
 
 (defun-lazy cmp-gt (f) (f nil nil t))
 (defun-lazy cmp-lt (f) (f nil t   nil))
@@ -185,10 +199,16 @@
 ;; I/O
 ;;================================================================
 (defmacro-lazy io-bitlength-to-wordsize (n)
-  `(supp-bitlength (lambda (x f) (f t x)) ,n))
+  `(do
+    (<- (n) (list2tuple ,n))
+    (lambda (x) (n (x t t t t t t t t t t t t t t t t)))
+    ;; (supp-bitlength (lambda (x f) (f t x)) n)
+    ))
 
 (defmacro-lazy wordsize-to-io-bitlength (n)
-  `(supp-bitlength cdr* ,n))
+  `(do
+    (<- (n) (tuple2list ,n))
+    (supp-bitlength cdr* n)))
 
 
 ;;================================================================
@@ -209,8 +229,8 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (<- (proglist) (lookup-tree** progtree jmp))
-          ((proglist (eval memory stdin)) reg))))
+          ;; (<- (proglist) (lookup-tree** progtree jmp))
+          (((jmp progtree) (eval memory stdin)) reg))))
     (let* regwrite (memory-write** reg))
     (let* regread (lookup-tree** reg))
     (cond
@@ -410,8 +430,8 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    (let* memory-write* memory-write*)
-    (let* lookup-tree* lookup-tree*)
+    (let* memory-write** memory-write**)
+    (let* lookup-tree** lookup-tree**)
 
     ;; Implicit parameter passing of memtree and progtree:
     ;; ((proglist (eval memtree progtree stdin)) initreg)
