@@ -85,6 +85,12 @@
     (<- (address) (tuple2list address))
     (memory-write** memory address value cont)))
 
+(defun-lazy memory-write-reg (reg address value cont)
+  (do
+    ;; (<- (value) (list2tuple value))
+    (<- (address) (tuple2list-reg address))
+    (memory-write** reg address value cont)))
+
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
     (if ,expr
@@ -120,6 +126,11 @@
     (<- (m) (tuple2list m))
     (<- (sum carry) (add** initcarry is-add n m))
     (list2tuple sum cont)))
+
+(defun-lazy tuple2list-reg (n cont)
+  (do
+    (<- (b1 b2 b3) (n))
+    (cont (list b1 b2 b3))))
 
 (defun-lazy tuple2list (n cont)
   (do
@@ -231,8 +242,8 @@
         (do
           ;; (<- (proglist) (lookup-tree** progtree jmp))
           (((jmp progtree) (eval memory stdin)) reg))))
-    (let* regwrite (memory-write** reg))
-    (let* regread (lookup-tree** reg))
+    (let* regwrite (memory-write-reg reg))
+    (let* regread (lambda (addr cont) (cont (addr reg))))
     (cond
       ((is-t-or-nil curblock)
         (typematch-nil-cons curproglist (car-curproglist cdr-curproglist)
@@ -371,7 +382,7 @@
 (defrec-lazy init-tree (address)
   (typematch-nil-cons address (car-address cdr-address)
     ;; nil case
-    int-zero
+    (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t))
     ;; cons case
     (do
       (let* nexttree (init-tree cdr-address))
@@ -430,8 +441,8 @@
     (let* Y-comb Y-comb)
     (let* cmp* cmp*)
     (let* add* add*)
-    (let* memory-write** memory-write**)
-    (let* lookup-tree** lookup-tree**)
+    (let* memory-write* memory-write*)
+    (let* lookup-tree* lookup-tree*)
 
     ;; Implicit parameter passing of memtree and progtree:
     ;; ((proglist (eval memtree progtree stdin)) initreg)
@@ -447,4 +458,13 @@
             (list2tree* memlist) ;; Implicit argument passing: memtree
             (eval)))
         stdin))
-      initreg))))
+      ;; initreg
+    (let ((zero (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t))))
+      (cons
+        (cons
+          (cons zero zero)
+          (cons zero zero))
+        (cons
+          (cons zero zero)
+          (cons zero zero))))
+      ))))
