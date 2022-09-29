@@ -135,13 +135,13 @@
   `(,expr (lambda (a b) t) (lambda (a) a) (lambda (a) t) nil))
 
 
-(defrec-lazy eval (memory progtree stdin curblock curproglist reg)
+(defrec-lazy eval (memory stdin curblock curproglist reg)
   (do
     (let* jumpto
       (lambda (jmp)
         (do
           (<- (proglist) (lookup-tree* progtree jmp))
-          ((proglist (eval memory progtree stdin)) reg))))
+          ((proglist (eval memory stdin)) reg))))
     (let* regwrite (memory-write* reg))
     (let* regread (lookup-tree* reg))
     (cond
@@ -150,11 +150,11 @@
           ;; nil case
           curproglist
           ;; cons case
-          ((eval memory progtree stdin car-curproglist cdr-curproglist) reg)))
+          ((eval memory stdin car-curproglist cdr-curproglist) reg)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
-          (let* eval-reg (eval memory progtree stdin nextblock curproglist))
+          (let* eval-reg (eval memory stdin nextblock curproglist))
           (<- (inst-type src-is-imm *src) (curinst)) ;; Delayed destruction: *dst
           (<- (src) (lookup-src-if-imm* src-is-imm *src))
           (lambda (*dst)
@@ -209,7 +209,7 @@
   (((regread *dst
       (memory-write* memory src))
      eval)
-   progtree stdin nextblock curproglist reg))
+   stdin nextblock curproglist reg))
 
 (def-lazy mov-case
   ;; Instruction structure:: (cons4 inst-mov [src-isimm] [src] [dst])
@@ -263,7 +263,7 @@
             ;; cons case
             (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
       (regwrite *src c)               ;; Implicit parameter passing: reg
-      (eval memory progtree stdin nextblock curproglist))
+      (eval memory stdin nextblock curproglist))
     ;; putc
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
@@ -308,7 +308,7 @@
     (let* lookup-tree* lookup-tree*)
 
     ;; Implicit parameter passing of memtree and progtree:
-    ;; ((proglist (eval memtree progtree stdin)) initreg)
+    ;; ((proglist (eval memtree stdin)) initreg)
     ((proglist
       (((do
           (let* list2tree*
@@ -316,7 +316,7 @@
               (do
                 (<- (tree _) (list2tree** l int-zero))
                 (cont tree))))
-          (list2tree* (cdr-generator proglist));; Implicit argument passing: progtree)
+          (<- (progtree) (list2tree* (cdr-generator proglist)))
           (list2tree* memlist) ;; Implicit argument passing: memtree
           (eval)))
       stdin))
