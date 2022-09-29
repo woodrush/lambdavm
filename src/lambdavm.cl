@@ -341,10 +341,19 @@
     ;; exit
     src-is-imm)) ;; always evaluates to nil
 
+(defrec-lazy init-tree (address)
+  (typematch-nil-cons address (car-address cdr-address)
+    ;; nil case
+    int-zero
+    ;; cons case
+    (do
+      (let* nexttree (init-tree cdr-address))
+      (cons nexttree nexttree))))
+
 (defrec-lazy list2tree** (l depth cont)
   (typematch-nil-cons l (_ _)
     ;; nil case
-    (cont l l)
+    (cont (init-tree depth))
     ;; cons case
     (typematch-nil-cons depth (_ cdr-depth)
       ;; nil case
