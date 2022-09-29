@@ -211,10 +211,21 @@
 ;;================================================================
 (defmacro-lazy io-bitlength-to-wordsize (n)
   `(do
-    (<- (n) (list2tuple ,n))
-    (lambda (x) (n (x t t t t t t t t t t t t t t t t)))
-    ;; (supp-bitlength (lambda (x f) (f t x)) n)
-    ))
+    (<- (b1 _) (,n))
+    (<- (b2 _) (_))
+    (<- (b3 _) (_))
+    (<- (b4 _) (_))
+    (<- (b5 _) (_))
+    (<- (b6 _) (_))
+    (<- (b7 _) (_))
+    (<- (b8 _) (_))
+    (lambda (x) (x t t t t   t t t t   t t t t   t t t t   b1 b2 b3 b4 b5 b6 b7 b8)))
+  ;; `(do
+  ;;   (<- (n) (list2tuple ,n))
+  ;;   (lambda (x) (n (x t t t t   t t t t   t t t t   t t t t)))
+  ;;   ;; (supp-bitlength (lambda (x f) (f t x)) n)
+  ;;   )
+    )
 
 (defmacro-lazy wordsize-to-io-bitlength (n)
   `(do
@@ -362,7 +373,7 @@
             ((lambda (return)
               (typematch-nil-cons stdin (car-stdin cdr-stdin)
                 ;; nil case
-                (return int-zero stdin)
+                (return int-tuple-zero stdin)
                 ;; cons case
                 (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
           (<- (reg) (regwrite *src c))
@@ -420,6 +431,7 @@
     (cons l (cdr-generator cdr-l))))
 
 (def-lazy initreg nil)
+(def-lazy int-tuple-zero (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t)))
 
 (defrec-lazy trampoline (expr)
   (typematch-nil-cons expr (car-expr cdr-expr)
