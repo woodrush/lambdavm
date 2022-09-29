@@ -377,8 +377,8 @@
 (defparameter plaintext-lambda-env-vars
   (list
     "x" "y" "z" "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w"
-    "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
-    "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "κ" "μ" "ν" "ξ" "π" "ρ" "σ" "τ" "υ" "φ" "χ" "ψ" "ω"))
+    "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Z"
+    "α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "κ" "μ" "ν" "ξ" "π" "ρ" "σ" "τ" "υ" "φ" "χ" "ψ"))
 
 (defun int-to-alphabet (i)
   (if (< i (length plaintext-lambda-env-vars))
