@@ -353,7 +353,17 @@
 (defrec-lazy list2tree** (l depth cont)
   (typematch-nil-cons l (_ _)
     ;; nil case
-    (cont (init-tree depth))
+    (typematch-nil-cons depth (_ cdr-depth)
+      ;; nil case
+      (cont
+        (cons
+          (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t))
+          (lambda (f) (f t t t t   t t t t   t t t t   t t t t   t t t t   t t t t)))
+        nil)
+      ;; cons case
+      (do
+        (<- (tree l) (list2tree** nil cdr-depth))
+        (cont (cons tree tree) l)))
     ;; cons case
     (typematch-nil-cons depth (_ cdr-depth)
       ;; nil case
