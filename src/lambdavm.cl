@@ -7,7 +7,7 @@
 ;;================================================================
 ;; Memory and program
 ;;================================================================
-(defrec-lazy lookup-tree* (memory address cont)
+(defrec-lazy lookup-tree** (memory address cont)
   (typematch-nil-cons memory (car-memory cdr-memory)
     ;; nil case
     (cont int-zero)
@@ -17,12 +17,37 @@
       (cont memory)
       ;; cons case
       ((if car-address
-        (lookup-tree* car-memory)
-        (lookup-tree* cdr-memory))
+        (lookup-tree** car-memory)
+        (lookup-tree** cdr-memory))
        cdr-address
        cont))))
 
-(defrec-lazy memory-write* (memory address value cont)
+(defrec-lazy lookup-memory** (memory address cont)
+  (typematch-nil-cons memory (car-memory cdr-memory)
+    ;; nil case
+    ;; (cont int-zero)
+    (cont (lambda (f) (f t t t t t t t t t t t t t t t t t t t t t t t t)))
+    ;; cons case
+    (typematch-nil-cons address (car-address cdr-address)
+      ;; nil case
+      (do
+        (<- (ret _) (memory))
+        (cont ret))
+      ;; cons case
+      ((if car-address
+        (lookup-memory** car-memory)
+        (lookup-memory** cdr-memory))
+       cdr-address
+       cont))))
+
+(defun-lazy lookup-tree* (memory address cont)
+  (do
+    (<- (ret) (lookup-memory** memory address))
+    ;; (cont (list t nil t nil t nil t nil t     nil t nil t nil t nil t     nil t nil t nil t nil))
+    (tuple2list ret cont)
+    ))
+
+(defrec-lazy memory-write** (memory address value cont)
   (typematch-nil-cons address (car-address cdr-address)
     ;; nil case
     (cont value)
@@ -42,10 +67,15 @@
                   (t
                     (cont cdr-memory car-memory) ;; Implicit parameter passing: memory-orig ?
                     ))))))
-          (memory-write* memory-target cdr-address value)))
+          (memory-write** memory-target cdr-address value)))
       (if car-address
         (cont (cons memory-rewritten memory-orig))
         (cont (cons memory-orig memory-rewritten))))))
+
+(defun-lazy memory-write* (memory address value cont)
+  (do
+    (<- (value) (list2tuple value))
+    (memory-write** memory address (cons value (lambda (x) x)) cont)))
 
 (defmacro-lazy eval-bool (expr)
   `(lambda (cont)
@@ -76,6 +106,38 @@
               (cont nil))))))
       (cont nextcarry (cons curbit curlist)))))
 
+(defun-lazy tuple2list (n cont)
+  (do
+    (<- (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24) (n))
+    (cont (list b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24))))
+
+(defun-lazy list2tuple (l cont)
+  (do
+    (<- (b1 _) (l))
+    (<- (b2 _) (_))
+    (<- (b3 _) (_))
+    (<- (b4 _) (_))
+    (<- (b5 _) (_))
+    (<- (b6 _) (_))
+    (<- (b7 _) (_))
+    (<- (b8 _) (_))
+    (<- (b9 _) (_))
+    (<- (b10 _) (_))
+    (<- (b11 _) (_))
+    (<- (b12 _) (_))
+    (<- (b13 _) (_))
+    (<- (b14 _) (_))
+    (<- (b15 _) (_))
+    (<- (b16 _) (_))
+    (<- (b17 _) (_))
+    (<- (b18 _) (_))
+    (<- (b19 _) (_))
+    (<- (b20 _) (_))
+    (<- (b21 _) (_))
+    (<- (b22 _) (_))
+    (<- (b23 _) (_))
+    (<- (b24 _) (_))
+    (cont (lambda (f) (f b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24)))))
 
 
 ;;================================================================
@@ -140,10 +202,10 @@
     (let* jumpto
       (lambda (jmp)
         (do
-          (<- (proglist) (lookup-tree* progtree jmp))
+          (<- (proglist) (lookup-tree** progtree jmp))
           ((proglist (eval memory progtree stdin)) reg))))
-    (let* regwrite (memory-write* reg))
-    (let* regread (lookup-tree* reg))
+    (let* regwrite (memory-write** reg))
+    (let* regread (lookup-tree** reg))
     (cond
       ((is-t-or-nil curblock)
         (typematch-nil-cons curproglist (car-curproglist cdr-curproglist)
