@@ -50,7 +50,7 @@
     ;; (tuple2list ret cont)
     ;; (cont (list t nil t nil t nil t nil t     nil t nil t nil t nil t     nil t nil t nil t nil))
     ;; (<- (addr-tuple) (list2tuple address))
-    (tuple2list (address memory) cont)
+    (cont (address memory))
     )
     )
 
@@ -124,8 +124,9 @@
   (do
     (<- (n) (tuple2list n))
     (<- (m) (tuple2list m))
-    (<- (sum carry) (add** initcarry is-add n m))
-    (list2tuple sum cont)))
+    (<- (carry sum) (add** initcarry is-add n m))
+    (<- (sum) (list2tuple sum))
+    (cont carry sum)))
 
 (defun-lazy tuple2list-reg (n cont)
   (do
