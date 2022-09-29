@@ -239,17 +239,16 @@
   ;; Typematch over the inst. type
   (*dst
     ;; getc
-    ((eval memory progtree stdin nextblock curproglist)
-      (do
-        (<- (c stdin)
-          ((lambda (return)
-            (typematch-nil-cons stdin (car-stdin cdr-stdin)
-              ;; nil case
-              (return int-zero stdin)
-              ;; cons case
-              (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
-        (regwrite *src c)               ;; Implicit parameter passing: reg
-        ))
+    (do
+      (<- (c stdin)
+        ((lambda (return)
+          (typematch-nil-cons stdin (car-stdin cdr-stdin)
+            ;; nil case
+            (return int-zero stdin)
+            ;; cons case
+            (return (io-bitlength-to-wordsize car-stdin) cdr-stdin)))))
+      (let* reg (regwrite *src c))
+      (eval memory progtree stdin nextblock curproglist reg))
     ;; putc
     (do
       (cons (wordsize-to-io-bitlength src) (eval-reg reg)))
