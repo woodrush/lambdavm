@@ -31,7 +31,7 @@ all: $(addsuffix .blc, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
 	 $(addsuffix .lazy, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
 	 $(addsuffix .ulamb, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 
-test: test-blc test-ulamb test-lazyk
+test: test-blc test-ulamb test-lazyk test-blc-unipp
 
 pdf: $(target_pdf)
 
@@ -60,6 +60,7 @@ test-%: $(addsuffix .%-out.expected-diff, $(addprefix out/, $(notdir $(wildcard 
 	@echo "\n    All tests have passed for $(interpreter-name-$*).\n"
 interpreter-name-blc="BLC with the interpreter 'uni'"
 interpreter-name-blc-blc="BLC with the interpreter 'Blc'"
+interpreter-name-blc-unipp="BLC with the interpreter 'uni++'"
 interpreter-name-ulamb="Universal Lambda"
 interpreter-name-lazyk="Lazy K"
 
@@ -95,6 +96,13 @@ out/%.blc-out: out/%.blc $(UNI) $(ASC2BIN)
 		cat $< | $(ASC2BIN) | $(UNI) | head -n 20 > $@.tmp; fi
 	mv $@.tmp $@
 
+.PRECIOUS: out/%.blc-unipp-out
+out/%.blc-unipp-out: out/%.blc $(UNIPP) $(ASC2BIN)
+	if [ -f "test/$*.in" ]; then \
+		( cat $< | $(ASC2BIN); cat test/$*.in ) | $(UNIPP) -o | head -n 20 > $@.tmp; else \
+		cat $< | $(ASC2BIN) | $(UNIPP) -o | head -n 20 > $@.tmp; fi
+	mv $@.tmp $@
+
 .PRECIOUS: out/%.ulamb-out
 out/%.ulamb-out: out/%.ulamb $(CLAMB) $(ASC2BIN)
 	if [ -f "test/$*.in" ]; then \
@@ -113,6 +121,9 @@ out/%.blc-out.expected-diff: ./out/%.blc-out ./test/%.out
 	diff $^ || exit 1
 
 out/%.blc-blc-out.expected-diff: ./out/%.blc-blc-out ./test/%.out
+	diff $^ || exit 1
+
+out/%.blc-unipp-out.expected-diff: ./out/%.blc-unipp-out ./test/%.out
 	diff $^ || exit 1
 
 out/%.ulamb-out.expected-diff: ./out/%.ulamb-out ./test/%.out
