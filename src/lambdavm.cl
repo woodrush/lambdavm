@@ -293,9 +293,7 @@
 
 (def-lazy initreg nil)
 
-(defun-lazy lambdaVM (
-  io-bitlength supp-bitlength
-  memlist proglist stdin)
+(defun-lazy lambdaVM (io-bitlength supp-bitlength memlist proglist stdin)
   (do
     ;; Share references to functions to prevent them from being inlined multiple times
     (let* int-zero
