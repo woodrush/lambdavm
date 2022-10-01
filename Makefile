@@ -12,6 +12,7 @@ LAZYK=./bin/lazyk
 # Tools
 ASC2BIN=./bin/asc2bin
 LAM2BIN=./bin/lam2bin
+BLCAIT=./bin/blc-ait
 
 # Toolkit
 LAMBDATOOLS=./build/lambda-calculus-devkit
@@ -35,6 +36,12 @@ test: test-blc test-ulamb test-lazyk test-blc-unipp
 
 pdf: $(target_pdf)
 
+lambdavm.lam: $(BLCAIT)
+	sbcl --script src/main.cl > out/lambdavm.lam.tmp
+	$(BLCAIT) blc out/lambdavm.lam.tmp > out/lambdavm.lam.tmp.opt
+	cat out/lambdavm.lam.tmp.opt | sbcl --script notes/blc-to-ski.cl -iblc -olambda > lambdavm.lam.tmp
+	mv lambdavm.lam.tmp lambdavm.lam
+
 
 #================================================================
 # Build the PDF
@@ -46,7 +53,7 @@ $(target_latex): $(LAMBDAVM_SRCS) ./src/main.cl ./tools/main.tex ./tools/make-la
 	mv lambdavm.tex out
 
 .PHONY: pdf
-$(target_pdf): $(target_latex)
+$(target_pdf): $(target_latex) lambdavm.lam
 	cp ./tools/main.tex out
 	cd out; $(LATEX) main.tex
 	cd out; $(DVIPDFMX) main.dvi -o lambdavm.pdf
@@ -181,3 +188,9 @@ lam2bin: $(LAM2BIN)
 $(LAM2BIN): $(LAMBDATOOLS)
 	mkdir -p bin
 	cd $(LAMBDATOOLS) && make lam2bin && mv bin/lam2bin ../../bin
+
+.PHONY: blc-ait
+blc-ait: $(BLCAIT)
+$(BLCAIT): $(LAMBDATOOLS)
+	mkdir -p bin
+	cd $(LAMBDATOOLS) && make blc-ait && mv bin/blc-ait ../../bin

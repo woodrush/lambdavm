@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-sbcl --script ./src/main.cl \
+cat lambdavm.lam \
 | LC_ALL=C sed -e "s/^/$/g" \
 | LC_ALL=C sed -e "s/$/$ @/g" \
 | LC_ALL=C sed -e "s/\\\\/@\\\\allowbreak \\\\lambda /g" \
