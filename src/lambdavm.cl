@@ -150,7 +150,7 @@
           ;; nil case
           curproglist
           ;; cons case
-          ((eval memory stdin car-curproglist cdr-curproglist) reg)))
+          ((curproglist (eval memory stdin)) reg)))
       (t
         (do
           (<- (curinst nextblock) (curblock))
