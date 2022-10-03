@@ -1,6 +1,5 @@
 (load "./src/lambdacraft.cl")
 (load "./src/blc-numbers.cl")
-(load "./src/blc-clamb-wrapper.cl")
 
 
 
@@ -293,29 +292,36 @@
 
 (def-lazy initreg nil)
 
-(defun-lazy lambdaVM (io-bitlength supp-bitlength memlist proglist stdin)
-  (do
-    ;; Share references to functions to prevent them from being inlined multiple times
-    (let* int-zero
-      (let ((cons-t (lambda (x f) (f t x))))
-        (supp-bitlength cons-t (io-bitlength cons-t nil))))
-    (let* Y-comb Y-comb)
-    (let* cmp* cmp*)
-    (let* add* add*)
-    (let* memory-write* memory-write*)
-    (let* lookup-tree* lookup-tree*)
+(defmacro def-lambdaVM ()
+  `(defun-lazy lambdaVM (io-bitlength supp-bitlength memlist proglist stdin)
+    (do
+      ;; Share references to functions to prevent them from being inlined multiple times
+      (let* int-zero
+        (let ((cons-t (lambda (x f) (f t x))))
+          (supp-bitlength cons-t (io-bitlength cons-t nil))))
+      ;; Remove reference sharing when compiling to Lazy K, which leads to a shorter code
+      ,@(cond
+          ((boundp 'compile-ski)
+            nil)
+          (t
+            `((let* Y-comb Y-comb)
+              (let* cmp* cmp*))))
+      (let* add* add*)
+      (let* memory-write* memory-write*)
+      (let* lookup-tree* lookup-tree*)
+      ;; Implicit parameter passing of memtree and progtree:
+      ;; ((proglist (eval memtree stdin)) initreg)
+      ((proglist
+        (((do
+            (let* list2tree*
+              (lambda (l cont)
+                (do
+                  (<- (tree _) (list2tree** l int-zero))
+                  (cont tree))))
+            (<- (progtree) (list2tree* (cdr-generator proglist)))
+            (list2tree* memlist) ;; Implicit argument passing: memtree
+            (eval)))
+        stdin))
+      initreg))))
 
-    ;; Implicit parameter passing of memtree and progtree:
-    ;; ((proglist (eval memtree stdin)) initreg)
-    ((proglist
-      (((do
-          (let* list2tree*
-            (lambda (l cont)
-              (do
-                (<- (tree _) (list2tree** l int-zero))
-                (cont tree))))
-          (<- (progtree) (list2tree* (cdr-generator proglist)))
-          (list2tree* memlist) ;; Implicit argument passing: memtree
-          (eval)))
-      stdin))
-     initreg)))
+(def-lambdaVM)

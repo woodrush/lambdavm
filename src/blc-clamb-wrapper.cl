@@ -1,5 +1,4 @@
-(def-lazy powerlist
-  (cons 128 (cons 64 (cons 32 (cons 16 (cons 8 (cons 4 (cons 2 (cons 1 nil)))))))))
+(def-lazy powerlist (list 128 64 32 16 8 4 2 1))
 
 (defrec-lazy int2bitlist (n powerlist cont)
   (if (isnil powerlist)

@@ -36,12 +36,19 @@ test: test-blc test-ulamb test-lazyk test-blc-unipp
 
 pdf: $(target_pdf)
 
-lambdavm.lam: $(BLCAIT)
+lambdavm.lam: $(BLCAIT) src/main.cl src/lambdavm.cl
 	sbcl --script src/main.cl > out/lambdavm.lam.tmp
 	$(BLCAIT) blc out/lambdavm.lam.tmp > out/lambdavm.lam.tmp.opt
-	cat out/lambdavm.lam.tmp.opt | sbcl --script notes/blc-to-ski.cl -iblc -olambda > lambdavm.lam.tmp
-	mv lambdavm.lam.tmp lambdavm.lam
+	cat out/lambdavm.lam.tmp.opt | sbcl --script notes/blc-to-ski.cl -iblc -olambda > out/lambdavm.lam.tmp
+	mv out/lambdavm.lam.tmp lambdavm.lam
+	rm out/lambdavm.lam.tmp.opt
 
+lambdavm.lazy: $(BLCAIT) src/main-lazy.cl src/lambdavm.cl src/blc-clamb-wrapper.cl
+	sbcl --script src/main-lazy.cl > out/lambdavm.lazy.lam.tmp
+	$(BLCAIT) blc out/lambdavm.lazy.lam.tmp > out/lambdavm.lazy.lam.tmp.opt
+	cat out/lambdavm.lazy.lam.tmp.opt | sbcl --script notes/blc-to-ski.cl -iblc -oski > out/lambdavm.lazy.tmp
+	cat out/lambdavm.lazy.tmp | sed -e 's/``s`kki/k/g' > lambdavm.lazy
+	rm out/lambdavm.lazy.tmp out/lambdavm.lazy.lam.tmp
 
 #================================================================
 # Build the PDF
@@ -58,6 +65,7 @@ $(target_pdf): $(target_latex) lambdavm.lam
 	cd out; $(LATEX) main.tex
 	cd out; $(DVIPDFMX) main.dvi -o lambdavm.pdf
 	mv out/lambdavm.pdf .
+
 
 #================================================================
 # Tests
@@ -145,7 +153,7 @@ out/%.lazyk-out.expected-diff: ./out/%.lazyk-out ./test/%.out
 #================================================================
 $(LAMBDATOOLS):
 	mkdir -p build
-	cd build; git clone https://github.com/woodrush/lambda-lang-toolkit
+	cd build; git clone github.com:woodrush/lambda-calculus-devkit
 
 .PHONY: blc
 blc: $(BLC)
