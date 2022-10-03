@@ -22,6 +22,8 @@
         (<- (c-blc) (int2bitlist c-ulamb powerlist))
         (cons c-blc (ulambstr-to-blcstr s-cdr))))))
 
+
+;; In SKI combinator calculus, using isnil led to shorter code than using typematch-nil-cons here.
 (defrec-lazy bitlist2int (n powerlist cont)
   (if (isnil powerlist)
     (cont 0)
@@ -33,6 +35,7 @@
         (cont n-ret)
         (cont (+ car-pow n-ret))))))
 
+;; In SKI combinator calculus, using isnil led to shorter code than using typematch-nil-cons here.
 (defun-lazy blcchar-to-ulambchar (c cont)
   (cond
     ((isnil c)
@@ -53,14 +56,13 @@
 
 ;; Lazy K
 (defrec-lazy blcstr-to-lazykstr (s)
-  (cond
-    ((isnil s)
-      (inflist 256))
-    (t
-      (do
-        (<- (c-blc s-cdr) (s))
-        (<- (c-ulamb) (blcchar-to-ulambchar c-blc))
-        (cons c-ulamb (blcstr-to-lazykstr s-cdr))))))
+  (typematch-nil-cons s (c-blc s-cdr)
+    ;; nil case
+    (inflist 256)
+    ;; cons case
+    (do
+      (<- (c-ulamb) (blcchar-to-ulambchar c-blc))
+      (cons c-ulamb (blcstr-to-lazykstr s-cdr)))))
 
 (defrec-lazy lazykstr-to-blcstr (s)
   (do
