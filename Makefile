@@ -43,6 +43,12 @@ lambdavm.lam: $(BLCAIT) src/main.cl src/lambdavm.cl
 	mv out/lambdavm.lam.tmp lambdavm.lam
 	rm out/lambdavm.lam.tmp.opt
 
+lambdavm.blc: $(BLCAIT) src/main.cl src/lambdavm.cl
+	sbcl --script src/main.cl > out/lambdavm.lam.tmp
+	$(BLCAIT) blc out/lambdavm.lam.tmp > lambdavm.blc.tmp
+	mv lambdavm.blc.tmp lambdavm.blc
+	rm out/lambdavm.lam.tmp
+
 lambdavm.lazy: $(BLCAIT) src/main-lazy.cl src/lambdavm.cl src/blc-clamb-wrapper.cl
 	sbcl --script src/main-lazy.cl > out/lambdavm.lazy.lam.tmp
 	$(BLCAIT) blc out/lambdavm.lazy.lam.tmp > out/lambdavm.lazy.lam.tmp.opt
