@@ -1,7 +1,8 @@
 # LambdaVM - A Programmable Virtual CPU Written as an Untyped Lambda Calculus Term
 LambdaVM is a programmable virtual CPU written as a closed untyped lambda calculus term.
 It supports an extended version of the [ELVM](https://github.com/shinh/elvm) architecture written by [Shinichiro Hamaji](https://github.com/shinh).
-LambdaVM supports 8 instructions, and has an arbitrarily configurable ROM/RAM address size and word size, and an arbitrarily configurable number of registers.
+LambdaVM supports 8 instructions including standard I/O and virtual memory operations, and has an arbitrarily configurable ROM/RAM address size and word size, and an arbitrarily configurable number of registers.
+
 Despite its rather rich capability, its lambda term is quite small. Here is its entire lambda term written in plaintext:
 
 ```text
@@ -64,6 +65,8 @@ A thorough explanation of programming in lambda calculus is described in [my blo
 ## Features
 - Instruction set:
   - `mov` `load` `store` `addsub` `cmp` `jmpcmp` `jmp` `putchar` `getchar` `exit`
+  - The behavior of each instruction is mostly the same as ELVM. Please see [elvm.md](https://github.com/shinh/elvm/blob/master/ELVM.md) from the ELVM repo for details.
+  - The lambda calculus data structure for each instruction is described later.
 - ROM/RAM address size and word size:
   - Pre-configurable to an arbitrary integer
 - I/O bit size:
@@ -175,6 +178,55 @@ These listings can be compiled by running *.cl on a Common Lisp interpreter such
 
 Since these programs are based on LambdaCraft and LambdaCraft runs on LambdaLisp,
 it is expected that these programs run on LambdaLisp as well, although it takes a lot of time compared to fast interpreters such as SBCL.
+
+Please use these example programs as a template for hand-assembling your own LambdaVM programs.
+
+
+## Instruction Structure
+Each instruction ${\rm inst}$ is a 4-tuple containing 4 arguments:
+
+$$
+{\rm inst} = {\rm cons4} ~ {\rm insttag} ~ {\rm srcisimm} ~ {\rm src} ~ {\rm opt}
+$$
+
+- ${\rm cons4}$ is a 4-tuple constructor, ${\rm cons4} = \lambda x. \lambda y. \lambda z. \lambda w. \lambda f. (f x y z w)$.
+- ${\rm insttag}$ is an 8-tuple specifying the instruction.
+- ${\rm srcisimm}$ is a boolean of either ${\rm t} = \lambda x. \lambda y. y$ or ${\rm nil} = \lambda x. \lambda y. y$.
+  It specifies whether if the following ${\rm src}$ is an immediate value or a register.
+- ${\rm src}$ is either an N-bit integer or a register address.
+- ${\rm opt}$ is an instruction-specific option with an instruction-specific data structure.
+
+### insttag and opt
+${\rm insttag}$ is used to specify the instruction type:
+
+| Instruction | ${\rm insttag}$                                                                             |
+|-------------|---------------------------------------------------------------------------------------------|
+| `mov`       | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. a$ |
+| `load`      | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. b$ |
+| `store`     | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. c$ |
+| `addsub`    | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. d$ |
+| `cmp`       | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. e$ |
+| `jmpcmp`    | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. f$ |
+| `jmp`       | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. g$ |
+| `io`        | $\lambda a. \lambda b. \lambda c. \lambda d. \lambda e. \lambda f. \lambda g. \lambda h. h$ |
+
+| Instruction | ${\rm opt}$                                                            |
+|-------------|------------------------------------------------------------------------|
+| `mov`       | ${\rm dst}$                                                            |
+| `load`      | ${\rm dst}$                                                            |
+| `store`     | ${\rm dst}$                                                            |
+| `addsub`    | ${\rm cons} ~ {\rm dst} ~ {\rm isadd}$                                 |
+| `cmp`       | ${\rm cons} ~ {\rm enumcmp} ~ {\rm dst}$                               |
+| `jmpcmp`    | ${\rm cons4} ~ {\rm enumcmp} ~ {\rm jmpisimm} ~ {\rm jmp} ~ {\rm dst}$ |
+| `jmp`       | (unused)                                                               |
+| `io`        | ${\rm enumio}$                                                         |
+
+
+### Implementation in LambdaCraft
+The examples under [./examples](https://github.com/woodrush/lambdavm/tree/main/examples) wrap this instruction structure as Lisp macros
+so that they can be written in an assembly-like notation.
+Macros are defined in [./src/lambda-asm-header.cl](https://github.com/woodrush/lambdavm/blob/main/src/lambda-asm-header.cl).
+For further details on the instruction structure, please see this source.
 
 
 ## Implementation Details
