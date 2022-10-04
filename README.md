@@ -1,9 +1,12 @@
 # LambdaVM - A Programmable Virtual CPU Written as an Untyped Lambda Calculus Term
 LambdaVM is a programmable virtual CPU written as a closed untyped lambda calculus term.
-It supports an extended version of the [ELVM](https://github.com/shinh/elvm) architecture written by [Shinichiro Hamaji](https://github.com/shinh).
+It supports an extended version of the [ELVM](https://github.com/shinh/elvm) instruction set and architecture written by [Shinichiro Hamaji](https://github.com/shinh).
+Using LambdaVM, you can enjoy assembly programming to write programs for lambda calculus.
+
+
 LambdaVM supports 8 instructions including standard I/O and virtual memory operations, and has an arbitrarily configurable ROM/RAM address size and word size, and an arbitrarily configurable number of registers.
 
-Despite its rather rich capability, its lambda term is quite small. Here is its entire lambda term written in plaintext:
+Despite its rather rich capability, LambdaVM's lambda term is quite small. Here is its entire lambda term written in plaintext:
 
 ```text
 LambdaVM = \x.\y.\z.\a.\b.((\c.((\d.((\e.((\f.((\g.((\h.(a ((\i.(i (d (\j.\k.(k 
@@ -30,26 +33,18 @@ w u r)))))) (\t.\u.(l (s t u) (s u t))))) (h o (o (\s.\t.t) (\s.\t.s))))))))) (k
 ```
 
 Shown here is a lambda calculus term featuring a RAM unit with 8 instructions including I/O and memory operations.
-
-You can hand-assemble programs for LambdaVM to write lambda calculus programs in an imperative assembly language as described later.
-Compiled lambda calculus programs can be run on the terminal using various lambda calculus interpreters, including:
-
-- SectorLambda, the [521-byte lambda calculus interpreter](https://justine.lol/lambda/) written by Justine Tunney
-- The [IOCCC](https://www.ioccc.org/) 2012 ["Most functional"](https://www.ioccc.org/2012/tromp/hint.html) interpreter written by John Tromp
-  (the [source](https://www.ioccc.org/2012/tromp/tromp.c) is in the shape of a λ)
-- Universal Lambda interpreter [clamb](https://github.com/irori/clamb) and Lazy K interpreter [lazyk](https://github.com/irori/lazyk) written by Kunihiko Sakamoto
-
-I have integrated LambdaVM into ELVM to implement ELVM's lambda calculus backend.
-Using this backend, you can even compile interactive C code to LambdaVM's assembly.
-Since ELVM implements its [own libc](https://github.com/shinh/elvm/tree/master/libc), you can even `#include <stdio.h>` and use library functions such as `printf` and `scanf`.
-Please see the documentation for ELVM for details.
+With LambdaVM, you can write an assembly program that runs on this virtual machine.
 
 Various designs for LambdaVM are borrowed from [Kunihiko Sakamoto](https://github.com/irori)'s [UnlambdaVM](https://irori.hatenablog.com/entry/elvm-unlambda-part2) (in Japanese), with many modifications. Details are described later.
 
-LambdaVM is built with [LambdaCraft](https://github.com/woodrush/lambdacraft), a Common Lisp DSL that I wrote for building large lambda calculus programs, also used to build [LambdaLisp](https://github.com/woodrush/lambdalisp).
+LambdaVM is built with [LambdaCraft](https://github.com/woodrush/lambdacraft), a Common Lisp DSL that I wrote for building large lambda calculus programs, also used to build [LambdaLisp](https://github.com/woodrush/lambdalisp), a Lisp interpreter implemented in untyped lambda calculus.
 
 
-## Lambda Calculus as a Programming Language
+## Overview
+### Lambda Calculus as a Programming Language
+Using LambdaVM, you can write lambda calculus programs in assembly style.
+But what does it mean to write programs in lambda calculus?
+
 Lambda calculus terms can be interpreted as programs, by interpreting it as a program that takes an input string and returns an output string.
 Characters and bytes are encoded as a list of bits with $0 = \lambda x. \lambda y.x$, $1 = \lambda x. \lambda y.y$,
 and lists are encoded in the [Scott encoding](https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding) with ${\rm cons} = \lambda x.\lambda y.\lambda f.(f x y)$, ${\rm nil} = \lambda x.\lambda y.y$.
@@ -60,6 +55,40 @@ Various lambda calculus interpreters automatically handle this I/O format so tha
 Using these interpreters, lambda calculus programs can be run on the terminal just like any other terminal utility with I/O.
 
 A thorough explanation of programming in lambda calculus is described in [my blog post](https://woodrush.github.io/blog/lambdalisp.html) about [LambdaLisp](https://github.com/woodrush/lambdalisp), a Lisp interpreter written as an untyped lambda calculus term.
+
+
+### Programming Languages Based on Lambda Calculus
+There are various programming languages that use this I/O strategy. Examples are:
+
+- [Binary lambda calculus](https://tromp.github.io/cl/Binary_lambda_calculus.html)
+- [Universal Lambda](https://esolangs.org/wiki/Universal_Lambda)
+- [Lazy K](https://tromp.github.io/cl/lazy-k.html)
+
+Seen as a programming language, these languages are purely functional languages with lazy evaluation.
+The "purely" part is emphasized even more than languages such as Haskell, since no primitive data types such as integers exist except for lambdas exist in these languages.
+Each of these languages have a different I/O encoding and a different notation for expressing lambda calculus terms.
+The I/O encoding can be absorbed by using a [wrapper](https://github.com/woodrush/lambdavm/blob/main/src/blc-clamb-wrapper.cl),
+and the notation can be adapted by using a [compiler](https://github.com/woodrush/lambdacraft) to write lambdas in the expected format.
+
+Using LambdaVM, you can write programs for these languages.
+A FizzBuzz program written in LambdaVM assembly looks like [./examples/fizzbuzz.cl](https://github.com/woodrush/lambdavm/blob/main/examples/fizzbuzz.cl).
+
+Compiled programs can be run on the terminal using various interpreters, including:
+
+- SectorLambda, the [521-byte lambda calculus interpreter](https://justine.lol/lambda/) written by Justine Tunney
+- The [IOCCC](https://www.ioccc.org/) 2012 ["Most functional"](https://www.ioccc.org/2012/tromp/hint.html) interpreter written by John Tromp
+  (the [source](https://www.ioccc.org/2012/tromp/tromp.c) is in the shape of a λ)
+- Universal Lambda interpreter [clamb](https://github.com/irori/clamb) and Lazy K interpreter [lazyk](https://github.com/irori/lazyk) written by Kunihiko Sakamoto
+
+
+### Compiling C to Lambda Calculus
+I have integrated LambdaVM into ELVM to implement ELVM's lambda calculus backend.
+Using this backend, you can even compile interactive C code to LambdaVM's assembly.
+Since ELVM implements its [own libc](https://github.com/shinh/elvm/tree/master/libc), you can even `#include <stdio.h>` and use library functions such as `printf` and `scanf`.
+
+This is entirely contained in the realm of the ELVM repository. Please see the documentation for ELVM for details.
+Instead of compiling C to assembly, you can enjoy hand-assembling programs for lambda calculus using the examples in this repository.
+
 
 
 ## Features
@@ -76,67 +105,8 @@ A thorough explanation of programming in lambda calculus is described in [my blo
   - Number of registers is arbitrarily pre-configurable
 
 
-## Specifications
-LambdaVM is written as the following lambda calculus term:
-
-$$
-{\rm LambdaVM} = \lambda.{\rm iobitsize} ~ \lambda.{\rm suppbitsize} ~ \lambda.{\rm proglist} ~ \lambda.{\rm memlist} ~ \lambda.{\rm stdin} ~ \cdots
-$$
-
-- The first 2 arguments ${\rm iobitsize}$ and ${\rm suppbitsize}$ are configuration parameters specifying the CPU's I/O word size and RAM word size.
-- ${\rm proglist}$ represents the assembly listing to be executed.
-- ${\rm memlist}$ represents the memory initialization state. Unspecified memory regions are initialized to 0.
-- ${\rm stdin}$ is the input string provided by the interpreter.
-
-By applying the first 4 arguments except ${\rm stdin}$ to ${\rm LambdaVM}$, the combined lambda term
-$({\rm LambdaVM} ~ {\rm iobitsize} ~ {\rm suppbitsize} ~ {\rm proglist} ~ {\rm memlist})$ behaves as a lambda calculus program that accepts a string
-${\rm stdin}$, processes it, and returns some string.
-
-
-### Implementation Design
-Various designs for LambdaVM are borrowed from [Kunihiko Sakamoto](https://github.com/irori)'s [UnlambdaVM](https://irori.hatenablog.com/entry/elvm-unlambda-part2) (in Japanese):
-
-- Using a binary tree structure to represent the RAM
-- Using a list of lists of instructions to represent the program
-
-LambdaVM has the following differences:
-- While Unlambda is a strictly evaluated language, LambdaVM assumes a lazily evaluated language.
-  While UnlambdaVM is written in direct style using function applications to mutate the VM's global state,
-  LambdaVM is written using continuation-passing style to handle monadic I/O.
-- The binary tree structure is modified so that an empty tree can be initialized with `nil = \x.\y.y`.
-
-
-### iobitsize and suppbitsize
-`iobitsize` and `suppbitsize` are integers encoded as lambda terms in the [Church encoding](https://en.wikipedia.org/wiki/Church_encoding).
-
-`iobitsize` specifies the number of bits used for the input string.
-In the [IOCCC](https://www.ioccc.org/) 2012 ["Most functional"](https://www.ioccc.org/2012/tromp/hint.html) interpreter,
-`iobitsize == 8` since it uses 8 bits for encoding the I/O.
-
-`suppbitsize` represents the additional number of bits added to `iobitsize` to make the machine's RAM and register word size.
-The word size becomes `iobitsize + suppbitsize`.
-
-In ELVM, the machine word size is 24 and the I/O bit size is 8, so `iobitsize` and `suppbitsize` are set to 8 and 16, respectively.
-
-### proglist
-`proglist` is represented as a list of lists, where each sublist is a _tag_ containing a list of instructions.
-The instruction format is described later.
-The beginning of each list represents a tag that can be jumped to using the `jmp` or `jmpcmp` instructions.
-When the `jmp` or `jmpcmp` instruction is run, the program proceeds to the beginning of the specified tag.
-
-### memlist
-`memlist` is represented as a list of N-bit unsigned integers with the machine's word size, where each integer is represented as a list of bits with
-$0 = \lambda x. \lambda y.x$ and $1 = \lambda x. \lambda y.y$.
-The elements of each list are assigned to contiguous RAM addresses startting from the address zero.
-The rest of the memory is initiliazed with the integer zero.
-
-### stdin
-This variable is supplied by the interpreter.
-The input is expected to be a list of characters, where each character is a list of bits of length `iobitsize`.
-This incoming character is appended with `suppbitsize` bits of 0.
-
-
-## Hand-Assembling Your Own LambdaVM Programs
+## Usage
+### Hand-Assembling Your Own LambdaVM Programs
 You can hand-assemble your own LambdaVM programs using [LambdaCraft](https://github.com/woodrush/lambdacraft),
 a Common Lisp DSL I wrote for building lambda calculus programs, also used to build [LambdaLisp](https://github.com/woodrush/lambdalisp).
 
@@ -181,6 +151,74 @@ it is expected that these programs run on LambdaLisp as well, although it takes 
 
 Please use these example programs as a template for hand-assembling your own LambdaVM programs.
 
+
+
+## Specifications
+LambdaVM is written as the following lambda calculus term:
+
+$$
+{\rm LambdaVM} = \lambda.{\rm iobitsize} ~ \lambda.{\rm suppbitsize} ~ \lambda.{\rm proglist} ~ \lambda.{\rm memlist} ~ \lambda.{\rm stdin} ~ \cdots
+$$
+
+- The first 2 arguments ${\rm iobitsize}$ and ${\rm suppbitsize}$ are configuration parameters specifying the CPU's I/O word size and RAM word size.
+- ${\rm proglist}$ represents the assembly listing to be executed.
+- ${\rm memlist}$ represents the memory initialization state. Unspecified memory regions are initialized to 0.
+- ${\rm stdin}$ is the input string provided by the interpreter.
+
+By applying the first 4 arguments except ${\rm stdin}$ to ${\rm LambdaVM}$, the combined lambda term
+$({\rm LambdaVM} ~ {\rm iobitsize} ~ {\rm suppbitsize} ~ {\rm proglist} ~ {\rm memlist})$ behaves as a lambda calculus program that accepts a string
+${\rm stdin}$, processes it, and returns some string.
+
+
+### Implementation Design
+Various designs for LambdaVM are borrowed from [Kunihiko Sakamoto](https://github.com/irori)'s [UnlambdaVM](https://irori.hatenablog.com/entry/elvm-unlambda-part2) (in Japanese):
+
+- Using a binary tree structure to represent the RAM
+- Using a list of lists of instructions to represent the program
+
+LambdaVM has the following differences:
+- While Unlambda is a strictly evaluated language, LambdaVM assumes a lazily evaluated language.
+  While UnlambdaVM is written in direct style using function applications to mutate the VM's global state,
+  LambdaVM is written using continuation-passing style to handle monadic I/O.
+- The binary tree structure is modified so that an empty tree can be initialized with `nil = \x.\y.y`.
+
+
+### Standard Input and Output
+By loading the program and initialization configurations to LambdaVM, the resulting lambda calculus term $({\rm LambdaVM} ~ {\rm iobitsize} ~ {\rm suppbitsize} ~ {\rm proglist} ~ {\rm memlist})$ behaves as a function that accepts a string as an input and outputs a string.
+
+Here, characters and bytes are encoded as a list of bits with $0 = \lambda x. \lambda y.x$, $1 = \lambda x. \lambda y.y$,
+and lists are encoded in the [Scott encoding](https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding) with ${\rm cons} = \lambda x.\lambda y.\lambda f.(f x y)$, ${\rm nil} = \lambda x.\lambda y.y$.
+
+The variable ${\rm stdin}$, the last argument of ${\rm LambdaVM}$, is expected to be provided by the interpreter in this format.
+
+Various lambda calculus languages use a slightly different I/O encoding, such as using [Church numerals](https://en.wikipedia.org/wiki/Church_encoding) to express each character.
+Such differences can be absorbed by using a [wrapper](https://github.com/woodrush/lambdavm/blob/main/src/blc-clamb-wrapper.cl) that adapts the program to its surrounding environment.
+This is discussed later in the [Adaptation to Different Languages](#adaptation-to-different-languages) section.
+
+
+### iobitsize and suppbitsize
+`iobitsize` and `suppbitsize` are integers encoded as lambda terms in the [Church encoding](https://en.wikipedia.org/wiki/Church_encoding).
+
+`iobitsize` specifies the number of bits used for the input string.
+In the [IOCCC](https://www.ioccc.org/) 2012 ["Most functional"](https://www.ioccc.org/2012/tromp/hint.html) interpreter,
+`iobitsize == 8` since it uses 8 bits for encoding the I/O.
+
+`suppbitsize` represents the additional number of bits added to `iobitsize` to make the machine's RAM and register word size.
+The word size becomes `iobitsize + suppbitsize`.
+
+In ELVM, the machine word size is 24 and the I/O bit size is 8, so `iobitsize` and `suppbitsize` are set to 8 and 16, respectively.
+
+### proglist
+`proglist` is represented as a list of lists, where each sublist is a _tag_ containing a list of instructions.
+The instruction format is described later.
+The beginning of each list represents a tag that can be jumped to using the `jmp` or `jmpcmp` instructions.
+When the `jmp` or `jmpcmp` instruction is run, the program proceeds to the beginning of the specified tag.
+
+### memlist
+`memlist` is represented as a list of N-bit unsigned integers with the machine's word size, where each integer is represented as a list of bits with
+$0 = \lambda x. \lambda y.x$ and $1 = \lambda x. \lambda y.y$.
+The elements of each list are assigned to contiguous RAM addresses startting from the address zero.
+The rest of the memory is initiliazed with the integer zero.
 
 ## Instruction Structure
 Each instruction ${\rm inst}$ is a 4-tuple containing 4 arguments:
@@ -228,6 +266,31 @@ so that they can be written in an assembly-like notation.
 Macros are defined in [./src/lambda-asm-header.cl](https://github.com/woodrush/lambdavm/blob/main/src/lambda-asm-header.cl).
 For further details on the instruction structure, please see this source.
 
+
+
+## Adaptation to Different Languages
+As mentioned earlier, various lambda calculus languages use a slightly different I/O encoding, such as using [Church numerals](https://en.wikipedia.org/wiki/Church_encoding) to express each character.
+Such differences can be absorbed by using a [wrapper](https://github.com/woodrush/lambdavm/blob/main/src/blc-clamb-wrapper.cl) that adapts the program to its surrounding environment.
+
+To run a lambda program $F = \lambda s. {\rm code}$ that uses an I/O encoding of method A in a different environment that uses an I/O encoding B,
+ you can wrap $F$ by writing a wrapper ${\rm AtoB}$ and ${\rm BtoA}$:
+
+$$
+F' = \lambda s. ({\rm AtoB} ~ (F ~ ({\rm BtoA} ~ s)))
+$$
+
+When $F'$ is run in the environment B, the input string $s$ is first encoded in the method of B.
+However, $F$ expects strings to be encoded in method A.
+This difference in the input is first absorbed by the wrapper ${\rm BtoA}$ which translates $s$ to a format recognizable by $F$.
+
+After calculuations, $F$ outputs a string in the method A.
+However, this string is not recognizable by the surrounding environment B.
+This difference in the output is then absorbed by the wrapper ${\rm AtoB}$ so that the interpreter recognizes the output by $F$.
+
+Using this strategy, any program $F$ compiled in a lambda-like language A can easily be transplied to $F'$ that runs on a different language B.
+The same holds for programs written using LambdaVM, making LambdaVM run in various lambda-based languages
+such as Binary Lambda Calculus, Universal Lambda, and Lazy K.
+The [wrapper](https://github.com/woodrush/lambdavm/blob/main/src/blc-clamb-wrapper.cl) used in LambdaVM is implemented exactly this way.
 
 ## Implementation Details
 Please see [details.md](details.md).
