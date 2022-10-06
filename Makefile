@@ -33,6 +33,7 @@ all: $(addsuffix .blc, $(addprefix out/, $(notdir $(wildcard examples/*.cl)))) \
 	 $(addsuffix .ulamb, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 
 test: test-blc test-ulamb test-lazyk test-blc-unipp
+testrot13: testrot13-blc testrot13-ulamb testrot13-lazyk testrot13-blc-unipp
 
 pdf: $(target_pdf)
 
@@ -76,6 +77,10 @@ $(target_pdf): $(target_latex) lambdavm.lam
 #================================================================
 # Tests
 #================================================================
+.PHONY: testrot13-%
+testrot13-%: out/rot13.cl.%-out.expected-diff
+	@echo "\n    All tests have passed for $(interpreter-name-$*).\n"
+
 .PHONY: test-%
 test-%: $(addsuffix .%-out.expected-diff, $(addprefix out/, $(notdir $(wildcard examples/*.cl))))
 	@echo "\n    All tests have passed for $(interpreter-name-$*).\n"

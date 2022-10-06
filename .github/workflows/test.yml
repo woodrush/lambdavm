@@ -16,4 +16,4 @@ jobs:
     - name: Run test
       run: |
         sudo apt install -y sbcl
-        make test
+        make testrot13
