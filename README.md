@@ -1,5 +1,7 @@
 # LambdaVM - A Programmable Virtual CPU Written as an Untyped Lambda Calculus Term
 
+[![test](https://github.com/woodrush/lambdavm/actions/workflows/test.yml/badge.svg)](https://github.com/woodrush/lambdavm/actions/workflows/test.yml)
+
 ![Lambda calculus diagram for LambdaVM.](bin/lambdavm-diagram.png)
 
 LambdaVM is a programmable virtual CPU written as a closed untyped lambda calculus term.
