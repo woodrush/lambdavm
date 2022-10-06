@@ -4,7 +4,7 @@
 
 LambdaVM is a programmable virtual CPU written as a closed untyped lambda calculus term.
 It supports an extended version of the [ELVM](https://github.com/shinh/elvm) instruction set and architecture written by [Shinichiro Hamaji](https://github.com/shinh).
-Using LambdaVM, you can enjoy assembly programming to write programs for lambda calculus.
+Using LambdaVM, you can enjoy assembly programming to write programs in untyped lambda calculus.
 
 
 LambdaVM supports 8 instructions including standard I/O and virtual memory operations, and has an arbitrarily configurable ROM/RAM address size and word size, and an arbitrarily configurable number of registers.
@@ -42,7 +42,7 @@ The image on the top of this repo is LambdaVM's [lambda calculus diagram](http:/
 
 Various designs for LambdaVM are borrowed from [Kunihiko Sakamoto](https://github.com/irori)'s [UnlambdaVM](https://irori.hatenablog.com/entry/elvm-unlambda-part2) (in Japanese), with many modifications. Details are described later.
 
-LambdaVM is built with [LambdaCraft](https://github.com/woodrush/lambdacraft), a Common Lisp DSL that I wrote for building large lambda calculus programs, also used to build [LambdaLisp](https://github.com/woodrush/lambdalisp), a Lisp interpreter implemented in untyped lambda calculus.
+LambdaVM is built using [LambdaCraft](https://github.com/woodrush/lambdacraft), a Common Lisp DSL that I wrote for building large lambda calculus programs, also used to build [LambdaLisp](https://github.com/woodrush/lambdalisp), a Lisp interpreter implemented in untyped lambda calculus.
 
 
 ## Overview
