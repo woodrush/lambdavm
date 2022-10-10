@@ -163,9 +163,7 @@ Please use these example programs as a template for hand-assembling your own Lam
 ## Specifications
 LambdaVM is written as the following lambda calculus term:
 
-$$
-{\rm LambdaVM} = \lambda.{\rm iobitsize} ~ \lambda.{\rm suppbitsize} ~ \lambda.{\rm proglist} ~ \lambda.{\rm memlist} ~ \lambda.{\rm stdin} ~ \cdots
-$$
+`LambdaVM = \iobitsize. \suppbitsize. \proglist. \memlist. \stdin. ...`
 
 - The first 2 arguments ${\rm iobitsize}$ and ${\rm suppbitsize}$ are configuration parameters specifying the CPU's I/O word size and RAM word size.
 - ${\rm proglist}$ represents the assembly listing to be executed.
