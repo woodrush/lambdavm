@@ -171,7 +171,7 @@ LambdaVM is written as the following lambda calculus term:
 - ${\rm stdin}$ is the input string provided by the interpreter.
 
 By applying the first 4 arguments except ${\rm stdin}$ to ${\rm LambdaVM}$, the combined lambda term
-$({\rm LambdaVM} ~ {\rm iobitsize} ~ {\rm suppbitsize} ~ {\rm proglist} ~ {\rm memlist})$ behaves as a lambda calculus program that accepts a string
+`(LambdaVM iobitsize suppbitsize proglist memlist)` behaves as a lambda calculus program that accepts a string
 ${\rm stdin}$, processes it, and returns some string.
 
 
@@ -189,7 +189,7 @@ LambdaVM has the following differences:
 
 
 ### Standard Input and Output
-By loading the program and initialization configurations to LambdaVM, the resulting lambda calculus term $({\rm LambdaVM} ~ {\rm iobitsize} ~ {\rm suppbitsize} ~ {\rm proglist} ~ {\rm memlist})$ behaves as a function that accepts a string as an input and outputs a string.
+By loading the program and initialization configurations to LambdaVM, the resulting lambda calculus term `(LambdaVM iobitsize suppbitsize proglist memlist)` behaves as a function that accepts a string as an input and outputs a string.
 
 Here, characters and bytes are encoded as a list of bits with $0 = \lambda x. \lambda y.x$, $1 = \lambda x. \lambda y.y$,
 and lists are encoded in the [Scott encoding](https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding) with ${\rm cons} = \lambda x.\lambda y.\lambda f.(f x y)$, ${\rm nil} = \lambda x.\lambda y.y$.
