@@ -30,19 +30,18 @@
 ;; Memory and program
 ;;================================================================
 (defrec-lazy lookup-tree* (memory address cont)
-  (typematch-nil-cons memory (car-memory cdr-memory)
+  (typematch-nil-cons address (car-address cdr-address)
     ;; nil case
-    (cont int-zero)
+    (cont memory)
     ;; cons case
-    (typematch-nil-cons address (car-address cdr-address)
-      ;; nil case
-      (cont memory)
-      ;; cons case
-      ((if car-address
-        (lookup-tree* car-memory)
-        (lookup-tree* cdr-memory))
-       cdr-address
-       cont))))
+    (do
+      (<- (car-memory cdr-memory) (memory))
+      ((lookup-tree*
+        (if car-address
+          car-memory
+          cdr-memory))
+        cdr-address
+        cont))))
 
 (defrec-lazy memory-write* (memory address value cont)
   (typematch-nil-cons address (car-address cdr-address)
@@ -292,18 +291,27 @@
     ;; exit
     src-is-imm)) ;; always evaluates to nil
 
-(defrec-lazy list2tree** (l depth cont)
+(defrec-lazy empty-tree (default depth)
+  (typematch-nil-cons depth (_ cdr-depth)
+    ;; nil case
+    default
+    ;; cons case
+    (do
+      (let* tree (empty-tree default cdr-depth)
+      (cons tree tree)))))
+
+(defrec-lazy list2tree** (default l depth cont)
   (typematch-nil-cons l (_ _)
     ;; nil case
-    (cont l l)
+    (cont (empty-tree default depth) l)
     ;; cons case
     (typematch-nil-cons depth (_ cdr-depth)
       ;; nil case
       (l cont)
       ;; cons case
       (do
-        (<- (right-tree l) (list2tree** l cdr-depth))
-        (<- (left-tree) (list2tree** l cdr-depth)) ;; Implicit parameter passing: l
+        (<- (right-tree l) (list2tree** default l cdr-depth))
+        (<- (left-tree) (list2tree** default l cdr-depth)) ;; Implicit parameter passing: l
         (cont (cons right-tree left-tree))))))
 
 (defrec-lazy cdr-generator (l)
@@ -339,12 +347,18 @@
             (let* list2tree*
               (lambda (l cont)
                 (do
-                  (<- (tree _) (list2tree** l int-zero))
+                  (<- (tree _) (list2tree** int-zero l int-zero))
                   (cont tree))))
             (<- (progtree) (list2tree* (cdr-generator proglist)))
             (list2tree* memlist) ;; Implicit argument passing: memtree
             (eval)))
         stdin))
-      initreg))))
+      (cons
+        int-zero
+        (cons
+          (cons int-zero int-zero)
+          (cons
+            int-zero
+              (cons int-zero int-zero))))))))
 
 (def-lambdaVM)
